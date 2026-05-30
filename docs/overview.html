@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trackspace Project Structure</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c0f;
+      --bg-2: #101114;
+      --panel: #141518;
+      --panel-2: #1a1c20;
+      --line: #2a2d33;
+      --line-soft: #202226;
+      --text: #f1f3f5;
+      --muted: #9aa1aa;
+      --soft: #c7ccd3;
+      --accent: #c7d2fe;
+      --accent-2: #d8dee9;
+      --blue: #c7d2fe;
+      --cyan: #d8dee9;
+      --amber: #f5d99f;
+      --red: #f1b6b6;
+      --green: #b9dec5;
+      --radius: 8px;
+      --shadow: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 46px 0 30px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+    }
+
+    .mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .mark::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent-2);
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 0 0 16px;
+      font-size: clamp(34px, 5.8vw, 58px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 820px;
+      margin: 0;
+      color: var(--soft);
+      font-size: 18px;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      background: rgba(11, 12, 15, 0.94);
+      border-bottom: 1px solid var(--line);
+    }
+
+    nav .shell {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    nav a {
+      flex: 0 0 auto;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      background: var(--panel-2);
+      text-decoration: none;
+    }
+
+    section {
+      padding: 44px 0;
+      border-bottom: 1px solid var(--line-soft);
+      scroll-margin-top: 58px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 28px;
+      line-height: 1.16;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    p {
+      color: var(--soft);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .screen-card {
+      min-height: 238px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .screen-card strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      color: var(--bg);
+      background: var(--accent);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    ul {
+      padding-left: 20px;
+      color: var(--soft);
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      color: var(--soft);
+      border: 1px solid var(--line);
+      background: transparent;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 88px;
+      background: var(--bg-2);
+    }
+
+    .status b {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .status span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .good b { color: var(--green); }
+    .watch b { color: var(--amber); }
+    .block b { color: var(--red); }
+    .unknown b { color: var(--blue); }
+
+    .diagram {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .diagram text {
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      fill: var(--text);
+    }
+
+    .diagram .sub {
+      fill: var(--muted);
+      font-size: 12px;
+    }
+
+    .diagram .box {
+      fill: #17191d;
+      stroke: #343840;
+      stroke-width: 1;
+    }
+
+    .diagram .box-strong {
+      fill: #1c1f24;
+      stroke: #c7ccd3;
+    }
+
+    .diagram .box-blue {
+      fill: #1c1f24;
+      stroke: #7f8792;
+    }
+
+    .diagram .line {
+      stroke: #7f8792;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .diagram .dash {
+      stroke-dasharray: 7 7;
+    }
+
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--bg-2);
+      font-size: 14px;
+    }
+
+    .mini-table th,
+    .mini-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mini-table th {
+      color: var(--text);
+      background: var(--panel-2);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mini-table td {
+      color: var(--soft);
+    }
+
+    .mini-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .source-tier {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 76px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--bg);
+      background: var(--accent-2);
+    }
+
+    .tier-2 { background: var(--blue); }
+    .tier-3 { background: var(--amber); }
+    .tier-4 { background: var(--red); }
+
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--panel);
+      padding: 16px 18px;
+      border-radius: 8px;
+      color: var(--soft);
+    }
+
+    code {
+      color: var(--accent-2);
+      background: var(--panel-2);
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+
+    footer {
+      padding: 34px 0 58px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .span-3,
+      .span-4,
+      .span-5,
+      .span-6,
+      .span-7,
+      .span-8 {
+        grid-column: span 12;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 24px, 1180px);
+      }
+
+      header {
+        padding-top: 38px;
+      }
+
+      .topline {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <div class="topline">
+        <div class="mark">Trackspace</div>
+        <div>Project structure document | Updated May 30, 2026</div>
+      </div>
+      <h1>Moon Base Progress Tracker</h1>
+      <p class="lede">
+        Trackspace is a simple, high-signal app for understanding NASA's path from Artemis missions to a sustained lunar base.
+        The product should explain capabilities, dependencies, milestones, and evidence, not just list space news.
+      </p>
+    </div>
+  </header>
+
+  <nav aria-label="Page sections">
+    <div class="shell">
+      <a href="#principle">Principle</a>
+      <a href="#screens">Screens</a>
+      <a href="#command">Command Center</a>
+      <a href="#diagrams">Diagrams</a>
+      <a href="#data-model">Data Model</a>
+      <a href="#accuracy">Accuracy</a>
+      <a href="#sources">Sources</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#mvp">MVP</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="principle">
+      <div class="shell grid">
+        <div class="span-7">
+          <h2>Project Goal</h2>
+          <p>
+            The app should answer one main question: <strong>how close is NASA to sustaining people and infrastructure on the Moon?</strong>
+            It should keep the experience minimal: four primary screens, one reusable detail drawer, and a source-first data model.
+          </p>
+          <div class="callout">
+            Artemis missions are major milestones, not the outer boundary of the product. The broader frame is NASA's Moon to Mars architecture
+            and the practical path toward long-term lunar operations.
+          </div>
+        </div>
+        <div class="span-5 card">
+          <h3>What the app is</h3>
+          <ul>
+            <li>A readiness tracker for NASA's long-term lunar base plans.</li>
+            <li>A dependency map for the capabilities required to live and work on the Moon.</li>
+            <li>A spatial command layer for launch sites, landing sites, orbits, and trajectories.</li>
+            <li>A timeline of tests, launches, incidents, reviews, slips, and milestones.</li>
+            <li>A source-backed explanation tool, not a rumor board.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="screens">
+      <div class="shell">
+        <h2>Main Screens</h2>
+        <p class="muted">Keep the product simple. Four top-level screens are enough.</p>
+
+        <div class="grid">
+          <article class="span-3 card screen-card">
+            <div>
+              <strong>01</strong>
+              <h3>Command Center</h3>
+              <p>The home screen and main visual experience.</p>
+            </div>
+            <ul>
+              <li>3D Earth/Moon scene</li>
+              <li>Lunar base readiness</li>
+              <li>Top blockers</li>
+              <li>Recent changes</li>
+              <li>Next milestones</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card screen-card">
+            <div>
+              <strong>02</strong>
+              <h3>Dependency Map</h3>
+              <p>The signature capability view.</p>
+            </div>
+            <ul>
+              <li>Milestone/capability graph</li>
+              <li>Upstream dependencies</li>
+              <li>Downstream impacts</li>
+              <li>Status coloring</li>
+              <li>Capability filters</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card screen-card">
+            <div>
+              <strong>03</strong>
+              <h3>Timeline</h3>
+              <p>The chronological data spine.</p>
+            </div>
+            <ul>
+              <li>Past and future events</li>
+              <li>Launches and tests</li>
+              <li>Incidents and reviews</li>
+              <li>Date confidence</li>
+              <li>Impact labels</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card screen-card">
+            <div>
+              <strong>04</strong>
+              <h3>Milestones</h3>
+              <p>Focused pages for Artemis missions and lunar buildout phases.</p>
+            </div>
+            <ul>
+              <li>Mission or phase objective</li>
+              <li>Required capabilities</li>
+              <li>Open blockers</li>
+              <li>Related events</li>
+              <li>Critical path</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <h3>Event detail is not a page</h3>
+          <p>
+            Events open in a drawer from any screen. The drawer shows what happened, what is confirmed, what is unknown, affected capabilities,
+            possible downstream impacts, and source links. This keeps the main app from growing extra pages too early.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="command">
+      <div class="shell grid">
+        <div class="span-6">
+          <h2>Command Center Structure</h2>
+          <p>
+            The Command Center should be the memorable first screen: a 3D Earth/Moon scene with useful overlays. It should feel like a spatial
+            control room, but the surrounding panels must keep the information understandable.
+          </p>
+
+          <div class="status-grid">
+            <div class="status good">
+              <b>Ready</b>
+              <span>Completed milestones and capabilities with no known blocker.</span>
+            </div>
+            <div class="status watch">
+              <b>Watch</b>
+              <span>Progressing, but has schedule or technical uncertainty.</span>
+            </div>
+            <div class="status block">
+              <b>Blocker</b>
+              <span>Known issue that may affect the lunar base critical path.</span>
+            </div>
+            <div class="status unknown">
+              <b>Unknown</b>
+              <span>Important item with insufficient public information.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="span-6 card">
+          <h3>3D simulation overlays</h3>
+          <ul>
+            <li><strong>Launch sites:</strong> KSC, Cape Canaveral, Starbase, Stennis test stands, contractor sites where relevant.</li>
+            <li><strong>Lunar locations:</strong> South Pole landing regions, candidate surface zones, Gateway lunar orbit context.</li>
+            <li><strong>Trajectories:</strong> official mission paths when available; conceptual arcs otherwise clearly labeled.</li>
+            <li><strong>Assets:</strong> SLS, Orion, Gateway, HLS landers, Blue Moon, Starship HLS, rovers, suits, power, comms.</li>
+            <li><strong>Incidents:</strong> visible markers for affected pads, vehicles, test stands, and downstream dependencies.</li>
+          </ul>
+        </div>
+
+        <div class="span-12">
+          <svg class="diagram" viewBox="0 0 1120 560" role="img" aria-label="Command Center layout diagram">
+            <rect x="0" y="0" width="1120" height="560" fill="#101114"></rect>
+            <rect class="box" x="24" y="24" width="1072" height="56" rx="10"></rect>
+            <text x="46" y="58" font-size="20" font-weight="700">Trackspace Command</text>
+            <text x="774" y="58" class="sub">Command | Map | Timeline | Milestones</text>
+
+            <rect class="box" x="24" y="104" width="240" height="330" rx="10"></rect>
+            <text x="46" y="139" font-size="18" font-weight="700">Readiness Panel</text>
+            <text x="46" y="170" class="sub">Lunar base status</text>
+            <text x="46" y="198" class="sub">Top blockers</text>
+            <text x="46" y="226" class="sub">Recent changes</text>
+            <text x="46" y="254" class="sub">Next milestones</text>
+            <rect x="46" y="292" width="176" height="12" rx="6" fill="#b9dec5"></rect>
+            <rect x="46" y="318" width="132" height="12" rx="6" fill="#f5d99f"></rect>
+            <rect x="46" y="344" width="92" height="12" rx="6" fill="#f1b6b6"></rect>
+
+            <rect class="box-strong" x="292" y="104" width="536" height="330" rx="10"></rect>
+            <circle cx="506" cy="270" r="102" fill="#242933" stroke="#8b95a1" stroke-width="2"></circle>
+            <circle cx="506" cy="270" r="130" fill="none" stroke="#3a3f47" stroke-width="1"></circle>
+            <circle cx="696" cy="214" r="42" fill="#2a2d33" stroke="#c7ccd3" stroke-width="2"></circle>
+            <path d="M506 270 C590 140, 650 142, 696 214" fill="none" stroke="#c7d2fe" stroke-width="3"></path>
+            <path d="M506 270 C616 386, 690 352, 696 214" fill="none" stroke="#f5d99f" stroke-width="2" stroke-dasharray="8 8"></path>
+            <text x="332" y="139" font-size="18" font-weight="700">3D Earth/Moon Simulation</text>
+            <text x="332" y="404" class="sub">Rotate, zoom, select launch sites, landing sites, trajectories, and affected capabilities.</text>
+
+            <rect class="box" x="856" y="104" width="240" height="330" rx="10"></rect>
+            <text x="878" y="139" font-size="18" font-weight="700">Selection Detail</text>
+            <text x="878" y="170" class="sub">Selected object</text>
+            <text x="878" y="198" class="sub">Status and confidence</text>
+            <text x="878" y="226" class="sub">Related capabilities</text>
+            <text x="878" y="254" class="sub">Related events</text>
+            <text x="878" y="282" class="sub">Source trail</text>
+
+            <rect class="box-blue" x="24" y="462" width="1072" height="70" rx="10"></rect>
+            <text x="46" y="505" font-size="18" font-weight="700">Timeline Scrubber</text>
+            <line x1="252" y1="497" x2="1048" y2="497" stroke="#7f8792" stroke-width="2"></line>
+            <circle cx="416" cy="497" r="8" fill="#c7d2fe"></circle>
+            <circle cx="620" cy="497" r="8" fill="#f5d99f"></circle>
+            <circle cx="838" cy="497" r="8" fill="#f1b6b6"></circle>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="diagrams">
+      <div class="shell">
+        <h2>Project Diagrams</h2>
+
+        <div class="grid">
+          <div class="span-6 card">
+            <h3>Information Architecture</h3>
+            <svg class="diagram" viewBox="0 0 540 360" role="img" aria-label="Information architecture diagram">
+              <rect class="box-strong" x="170" y="26" width="200" height="52" rx="10"></rect>
+              <text x="216" y="58" font-size="17" font-weight="700">App Shell</text>
+
+              <rect class="box" x="24" y="128" width="112" height="56" rx="9"></rect>
+              <rect class="box" x="150" y="128" width="112" height="56" rx="9"></rect>
+              <rect class="box" x="276" y="128" width="112" height="56" rx="9"></rect>
+              <rect class="box" x="402" y="128" width="112" height="56" rx="9"></rect>
+              <text x="47" y="161" font-size="14" font-weight="700">Command</text>
+              <text x="184" y="161" font-size="14" font-weight="700">Map</text>
+              <text x="303" y="161" font-size="14" font-weight="700">Timeline</text>
+              <text x="423" y="161" font-size="14" font-weight="700">Milestones</text>
+
+              <path class="line" d="M270 78 L80 128"></path>
+              <path class="line" d="M270 78 L206 128"></path>
+              <path class="line" d="M270 78 L332 128"></path>
+              <path class="line" d="M270 78 L458 128"></path>
+
+              <rect class="box-blue" x="118" y="260" width="304" height="58" rx="10"></rect>
+              <text x="191" y="294" font-size="15" font-weight="700">Reusable Event Drawer</text>
+              <path class="line dash" d="M80 184 C90 230, 145 242, 190 260"></path>
+              <path class="line dash" d="M206 184 C215 220, 230 240, 248 260"></path>
+              <path class="line dash" d="M332 184 C326 220, 311 240, 292 260"></path>
+              <path class="line dash" d="M458 184 C445 230, 390 242, 346 260"></path>
+            </svg>
+          </div>
+
+          <div class="span-6 card">
+            <h3>Data Pipeline</h3>
+            <svg class="diagram" viewBox="0 0 540 360" role="img" aria-label="Data pipeline diagram">
+              <rect class="box" x="20" y="34" width="132" height="62" rx="9"></rect>
+              <text x="52" y="61" font-size="14" font-weight="700">Sources</text>
+              <text x="40" y="82" class="sub">NASA, FAA, vendors</text>
+
+              <rect class="box" x="204" y="34" width="132" height="62" rx="9"></rect>
+              <text x="237" y="61" font-size="14" font-weight="700">Ingest</text>
+              <text x="223" y="82" class="sub">Feeds + manual review</text>
+
+              <rect class="box" x="388" y="34" width="132" height="62" rx="9"></rect>
+              <text x="421" y="61" font-size="14" font-weight="700">Normalize</text>
+              <text x="404" y="82" class="sub">Events + capabilities</text>
+
+              <path class="line" d="M152 65 L204 65"></path>
+              <path class="line" d="M336 65 L388 65"></path>
+
+              <rect class="box-strong" x="80" y="156" width="160" height="72" rx="9"></rect>
+              <text x="112" y="185" font-size="14" font-weight="700">Confidence</text>
+              <text x="106" y="207" class="sub">Source tier + freshness</text>
+
+              <rect class="box-blue" x="300" y="156" width="160" height="72" rx="9"></rect>
+              <text x="331" y="185" font-size="14" font-weight="700">Impact Model</text>
+              <text x="325" y="207" class="sub">Dependency links</text>
+
+              <path class="line" d="M454 96 C454 132, 422 138, 380 156"></path>
+              <path class="line" d="M270 96 C258 128, 208 136, 160 156"></path>
+              <path class="line" d="M240 192 L300 192"></path>
+
+              <rect class="box" x="154" y="276" width="232" height="54" rx="9"></rect>
+              <text x="227" y="308" font-size="14" font-weight="700">UI Screens</text>
+              <path class="line" d="M160 228 C178 252, 206 264, 252 276"></path>
+              <path class="line" d="M380 228 C364 252, 335 264, 288 276"></path>
+            </svg>
+          </div>
+
+          <div class="span-12 card">
+            <h3>Core Entity Relationships</h3>
+            <svg class="diagram" viewBox="0 0 1120 360" role="img" aria-label="Core entity relationship diagram">
+              <rect class="box-strong" x="40" y="60" width="160" height="76" rx="10"></rect>
+              <text x="78" y="94" font-size="17" font-weight="700">Milestone</text>
+              <text x="62" y="118" class="sub">Missions, base phases</text>
+
+              <rect class="box" x="292" y="60" width="160" height="76" rx="10"></rect>
+              <text x="330" y="94" font-size="17" font-weight="700">Capability</text>
+              <text x="313" y="118" class="sub">Land, move, power</text>
+
+              <rect class="box" x="544" y="60" width="160" height="76" rx="10"></rect>
+              <text x="590" y="94" font-size="17" font-weight="700">Event</text>
+              <text x="570" y="118" class="sub">Launch, test, review</text>
+
+              <rect class="box" x="796" y="60" width="160" height="76" rx="10"></rect>
+              <text x="841" y="94" font-size="17" font-weight="700">Source</text>
+              <text x="822" y="118" class="sub">NASA, FAA, AP</text>
+
+              <rect class="box-blue" x="418" y="224" width="160" height="76" rx="10"></rect>
+              <text x="454" y="258" font-size="17" font-weight="700">Location</text>
+              <text x="448" y="282" class="sub">Pad, orbit, site</text>
+
+              <path class="line" d="M200 98 L292 98"></path>
+              <text x="218" y="85" class="sub">requires</text>
+              <path class="line" d="M452 98 L544 98"></path>
+              <text x="475" y="85" class="sub">affected by</text>
+              <path class="line" d="M704 98 L796 98"></path>
+              <text x="723" y="85" class="sub">supported by</text>
+              <path class="line" d="M624 136 C626 188, 574 206, 518 224"></path>
+              <text x="601" y="196" class="sub">happens at</text>
+              <path class="line" d="M372 136 C380 190, 418 205, 470 224"></path>
+              <text x="384" y="196" class="sub">located at</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="data-model">
+      <div class="shell grid">
+        <div class="span-5">
+          <h2>Data Model</h2>
+          <p>
+            Start with a small schema. It should be easy to manually curate at first, then automate later.
+          </p>
+          <div class="pill-row">
+            <span class="pill">Milestone</span>
+            <span class="pill">Capability</span>
+            <span class="pill">Event</span>
+            <span class="pill">Location</span>
+            <span class="pill">Source</span>
+            <span class="pill">Impact</span>
+            <span class="pill">Confidence</span>
+          </div>
+        </div>
+
+        <div class="span-7 card">
+          <h3>Minimum useful fields</h3>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Entity</th>
+                <th>Fields</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Milestone</code></td>
+                <td>Name, type, objective, target window, required capabilities, blockers, status, source links, last verified.</td>
+              </tr>
+              <tr>
+                <td><code>Capability</code></td>
+                <td>Name, category, owner, readiness state, dependencies, related locations, related events.</td>
+              </tr>
+              <tr>
+                <td><code>Event</code></td>
+                <td>Title, event type, date, date confidence, summary, affected capabilities, impact level, confirmed facts, unknowns, sources.</td>
+              </tr>
+              <tr>
+                <td><code>Location</code></td>
+                <td>Name, type, latitude, longitude, body, confidence, visible overlays, related capabilities and events.</td>
+              </tr>
+              <tr>
+                <td><code>Source</code></td>
+                <td>URL, publisher, source tier, publication date, retrieval date, quoted claim, claim type.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="accuracy">
+      <div class="shell grid">
+        <div class="span-5">
+          <h2>Accuracy Policy</h2>
+          <p>
+            Trackspace should be useful because it is careful. The app can detect signals from many places, but user-facing readiness and impact
+            labels for lunar base progress should only change when the claim has enough source support.
+          </p>
+          <div class="callout">
+            Default posture: official facts first, inference second, rumor never. When impact is uncertain, say "unknown" instead of inventing precision.
+          </div>
+        </div>
+
+        <div class="span-7 card">
+          <h3>Claim labels</h3>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Meaning</th>
+                <th>Allowed source basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Confirmed</code></td>
+                <td>A thing happened or an official schedule/status exists.</td>
+                <td>NASA, FAA, OIG, GAO, partner agency, or responsible contractor statement.</td>
+              </tr>
+              <tr>
+                <td><code>Reported</code></td>
+                <td>A reputable outlet reports an event before official details are complete.</td>
+                <td>AP, Reuters, SpaceNews, Ars Technica, or similarly accountable reporting.</td>
+              </tr>
+              <tr>
+                <td><code>Inferred</code></td>
+                <td>The app is connecting a known event to a likely dependency impact.</td>
+                <td>Must reference the confirmed event plus the dependency link used for the inference.</td>
+              </tr>
+              <tr>
+                <td><code>Conceptual</code></td>
+                <td>Used for visual paths, trajectories, or architecture that are illustrative.</td>
+                <td>Clearly label when exact trajectory, ephemeris, or site data is unavailable.</td>
+              </tr>
+              <tr>
+                <td><code>Unverified</code></td>
+                <td>Discovery signal only. It can create a private review task, not a public claim.</td>
+                <td>Social media, forums, livestream clips, Wikipedia, or uncited launch trackers.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="shell">
+        <h2>Accurate Information Sources</h2>
+        <p class="muted">
+          Use source tiers. The app can ingest many feeds, but only source-backed facts should drive readiness and impact labels.
+        </p>
+
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Use</th>
+              <th>Starting sources</th>
+              <th>Rule</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="source-tier">Tier 1</span></td>
+              <td>Official Moon to Mars architecture, mission pages, launch schedule, NASA updates.</td>
+              <td>
+                <a href="https://www.nasa.gov/moontomarsarchitecture/">NASA Moon to Mars Architecture</a>,
+                <a href="https://www.nasa.gov/moontomarsarchitecture-architecturedefinitiondocuments/">NASA Architecture Definition Documents</a>,
+                <a href="https://www.nasa.gov/humans-in-space/artemis/">NASA Artemis</a>,
+                <a href="https://www.nasa.gov/event/artemis-v/">NASA Artemis V</a>,
+                <a href="https://www.nasa.gov/event-type/launch-schedule/">NASA Launch Schedule</a>,
+                <a href="https://www.nasa.gov/blogs/artemis/">NASA Artemis Blog</a>,
+                <a href="https://www.nasa.gov/rss-feeds/">NASA RSS Feeds</a>
+              </td>
+              <td>Highest authority for mission status, dates, and architecture.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier">Tier 1</span></td>
+              <td>Major lunar architecture capabilities.</td>
+              <td>
+                <a href="https://www.nasa.gov/reference/human-landing-systems/">NASA Human Landing Systems</a>,
+                <a href="https://www.nasa.gov/humans-in-space/human-landing-system/">NASA Starship HLS</a>,
+                <a href="https://www.nasa.gov/reference/gateway-about/">NASA Gateway</a>,
+                <a href="https://www.nasa.gov/suits-and-rovers/">NASA Suits and Rovers</a>,
+                <a href="https://www.nasa.gov/suits-and-rovers/lunar-terrain-vehicle">NASA Lunar Terrain Vehicle</a>,
+                <a href="https://www.nasa.gov/humans-in-space/lunanet-empowering-artemis-with-communications-and-navigation-interoperability/">NASA LunaNet</a>,
+                <a href="https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/">NASA lunar landing regions</a>
+              </td>
+              <td>Use for capability definitions and official relationships between capabilities.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier">Tier 1</span></td>
+              <td>Oversight, schedule risk, audits, and program management risk.</td>
+              <td>
+                <a href="https://oig.nasa.gov/office-of-inspector-general-oig/audit-reports/nasas-management-of-the-human-landing-system-contracts/">NASA OIG HLS report</a>,
+                <a href="https://oig.nasa.gov/audits/nasas-acquisition-of-next-generation-spacesuit-services/">NASA OIG spacesuit report</a>,
+                <a href="https://www.gao.gov/search?search_api_fulltext=Artemis">GAO Artemis reports</a>,
+                <a href="https://ntrs.nasa.gov/">NASA Technical Reports Server</a>
+              </td>
+              <td>Use for risk context. Do not turn audit projections into certain outcomes.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier">Tier 1</span></td>
+              <td>Launch/reentry licensing, commercial space operations, mishap/regulatory context.</td>
+              <td>
+                <a href="https://www.faa.gov/space">FAA Commercial Space Transportation</a>,
+                <a href="https://www.faa.gov/space/licenses/operator_licenses_permits">FAA vehicle operator licenses</a>,
+                <a href="https://www.faa.gov/node/52196">FAA commercial space by the numbers</a>,
+                <a href="https://www.faa.gov/newsroom/commercial-space-transportation-activities">FAA commercial space activities</a>
+              </td>
+              <td>Use for regulatory status and mishap process. Avoid guessing investigation outcomes.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier tier-2">Tier 2</span></td>
+              <td>Official contractor and partner updates.</td>
+              <td>
+                <a href="https://www.blueorigin.com/blue-moon/">Blue Origin Blue Moon</a>,
+                <a href="https://www.blueorigin.com/new-glenn/">Blue Origin New Glenn</a>,
+                <a href="https://www.blueorigin.com/news/">Blue Origin News</a>,
+                <a href="https://www.spacex.com/updates/">SpaceX Updates</a>,
+                <a href="https://www.axiomspace.com/axiom-suit">Axiom Suit</a>,
+                <a href="https://www.axiomspace.com/news">Axiom Space News</a>,
+                <a href="https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Exploration/Gateway">ESA Gateway</a>,
+                <a href="https://www.asc-csa.gc.ca/eng/canadarm3/about.asp">CSA Canadarm3</a>
+              </td>
+              <td>Use for hardware progress, but verify lunar base impact against NASA when possible.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier tier-2">Tier 2</span></td>
+              <td>Structured launch/event feeds and media assets.</td>
+              <td>
+                <a href="https://ll.thespacedevs.com/">Launch Library 2 API</a>,
+                <a href="https://thespacedevs.com/llapi">The Space Devs LL2 overview</a>,
+                <a href="https://api.nasa.gov/">NASA Open APIs</a>,
+                <a href="https://images.nasa.gov/">NASA Image and Video Library</a>,
+                <a href="https://images.nasa.gov/docs/images.nasa.gov_api_docs.pdf">NASA Images API docs</a>
+              </td>
+              <td>Use as convenience data. Cross-check key lunar base items with primary sources.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier tier-3">Tier 3</span></td>
+              <td>Reputable reporting when official sources lag behind.</td>
+              <td>
+                <a href="https://apnews.com/article/a69e249784c277b0d08ac8c246b21a6d">AP New Glenn follow-up</a>,
+                <a href="https://apnews.com/article/ecdb38828fac02e3a33cc4fd4e61543e">AP New Glenn incident report</a>,
+                <a href="https://spacenews.com/?s=Artemis">SpaceNews Artemis search</a>,
+                <a href="https://arstechnica.com/space/">Ars Technica Space</a>,
+                <a href="https://www.reutersconnect.com/">Reuters Connect</a>
+              </td>
+              <td>Good for early event detection. Mark downstream impact as inference unless official confirmation exists.</td>
+            </tr>
+            <tr>
+              <td><span class="source-tier tier-4">Tier 4</span></td>
+              <td>Low-confidence discovery only.</td>
+              <td>Reddit, X, YouTube clips, Wikipedia, forums, unverified trackers.</td>
+              <td>Never use alone for app claims. Use only to find leads that get verified elsewhere.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout" style="margin-top: 18px;">
+          For 3D trajectory accuracy, default to "conceptual" unless the app has official mission profile data, ephemeris, or NASA trajectory materials.
+          A pretty but wrong trajectory is worse than a clearly labeled conceptual one.
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="shell grid">
+        <div class="span-6">
+          <h2>Update Workflow</h2>
+          <p>
+            The earliest version can be manually curated. The important part is preserving source links and confidence rules from the beginning.
+          </p>
+          <ol class="muted">
+            <li>Detect a new item from NASA, FAA, contractor feeds, Launch Library 2, or reputable reporting.</li>
+            <li>Create or update an <code>Event</code> record with exact source links and publication dates.</li>
+            <li>Attach affected <code>Capability</code> and <code>Milestone</code> records.</li>
+            <li>Assign impact: <code>none</code>, <code>watch</code>, <code>likely delay</code>, <code>blocker</code>, or <code>unknown</code>.</li>
+            <li>Separate confirmed facts from unknowns and inference.</li>
+            <li>Show the change in Command Center, Timeline, and any affected mission or buildout phase.</li>
+          </ol>
+        </div>
+
+        <div class="span-6 card">
+          <h3>Example: launchpad incident handling</h3>
+          <table class="mini-table">
+            <tbody>
+              <tr>
+                <td><strong>Confirmed</strong></td>
+                <td>Vehicle, date, location, test type, source links, official statements.</td>
+              </tr>
+              <tr>
+                <td><strong>Unknown</strong></td>
+                <td>Damage severity, investigation duration, repair timeline, alternate launch path.</td>
+              </tr>
+              <tr>
+                <td><strong>Impact model</strong></td>
+                <td>Pad -> New Glenn launch cadence -> Blue Moon test schedule -> sustained lunar access readiness.</td>
+              </tr>
+              <tr>
+                <td><strong>UI label</strong></td>
+                <td>Use <code>Watch</code> or <code>Unknown</code> until official impact is established.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="mvp">
+      <div class="shell grid">
+        <div class="span-5">
+          <h2>MVP Scope</h2>
+          <p>
+            Build the smallest useful version around one lunar base outcome, one dependency graph, and a small curated event set.
+          </p>
+        </div>
+
+        <div class="span-7 card">
+          <h3>First useful dataset</h3>
+          <ul>
+            <li><strong>Outcome:</strong> sustained human lunar surface operations.</li>
+            <li><strong>Milestones:</strong> Artemis missions, HLS demos, rover milestones, surface power demos, habitat/logistics milestones.</li>
+            <li><strong>Capabilities:</strong> SLS, Orion, Gateway, Blue Moon, New Glenn, Starship HLS, spacesuits, LTV, surface power, lunar comms, habitats, logistics.</li>
+            <li><strong>Locations:</strong> Kennedy Space Center, Cape Canaveral LC-36, lunar South Pole regions, Gateway lunar orbit context.</li>
+            <li><strong>Events:</strong> official Artemis milestones, HLS tests, New Glenn tests/flights, Starship HLS tests, spacesuit milestones, rover milestones, regulatory reviews.</li>
+            <li><strong>Interactions:</strong> rotate 3D scene, select object, open event drawer, filter timeline by milestone/capability/impact.</li>
+          </ul>
+        </div>
+
+        <div class="span-12 card">
+          <h3>What to avoid early</h3>
+          <ul>
+            <li>Do not create ten pages. Keep four screens and one event drawer.</li>
+            <li>Do not claim exact delay estimates unless an authoritative source does.</li>
+            <li>Do not treat future dates as firm unless NASA or the responsible agency says they are firm.</li>
+            <li>Do not render exact-looking trajectories if the underlying data is conceptual.</li>
+            <li>Do not rely on social media clips or forum posts as source-backed facts.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      This document is a planning artifact for Trackspace. It is intentionally static HTML so it can be opened directly and revised as the product direction sharpens.
+    </div>
+  </footer>
+</body>
+</html>

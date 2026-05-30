@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trackspace Tech Stack</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c0f;
+      --panel: #141518;
+      --panel-2: #1a1c20;
+      --line: #2a2d33;
+      --line-soft: #202226;
+      --text: #f1f3f5;
+      --muted: #9aa1aa;
+      --soft: #c7ccd3;
+      --accent: #c7d2fe;
+      --green: #b9dec5;
+      --amber: #f5d99f;
+      --red: #f1b6b6;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .shell {
+      width: min(980px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 44px 0 30px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+    }
+
+    .mark {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0 0 14px;
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.05;
+    }
+
+    .lede {
+      max-width: 760px;
+      color: var(--soft);
+      font-size: 18px;
+      margin: 0;
+    }
+
+    section {
+      padding: 36px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 26px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    p,
+    li,
+    td {
+      color: var(--soft);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      grid-column: span 6;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .card.full {
+      grid-column: span 12;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #101114;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      vertical-align: top;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      color: var(--text);
+      background: var(--panel-2);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      color: #d8dee9;
+      background: var(--panel-2);
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--bg);
+      background: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .ok {
+      background: var(--green);
+    }
+
+    .later {
+      background: var(--amber);
+    }
+
+    .no {
+      background: var(--red);
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 10px 0 0;
+    }
+
+    footer {
+      padding: 28px 0 44px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .card {
+        grid-column: span 12;
+      }
+
+      .topline {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <div class="topline">
+        <div class="mark">Trackspace</div>
+        <div>Technical stack brief | Updated May 30, 2026</div>
+      </div>
+      <h1>Recommended Tech Stack</h1>
+      <p class="lede">
+        Trackspace should be a source-backed lunar base progress tracker with a 3D command surface, dependency graph,
+        timeline, and curated data model. Keep the stack portable and avoid user/auth complexity early.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="shell">
+        <h2>Core Recommendation</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Choice</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>App framework</td>
+              <td><code>Next.js</code> + <code>TypeScript</code></td>
+              <td>Routes, server handlers, static/docs pages, and API endpoints in one app.</td>
+            </tr>
+            <tr>
+              <td>UI styling</td>
+              <td><code>Tailwind CSS</code> + custom components</td>
+              <td>Fast to build, easy to keep minimal, avoids heavy UI framework lock-in.</td>
+            </tr>
+            <tr>
+              <td>3D command scene</td>
+              <td><code>Three.js</code> + <code>@react-three/fiber</code> + <code>@react-three/drei</code></td>
+              <td>Best fit for custom Earth/Moon scene, trajectories, overlays, and timeline playback.</td>
+            </tr>
+            <tr>
+              <td>Dependency map</td>
+              <td><code>@xyflow/react</code></td>
+              <td>Purpose-built interactive node/edge graph for capability dependencies.</td>
+            </tr>
+            <tr>
+              <td>Database</td>
+              <td>File-based <code>SQLite</code> (via <code>better-sqlite3</code>)</td>
+              <td>Read-mostly curated MVP dataset needs zero infra. Spatial anchors are plain <code>lat</code>/<code>lng</code> numeric columns &mdash; no PostGIS until a real spatial query exists. Schema stays portable to Postgres later.</td>
+            </tr>
+            <tr>
+              <td>Database access</td>
+              <td><code>Drizzle ORM</code></td>
+              <td>Typed schema, SQL-friendly queries, migrations, and one schema that targets SQLite now and Postgres later with minimal change.</td>
+            </tr>
+            <tr>
+              <td>Server/client data</td>
+              <td><code>TanStack Query</code></td>
+              <td>Cache, loading, refetch, and error states for timeline/map/detail data.</td>
+            </tr>
+            <tr>
+              <td>Local UI state</td>
+              <td><code>Zustand</code></td>
+              <td>Simple state for selected object, filters, drawer state, and timeline position.</td>
+            </tr>
+            <tr>
+              <td>Validation</td>
+              <td><code>Zod</code></td>
+              <td>Validate ingested data, API payloads, and source-backed claim records.</td>
+            </tr>
+            <tr>
+              <td>Testing</td>
+              <td><code>Vitest</code></td>
+              <td>Unit tests for data logic, schema helpers, ingestion transforms, and impact calculations.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="shell grid">
+        <div class="card">
+          <h3>Use Now</h3>
+          <p class="muted">These should be in the first implementation.</p>
+          <ul>
+            <li><code>next</code>, <code>react</code>, <code>typescript</code></li>
+            <li><code>tailwindcss</code></li>
+            <li><code>three</code>, <code>@react-three/fiber</code>, <code>@react-three/drei</code></li>
+            <li><code>@xyflow/react</code></li>
+            <li><code>drizzle-orm</code>, <code>drizzle-kit</code>, <code>better-sqlite3</code></li>
+            <li><code>@tanstack/react-query</code>, <code>zustand</code>, <code>zod</code></li>
+          </ul>
+          <p class="muted" style="margin-top: 12px;">
+            <strong>Peer-dep note:</strong> <code>@react-three/fiber</code> v9 declares a React ceiling of <code>&lt;19.3</code>.
+            It installs cleanly against the React 19.2.x that <code>create-next-app</code> ships today, but once the scaffold
+            starts pulling React 19.3+, <code>npm install</code> will throw an <code>ERESOLVE</code> peer conflict until fiber raises
+            the ceiling. Fix when it happens: <code>npm install --legacy-peer-deps</code>.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>Defer</h3>
+          <p class="muted">Useful later, but not needed for the MVP.</p>
+          <ul>
+            <li><code>PostgreSQL</code> (Dockerized or managed) once the dataset grows or ingestion lands.</li>
+            <li><code>PostGIS</code> only when a feature needs real spatial queries (radius, polygon, intersection).</li>
+            <li><code>CesiumJS</code> for high-fidelity geospatial visualization.</li>
+            <li>Auth, users, saved dashboards, and alerts.</li>
+            <li>Automated ingestion workers beyond seed/manual scripts.</li>
+            <li>Search infrastructure beyond the database's built-in full-text search (SQLite FTS5, later Postgres FTS).</li>
+            <li>Realtime updates or websockets.</li>
+          </ul>
+        </div>
+
+        <div class="card full">
+          <h3>Database Stance</h3>
+          <p>
+            Start on file-based <code>SQLite</code>. The MVP is a small, curated, read-mostly dataset, so there is no payoff to running
+            a Postgres container during the build phase &mdash; SQLite gets the app running with zero infra and no "is Docker up?" friction.
+            Spatial anchors are stored as plain <code>lat</code>/<code>lng</code> numeric columns and rendered directly in the 3D scene;
+            none of the four screens needs real spatial SQL, so <code>PostGIS</code> is deferred until a feature actually requires it.
+            Keep the Drizzle schema portable so it can move to any managed Postgres provider when the dataset grows, ingestion lands, or the app goes public.
+            Supabase is not required: no user-specific features, no auth, no realtime.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="shell">
+        <h2>Data Model</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>milestones</code></td>
+              <td>Artemis missions, lunar buildout phases, demos, reviews, and major program checkpoints.</td>
+            </tr>
+            <tr>
+              <td><code>capabilities</code></td>
+              <td>Landing, launch, suits, mobility, power, comms, habitats, logistics, and supporting systems.</td>
+            </tr>
+            <tr>
+              <td><code>events</code></td>
+              <td>Tests, launches, incidents, announcements, slips, reviews, deliveries, and demonstrations.</td>
+            </tr>
+            <tr>
+              <td><code>sources</code></td>
+              <td>NASA, FAA, OIG, GAO, contractor updates, reputable reporting, and source metadata.</td>
+            </tr>
+            <tr>
+              <td><code>claims</code></td>
+              <td>Atomic source-backed facts and inferences used to justify readiness and impact labels.</td>
+            </tr>
+            <tr>
+              <td><code>locations</code></td>
+              <td>Launch pads, test stands, lunar regions, Gateway context, and other spatial anchors.</td>
+            </tr>
+            <tr>
+              <td><code>dependencies</code></td>
+              <td>Edges between capabilities, milestones, events, and locations for the dependency map.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="shell">
+        <h2>Implementation Phases</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Phase</th>
+              <th>Scope</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag ok">Now</span></td>
+              <td>Static MVP data</td>
+              <td>SQLite file, Drizzle schema, seed data, four app screens, event drawer.</td>
+            </tr>
+            <tr>
+              <td><span class="tag ok">Now</span></td>
+              <td>Interactive visuals</td>
+              <td>3D Earth/Moon scene, dependency map, timeline filtering, selected-object panel.</td>
+            </tr>
+            <tr>
+              <td><span class="tag later">Later</span></td>
+              <td>Ingestion scripts</td>
+              <td>NASA feeds, FAA updates, Launch Library 2, contractor news, manual review queue.</td>
+            </tr>
+            <tr>
+              <td><span class="tag later">Later</span></td>
+              <td>Deployment</td>
+              <td>Migrate the portable Drizzle schema from SQLite to managed Postgres when the app needs to be public.</td>
+            </tr>
+            <tr>
+              <td><span class="tag no">Avoid</span></td>
+              <td>Premature platform features</td>
+              <td>No auth, no user accounts, no realtime, no alert system until the core tracker works.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      This stack keeps Trackspace local-first, source-backed, and portable while leaving room for richer geospatial and ingestion features later.
+    </div>
+  </footer>
+</body>
+</html>
