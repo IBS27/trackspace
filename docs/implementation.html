@@ -662,14 +662,23 @@ src/features/trackspace/
           <article class="card step">
             <h3>Replace the starter page</h3>
             <p>
-              Remove the create-next-app content. Render the Trackspace app from <code>src/app/page.tsx</code>.
+              This means changing the home route entry file, not building the whole UI yet. Remove the default create-next-app
+              JSX from <code>src/app/page.tsx</code>: the Next logo, "To get started" text, Deploy button, and Documentation link.
+              The page should only import the Trackspace app and render it.
             </p>
+            <pre><code>import { TrackspaceApp } from "@/features/trackspace/TrackspaceApp";
+import "@/features/trackspace/styles/trackspace.css";
+
+export default function Home() {
+  return &lt;TrackspaceApp /&gt;;
+}</code></pre>
           </article>
 
           <article class="card step">
             <h3>Add the app shell</h3>
             <p>
-              Build the top strip, header, left rail, main screen area, and drawer. Make the shell match the mock before adding every detail.
+              This is the visible frame inside <code>TrackspaceApp</code>. Build the top strip, header, left rail, main screen area,
+              and drawer. Step 2 wires the route to the app. Step 3 builds the frame the user actually sees.
             </p>
           </article>
 
