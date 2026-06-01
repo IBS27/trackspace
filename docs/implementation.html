@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trackspace Implementation Plan</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c0f;
+      --bg-2: #101114;
+      --panel: #141518;
+      --panel-2: #1a1c20;
+      --line: #2a2d33;
+      --line-soft: #202226;
+      --text: #f1f3f5;
+      --muted: #9aa1aa;
+      --soft: #c7ccd3;
+      --accent: #c7d2fe;
+      --green: #b9dec5;
+      --amber: #f5d99f;
+      --red: #f1b6b6;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      width: min(980px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 46px 0 30px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+    }
+
+    .mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .mark::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0 0 16px;
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 760px;
+      margin: 0;
+      color: var(--soft);
+      font-size: 18px;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(11, 12, 15, 0.94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    nav .shell {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    nav a {
+      flex: 0 0 auto;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      background: var(--panel-2);
+      text-decoration: none;
+    }
+
+    section {
+      padding: 42px 0;
+      border-bottom: 1px solid var(--line-soft);
+      scroll-margin-top: 58px;
+    }
+
+    h2 {
+      max-width: 760px;
+      margin: 0 0 14px;
+      font-size: 27px;
+      line-height: 1.18;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    p,
+    li,
+    td {
+      color: var(--soft);
+    }
+
+    p {
+      max-width: 760px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    ul {
+      padding-left: 20px;
+      margin: 10px 0 0;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .callout {
+      max-width: 760px;
+      border-left: 3px solid var(--accent);
+      background: var(--panel);
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      color: var(--soft);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-2);
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      vertical-align: top;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      color: var(--text);
+      background: var(--panel-2);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      color: var(--accent);
+      background: var(--panel-2);
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      color: var(--soft);
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 70px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--bg);
+      background: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.good { background: var(--green); }
+    .tag.warn { background: var(--amber); }
+    .tag.bad { background: var(--red); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .swatch-card {
+      min-height: 98px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 11px;
+    }
+
+    .swatch {
+      display: block;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      margin-bottom: 10px;
+    }
+
+    .swatch-card b {
+      display: block;
+      color: var(--text);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .swatch-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .steps {
+      counter-reset: step;
+      display: grid;
+      gap: 12px;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 56px;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step, decimal-leading-zero);
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg);
+      background: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    footer {
+      padding: 34px 0 58px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .span-3,
+      .span-4,
+      .span-5,
+      .span-6,
+      .span-7,
+      .span-8 {
+        grid-column: span 12;
+      }
+
+      .swatches {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 24px, 980px);
+      }
+
+      header {
+        padding-top: 38px;
+      }
+
+      .topline {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .swatches {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <div class="topline">
+        <div class="mark">Trackspace</div>
+        <div>Implementation plan | Updated June 1, 2026</div>
+      </div>
+      <h1>Implementation Approach</h1>
+      <p class="lede">
+        Use <a href="mock-design.html">mock-design.html</a> as the reference. The job is to replace the starter page with a real dashboard
+        that has the same layout, colors, data, and interactions as the mock.
+      </p>
+    </div>
+  </header>
+
+  <nav aria-label="Page sections">
+    <div class="shell">
+      <a href="#goal">Goal</a>
+      <a href="#look">Look</a>
+      <a href="#code">Code</a>
+      <a href="#screens">Screens</a>
+      <a href="#data">Data</a>
+      <a href="#steps">Steps</a>
+      <a href="#checks">Checks</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="goal">
+      <div class="shell grid">
+        <div class="span-7">
+          <h2>What to Build First</h2>
+          <p>
+            Start with the dashboard, not a landing page. The first screen should already look and behave like Trackspace:
+            a top status strip, a header, a left rail, a main workspace, and a drawer for details.
+          </p>
+          <div class="callout">
+            Do not paste the bundled mock into the app. Rebuild it as normal React components, with typed data and CSS that the project can maintain.
+          </div>
+        </div>
+
+        <aside class="span-5 card">
+          <h3>Do This</h3>
+          <ul>
+            <li>Use the mock for layout, spacing, colors, and behavior.</li>
+            <li>Keep <code>src/app/page.tsx</code> small.</li>
+            <li>Move the interactive app into a client component.</li>
+            <li>Use seed data first so the UI can move quickly.</li>
+            <li>Add SQLite after the screen design is stable.</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section id="look">
+      <div class="shell">
+        <h2>How It Should Look</h2>
+        <p>
+          The mock is dark, compact, and data-heavy. Keep the thin borders, small labels, monospace numbers, status colors,
+          and tight panel spacing. Avoid large marketing sections, oversized cards, and friendly startup-style copy.
+        </p>
+
+        <div class="swatches">
+          <div class="swatch-card">
+            <span class="swatch" style="background: #070910;"></span>
+            <b>Background</b>
+            <span><code>#070910</code></span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #0e121b;"></span>
+            <b>Panel</b>
+            <span><code>#0e121b</code></span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #1b2230;"></span>
+            <b>Border</b>
+            <span><code>#1b2230</code></span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #5bd0ff;"></span>
+            <b>Accent</b>
+            <span><code>#5bd0ff</code></span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #33d39c;"></span>
+            <b>Ready</b>
+            <span>Working or proven.</span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #f5b13d;"></span>
+            <b>Watch</b>
+            <span>Has risk or open work.</span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #ff5468;"></span>
+            <b>Blocker</b>
+            <span>Blocks later work.</span>
+          </div>
+          <div class="swatch-card">
+            <span class="swatch" style="background: #7587a3;"></span>
+            <b>Unknown</b>
+            <span>Not enough public evidence.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="code">
+      <div class="shell grid">
+        <div class="span-6">
+          <h2>Where the Code Should Go</h2>
+          <p>
+            Put the dashboard code under one feature folder. This keeps the route files small and keeps the app screens,
+            shared components, and data helpers together.
+          </p>
+          <pre><code>src/app/page.tsx
+src/features/trackspace/
+  TrackspaceApp.tsx
+  components/
+    AppShell.tsx
+    StatusChip.tsx
+    ConfidenceChip.tsx
+    DetailDrawer.tsx
+  screens/
+    CommandCenter.tsx
+    DependencyMap.tsx
+    TimelineScreen.tsx
+    MilestonesScreen.tsx
+  data/
+    seed.ts
+    selectors.ts
+    types.ts
+  scene/
+    EarthMoonScene.tsx
+  styles/
+    trackspace.css</code></pre>
+        </div>
+
+        <div class="span-6 card">
+          <h3>Next.js Note</h3>
+          <p>
+            This project uses Next.js 16. Before changing app routes, layouts, metadata, route handlers, or server/client component boundaries,
+            read the relevant guide in <code>node_modules/next/dist/docs/</code>.
+          </p>
+          <h3>Client Component Rule</h3>
+          <p>
+            The dashboard needs local state for navigation, filters, selections, and the drawer. Put that state in a <code>"use client"</code>
+            component, then render it from the page.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="screens">
+      <div class="shell">
+        <h2>Build the Screens in This Order</h2>
+        <p class="muted">
+          Finish one screen enough to compare it with the mock before moving on.
+        </p>
+
+        <div class="grid">
+          <article class="span-3 card">
+            <h3>1. Command Center</h3>
+            <ul>
+              <li>Earth/Moon scene</li>
+              <li>Readiness number</li>
+              <li>Status counts</li>
+              <li>Top blockers</li>
+              <li>Recent changes</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card">
+            <h3>2. Dependency Map</h3>
+            <ul>
+              <li>Capability nodes</li>
+              <li>Dependency lines</li>
+              <li>Status filters</li>
+              <li>Group filters</li>
+              <li>Node drawer</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card">
+            <h3>3. Timeline</h3>
+            <ul>
+              <li>Past events</li>
+              <li>Future targets</li>
+              <li>Current marker</li>
+              <li>Status filters</li>
+              <li>Event drawer</li>
+            </ul>
+          </article>
+
+          <article class="span-3 card">
+            <h3>4. Milestones</h3>
+            <ul>
+              <li>Mission list</li>
+              <li>Selected mission page</li>
+              <li>Required capabilities</li>
+              <li>Open blockers</li>
+              <li>Related events</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="data">
+      <div class="shell grid">
+        <div class="span-5">
+          <h2>Use Seed Data First</h2>
+          <p>
+            The mock already has the right kinds of records: capabilities, milestones, events, statuses, confidence labels,
+            dependencies, and source links. Put those records into typed seed files first.
+          </p>
+          <p>
+            After the UI works, move the same shape into Drizzle and SQLite. Do not let database setup slow down the first UI pass.
+          </p>
+        </div>
+
+        <div class="span-7">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>What It Stores</th>
+                <th>Used By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Capability</code></td>
+                <td>Launch, landing, suits, power, comms, habitats, ISRU, and other required systems.</td>
+                <td>Command Center, Dependency Map, Milestones</td>
+              </tr>
+              <tr>
+                <td><code>Milestone</code></td>
+                <td>Artemis missions and later lunar base phases.</td>
+                <td>Command Center, Milestones</td>
+              </tr>
+              <tr>
+                <td><code>Event</code></td>
+                <td>Tests, launches, delays, findings, demos, and future targets.</td>
+                <td>Timeline, Drawer, Recent Changes</td>
+              </tr>
+              <tr>
+                <td><code>Source</code></td>
+                <td>NASA, OIG, GAO, contractor updates, press kits, and reporting references.</td>
+                <td>Drawer</td>
+              </tr>
+              <tr>
+                <td><code>Selector</code></td>
+                <td>Readiness score, status counts, blockers, related events, and graph edges.</td>
+                <td>All screens</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="steps">
+      <div class="shell">
+        <h2>Step-by-Step Plan</h2>
+        <div class="steps">
+          <article class="card step">
+            <h3>Read the local Next.js docs</h3>
+            <p>
+              Check the relevant Next.js 16 docs before editing routes, layouts, metadata, server components, client components, or API routes.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Replace the starter page</h3>
+            <p>
+              Remove the create-next-app content. Render the Trackspace app from <code>src/app/page.tsx</code>.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Add the app shell</h3>
+            <p>
+              Build the top strip, header, left rail, main screen area, and drawer. Make the shell match the mock before adding every detail.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Add typed seed data</h3>
+            <p>
+              Add statuses, confidence levels, capabilities, milestones, events, and helper functions for derived values.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Build the Command Center</h3>
+            <p>
+              Add the Earth/Moon scene, the readiness panel, blockers, recent changes, and next milestone rows.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Build the other screens</h3>
+            <p>
+              Add the dependency map, timeline, milestones, filters, selected states, and drawer links.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Move data into SQLite</h3>
+            <p>
+              Once the UI is stable, define Drizzle tables and seed the same data into SQLite.
+            </p>
+          </article>
+
+          <article class="card step">
+            <h3>Compare with the mock</h3>
+            <p>
+              Open the app and <code>docs/mock-design.html</code>. Check layout, color, text size, spacing, scrolling, filters, and drawer behavior.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="checks">
+      <div class="shell">
+        <h2>Checks Before Calling It Done</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>What Should Be True</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag good">Layout</span></td>
+              <td>The first view has the top strip, header, left rail, main workspace, side panel, and drawer behavior shown in the mock.</td>
+            </tr>
+            <tr>
+              <td><span class="tag good">Style</span></td>
+              <td>Colors, borders, text sizes, labels, status chips, and panel spacing look close to the mock.</td>
+            </tr>
+            <tr>
+              <td><span class="tag good">State</span></td>
+              <td>Rail tabs, filters, selected nodes, selected events, selected milestones, and drawer open/close all work.</td>
+            </tr>
+            <tr>
+              <td><span class="tag good">Data</span></td>
+              <td>Readiness, status counts, blockers, related events, and graph edges come from the typed data, not copied display text.</td>
+            </tr>
+            <tr>
+              <td><span class="tag warn">Mobile</span></td>
+              <td>The page is usable on a phone-size viewport. Text should not overlap, clip, or force the whole page sideways.</td>
+            </tr>
+            <tr>
+              <td><span class="tag bad">Avoid</span></td>
+              <td>No starter UI, no marketing hero, no default graph styling, no placeholder boxes that do not match the mock.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid" style="margin-top: 16px;">
+          <div class="span-6 card">
+            <h3>Local Commands</h3>
+            <pre><code>npm run dev
+npm run lint
+npm run build
+npm run test -- --run</code></pre>
+            <p class="muted">
+              The test command can fail when there are no test files yet. That is expected until tests are added.
+            </p>
+          </div>
+
+          <div class="span-6 card">
+            <h3>First Tests to Add</h3>
+            <ul>
+              <li>Readiness score and status count helpers.</li>
+              <li>Blocker and related-event selectors.</li>
+              <li>Rail navigation and drawer open/close behavior.</li>
+              <li>Basic rendering tests for each screen.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      Build the dashboard first. Add database, ingestion, and deployment after the UI matches the mock and the main interactions work.
+    </div>
+  </footer>
+</body>
+</html>

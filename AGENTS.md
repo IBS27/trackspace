@@ -36,3 +36,13 @@ This project uses **Next.js 16** with breaking changes vs older versions. Before
 ### Peer dependencies
 
 If `@react-three/fiber` conflicts with React during install, use `npm install --legacy-peer-deps` (documented in `docs/tech-stack.html`).
+
+## Instructions for writing HTML documents when asked by the user
+
+- When I ask for an HTML document, create or edit a `.html` file, usually in `docs/` unless I specify another path.
+- Treat the HTML file as a readable document, similar to a Markdown brief, but with better layout and navigation.
+- Match the existing docs style: clean, minimal, dark theme, readable spacing, cards/tables only when they help.
+- Keep the writing plain and concrete. Avoid vague language, hype, filler, and generic AI-sounding phrasing.
+- Prefer short sections, direct headings, bullets, tables, and examples over long paragraphs.
+- Make the document self-contained: inline CSS, no unnecessary JavaScript, no external assets unless requested.
+- Use semantic HTML and make it responsive enough to read on desktop and mobile.
