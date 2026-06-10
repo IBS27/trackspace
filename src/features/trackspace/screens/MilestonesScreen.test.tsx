@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MILESTONES } from "../data/seed";
@@ -26,9 +20,11 @@ function rail(): HTMLElement {
 }
 
 function railItem(name: string): HTMLElement {
-  return Array.from(rail().querySelectorAll("button")).find((b) =>
+  const item = Array.from(rail().querySelectorAll("button")).find((b) =>
     b.textContent?.includes(name),
-  ) as HTMLElement;
+  );
+  if (!item) throw new Error(`No rail item found for "${name}"`);
+  return item;
 }
 
 describe("MilestonesScreen", () => {
@@ -67,8 +63,9 @@ describe("MilestonesScreen", () => {
   });
 
   it("lists the milestone's open blockers", () => {
-    const { container } = render(<MilestonesScreen onOpen={() => {}} />);
-    const flagged = container.querySelectorAll(".trackspace-caprow-flag");
+    render(<MilestonesScreen onOpen={() => {}} />);
+    // Blocker rows are the only buttons whose accessible name ends in BLOCKER.
+    const flagged = screen.queryAllByRole("button", { name: /BLOCKER$/ });
     expect(flagged.length).toBe(getMilestoneBlockers("a3").length);
   });
 
@@ -76,17 +73,16 @@ describe("MilestonesScreen", () => {
     const onOpen = vi.fn();
     render(<MilestonesScreen onOpen={onOpen} />);
     const capId = MILESTONE_BY_ID.a3.caps[0];
+    const capability = CAPABILITY_BY_ID[capId];
 
-    const page = screen.getByRole("heading", { level: 1 })
-      .closest(".trackspace-mspage") as HTMLElement;
-    const capRow = within(page)
-      .getAllByRole("button")
-      .find(
-        (b) =>
-          b.className.includes("trackspace-caprow") &&
-          b.textContent?.includes(CAPABILITY_BY_ID[capId].name),
-      )!;
-    fireEvent.click(capRow);
+    // A required-capability row's accessible name is its name plus the
+    // readiness %, which distinguishes it from the same capability's
+    // blocker row ("{name} BLOCKER").
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: new RegExp(`^${capability.name}\\s*${capability.readiness}%$`),
+      }),
+    );
 
     expect(onOpen).toHaveBeenCalledWith({ type: "capability", id: capId });
   });
