@@ -92,6 +92,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
           <button
             type="button"
             className={`trackspace-fchip${groupFilter.length === 0 ? " is-on" : ""}`}
+            aria-pressed={groupFilter.length === 0}
             onClick={() => setGroupFilter([])}
           >
             All caps
