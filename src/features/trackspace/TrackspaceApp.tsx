@@ -9,6 +9,7 @@ import {
 import { getSummary } from "./data/selectors";
 import { CommandCenter } from "./screens/CommandCenter";
 import { DependencyMap } from "./screens/DependencyMap";
+import { TimelineScreen } from "./screens/TimelineScreen";
 
 type TrackspaceView = "command" | "dependency" | "timeline" | "milestones";
 
@@ -93,6 +94,8 @@ export function TrackspaceApp() {
         <CommandCenter onOpen={setSelection} />
       ) : activeView === "dependency" ? (
         <DependencyMap onOpen={setSelection} />
+      ) : activeView === "timeline" ? (
+        <TimelineScreen onOpen={setSelection} />
       ) : (
         <MainContentSlot activeView={activeView} />
       )}
