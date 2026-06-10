@@ -93,6 +93,14 @@ export function getNextMilestone(milestones: Milestone[] = MILESTONES): Mileston
   return ordered.find((m) => m.status !== "ready") ?? ordered[ordered.length - 1];
 }
 
+/** Milestones not yet achieved, in date order. */
+export function getUpcomingMilestones(count = 3): Milestone[] {
+  return [...MILESTONES]
+    .sort((a, b) => compareDates(a.date, b.date))
+    .filter((m) => m.status !== "ready")
+    .slice(0, count);
+}
+
 /** Past events, newest first. */
 export function getRecentChanges(count = 3): TrackspaceEvent[] {
   return EVENTS.filter((e) => !e.future)
