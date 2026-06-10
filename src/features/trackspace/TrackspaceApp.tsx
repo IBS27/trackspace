@@ -47,6 +47,16 @@ export function TrackspaceApp() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
       const index = Number(event.key) - 1;
       const item = NAV_ITEMS[index];
       if (item && isTrackspaceView(item.id)) {
