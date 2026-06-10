@@ -82,6 +82,7 @@ export function TrackspaceApp() {
       onNavChange={(view) => {
         if (isTrackspaceView(view)) {
           setActiveView(view);
+          setSelection(null);
         }
       }}
       presenceIndex={SUMMARY.overall}
