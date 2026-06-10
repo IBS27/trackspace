@@ -19,6 +19,7 @@ import {
   getSourcesForConfidence,
   getStatusCounts,
   getSummary,
+  getUpcomingMilestones,
 } from "./selectors";
 
 describe("getOverallReadiness", () => {
@@ -72,6 +73,21 @@ describe("getNextMilestone", () => {
       status: "ready",
     }));
     expect(getNextMilestone(allReady).id).toBe("base");
+  });
+});
+
+describe("getUpcomingMilestones", () => {
+  it("returns unachieved milestones in date order", () => {
+    expect(getUpcomingMilestones().map((m) => m.id)).toEqual(["a2", "a3", "gw"]);
+  });
+
+  it("respects the count argument", () => {
+    expect(getUpcomingMilestones(5).map((m) => m.id)).toEqual([
+      "a2",
+      "a3",
+      "gw",
+      "base",
+    ]);
   });
 });
 

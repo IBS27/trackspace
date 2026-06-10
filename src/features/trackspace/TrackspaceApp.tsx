@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { AppShell, type TrackspaceNavItem } from "./components/AppShell";
+import {
+  DetailDrawer,
+  type DrawerSelection,
+} from "./components/DetailDrawer";
 import { getSummary } from "./data/selectors";
+import { CommandCenter } from "./screens/CommandCenter";
 
 type TrackspaceView = "command" | "dependency" | "timeline" | "milestones";
 
@@ -41,6 +46,7 @@ const RECENT_FEED = SUMMARY.recentChanges.map((event) => event.title);
 
 export function TrackspaceApp() {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
+  const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [utcTime, setUtcTime] = useState("00:00:00");
 
   useEffect(() => {
@@ -62,18 +68,31 @@ export function TrackspaceApp() {
   return (
     <AppShell
       activeView={activeView}
-      drawer={null}
+      drawer={
+        selection && (
+          <DetailDrawer
+            selection={selection}
+            onOpen={setSelection}
+            onClose={() => setSelection(null)}
+          />
+        )
+      }
       navItems={NAV_ITEMS}
       nextGate={`${SUMMARY.nextMilestone.code} · ${SUMMARY.nextMilestone.date}`}
       onNavChange={(view) => {
         if (isTrackspaceView(view)) {
           setActiveView(view);
+          setSelection(null);
         }
       }}
       presenceIndex={SUMMARY.overall}
       utcTime={utcTime}
     >
-      <MainContentSlot activeView={activeView} />
+      {activeView === "command" ? (
+        <CommandCenter onOpen={setSelection} />
+      ) : (
+        <MainContentSlot activeView={activeView} />
+      )}
     </AppShell>
   );
 }
