@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 export type TrackspaceNavItem = {
   id: string;
   icon: string;
-  label: string;
   name: string;
 };
 
@@ -32,12 +31,12 @@ export function AppShell({
     <div className="trackspace-app">
       <TopStatusStrip presenceIndex={presenceIndex} utcTime={utcTime} />
       <Header nextGate={nextGate} />
+      <TabBar
+        activeView={activeView}
+        navItems={navItems}
+        onNavChange={onNavChange}
+      />
       <div className="trackspace-body">
-        <LeftRail
-          activeView={activeView}
-          navItems={navItems}
-          onNavChange={onNavChange}
-        />
         <main className="trackspace-screen">{children}</main>
       </div>
       <div className="trackspace-drawer-mount">{drawer}</div>
@@ -106,7 +105,7 @@ function StatusCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LeftRail({
+function TabBar({
   activeView,
   navItems,
   onNavChange,
@@ -116,23 +115,24 @@ function LeftRail({
   onNavChange: (view: string) => void;
 }) {
   return (
-    <nav className="trackspace-rail" aria-label="Trackspace views">
+    <nav className="trackspace-tabbar" aria-label="Trackspace views">
       {navItems.map((item) => (
         <button
           type="button"
           key={item.id}
-          className={item.id === activeView ? "is-active" : undefined}
+          className={`trackspace-tab${item.id === activeView ? " is-active" : ""}`}
           onClick={() => onNavChange(item.id)}
           aria-current={item.id === activeView ? "page" : undefined}
-          title={item.name}
         >
-          <span className="trackspace-rail-icon" aria-hidden="true">
+          <span className="trackspace-tab-icon" aria-hidden="true">
             {item.icon}
           </span>
-          <span className="trackspace-rail-label">{item.label}</span>
+          {item.name}
         </button>
       ))}
-      <span className="trackspace-rail-spacer" />
+      <span className="trackspace-tabbar-hint" aria-hidden="true">
+        PRESS 1–4
+      </span>
     </nav>
   );
 }

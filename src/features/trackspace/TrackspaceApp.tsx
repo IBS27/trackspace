@@ -14,14 +14,14 @@ import { TimelineScreen } from "./screens/TimelineScreen";
 
 type TrackspaceView = "command" | "dependency" | "timeline" | "milestones";
 
-const NAV_ITEMS: TrackspaceNavItem[] = [
-  { id: "command", icon: "⊕", label: "CMD", name: "Command Center" },
-  { id: "dependency", icon: "⧉", label: "DEP", name: "Dependency Map" },
-  { id: "timeline", icon: "≣", label: "TML", name: "Timeline" },
-  { id: "milestones", icon: "◎", label: "MIL", name: "Milestones" },
-];
-
 const SUMMARY = getSummary();
+
+const NAV_ITEMS: TrackspaceNavItem[] = [
+  { id: "command", icon: "⊕", name: "Command Center" },
+  { id: "dependency", icon: "⧉", name: "Dependency Map" },
+  { id: "timeline", icon: "≣", name: "Timeline" },
+  { id: "milestones", icon: "◎", name: "Milestones" },
+];
 
 export function TrackspaceApp() {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
@@ -42,6 +42,31 @@ export function TrackspaceApp() {
     const timer = window.setInterval(tick, 1000);
 
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const index = Number(event.key) - 1;
+      const item = NAV_ITEMS[index];
+      if (item && isTrackspaceView(item.id)) {
+        setActiveView(item.id);
+        setSelection(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   return (
