@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AppShell, type TrackspaceNavItem } from "./components/AppShell";
+import { getSummary } from "./data/selectors";
 
 type TrackspaceView = "command" | "dependency" | "timeline" | "milestones";
 
@@ -19,18 +20,24 @@ const VIEW_TITLES: Record<TrackspaceView, string> = {
   milestones: "Milestones",
 };
 
+const SUMMARY = getSummary();
+
 const SHELL_METRICS = [
-  { label: "Overall", value: "68%", status: "ready" },
-  { label: "Watch", value: "7", status: "watch" },
-  { label: "Blockers", value: "2", status: "blocker" },
-  { label: "Unknown", value: "4", status: "unknown" },
+  { label: "Overall", value: `${SUMMARY.overall}%`, status: "ready" },
+  { label: "Watch", value: `${SUMMARY.statusCounts.watch}`, status: "watch" },
+  {
+    label: "Blockers",
+    value: `${SUMMARY.statusCounts.blocker}`,
+    status: "blocker",
+  },
+  {
+    label: "Unknown",
+    value: `${SUMMARY.statusCounts.unknown}`,
+    status: "unknown",
+  },
 ];
 
-const RECENT_FEED = [
-  "HLS docking sequence remains on watch",
-  "Surface power path still blocks extended stay",
-  "Suit readiness trending toward A3 review",
-];
+const RECENT_FEED = SUMMARY.recentChanges.map((event) => event.title);
 
 export function TrackspaceApp() {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
@@ -57,11 +64,13 @@ export function TrackspaceApp() {
       activeView={activeView}
       drawer={null}
       navItems={NAV_ITEMS}
+      nextGate={`${SUMMARY.nextMilestone.code} · ${SUMMARY.nextMilestone.date}`}
       onNavChange={(view) => {
         if (isTrackspaceView(view)) {
           setActiveView(view);
         }
       }}
+      presenceIndex={SUMMARY.overall}
       utcTime={utcTime}
     >
       <MainContentSlot activeView={activeView} />

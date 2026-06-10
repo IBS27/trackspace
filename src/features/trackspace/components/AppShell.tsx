@@ -13,6 +13,8 @@ type AppShellProps = {
   navItems: TrackspaceNavItem[];
   onNavChange: (view: string) => void;
   utcTime: string;
+  presenceIndex: number;
+  nextGate: string;
   children: ReactNode;
 };
 
@@ -21,13 +23,15 @@ export function AppShell({
   children,
   drawer,
   navItems,
+  nextGate,
   onNavChange,
+  presenceIndex,
   utcTime,
 }: AppShellProps) {
   return (
     <div className="trackspace-app">
-      <TopStatusStrip utcTime={utcTime} />
-      <Header />
+      <TopStatusStrip presenceIndex={presenceIndex} utcTime={utcTime} />
+      <Header nextGate={nextGate} />
       <div className="trackspace-body">
         <LeftRail
           activeView={activeView}
@@ -41,7 +45,13 @@ export function AppShell({
   );
 }
 
-function TopStatusStrip({ utcTime }: { utcTime: string }) {
+function TopStatusStrip({
+  presenceIndex,
+  utcTime,
+}: {
+  presenceIndex: number;
+  utcTime: string;
+}) {
   return (
     <div className="trackspace-topstrip" aria-label="Trackspace status">
       <span className="trackspace-live">
@@ -58,7 +68,7 @@ function TopStatusStrip({ utcTime }: { utcTime: string }) {
       </span>
       <span className="trackspace-grow" />
       <span>
-        SUSTAINED-PRESENCE INDEX <b>68%</b>
+        SUSTAINED-PRESENCE INDEX <b>{presenceIndex}%</b>
       </span>
       <span className="trackspace-separator" aria-hidden="true" />
       <span>
@@ -68,7 +78,7 @@ function TopStatusStrip({ utcTime }: { utcTime: string }) {
   );
 }
 
-function Header() {
+function Header({ nextGate }: { nextGate: string }) {
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
@@ -81,7 +91,7 @@ function Header() {
       <div className="trackspace-header-stats" aria-label="Program summary">
         <StatusCell label="Program" value="Artemis / Moon-to-Mars" />
         <StatusCell label="Horizon" value="Sustained Presence" />
-        <StatusCell label="Next Gate" value="A3 / 2026" />
+        <StatusCell label="Next Gate" value={nextGate} />
       </div>
     </header>
   );
