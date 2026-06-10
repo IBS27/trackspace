@@ -1,11 +1,21 @@
 import { STATUS } from "../data/seed";
 import type { Status } from "../data/types";
 
-export function StatusChip({ status }: { status: Status }) {
+export function StatusChip({
+  status,
+  compact = false,
+}: {
+  status: Status;
+  /** Square-only variant for tight spots like graph node cards. */
+  compact?: boolean;
+}) {
   return (
-    <span className={`trackspace-schip trackspace-schip-${status}`}>
+    <span
+      className={`trackspace-schip trackspace-schip-${status}`}
+      aria-label={compact ? STATUS[status].label : undefined}
+    >
       <i className="trackspace-schip-square" aria-hidden="true" />
-      {STATUS[status].label}
+      {!compact && STATUS[status].label}
     </span>
   );
 }

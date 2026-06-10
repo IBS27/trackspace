@@ -35,7 +35,9 @@
   box-sizing: border-box;
 }
 
-.trackspace-app button {
+/* :where() keeps this reset at zero specificity so component classes can
+   set their own button fonts (filter chips, captags, drawer close). */
+.trackspace-app :where(button) {
   font: inherit;
 }
 
@@ -1284,6 +1286,238 @@
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
   white-space: nowrap;
+}
+
+/* ===== Dependency map ===== */
+
+.trackspace-dep {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ts-bg);
+}
+
+.trackspace-dep-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ts-line);
+  background: var(--ts-bg-2);
+  flex-wrap: wrap;
+}
+
+.trackspace-dep-title {
+  color: var(--ts-ink);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.trackspace-dep-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.trackspace-fchip {
+  padding: 5px 10px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 4px;
+  background: #0e131c;
+  color: var(--ts-dim);
+  cursor: pointer;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: 130ms;
+}
+
+.trackspace-fchip:hover {
+  color: var(--ts-ink);
+  border-color: var(--ts-accent-dim);
+}
+
+.trackspace-fchip:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.trackspace-fchip.is-on {
+  color: var(--ts-bg);
+  background: var(--ts-accent);
+  border-color: var(--ts-accent);
+  font-weight: 600;
+}
+
+.trackspace-dep-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.trackspace-dep-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ts-dim);
+  cursor: pointer;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.trackspace-dep-legend-item:hover,
+.trackspace-dep-legend-item.is-on {
+  color: var(--ts-ink);
+}
+
+.trackspace-dep-legend-item:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.trackspace-dep-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.trackspace-graph {
+  position: relative;
+  overflow: auto;
+}
+
+.trackspace-graph-inner {
+  position: relative;
+  width: 1180px;
+  height: 760px;
+  margin: 0 auto;
+}
+
+.trackspace-edges {
+  position: absolute;
+  inset: 0;
+  width: 1180px;
+  height: 760px;
+  pointer-events: none;
+}
+
+.trackspace-colhdr {
+  position: absolute;
+  top: 8px;
+  z-index: 1;
+  transform: translateX(-50%);
+  color: var(--ts-faint);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.trackspace-gnode {
+  position: absolute;
+  z-index: 2;
+  width: 172px;
+  padding: 11px 12px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #0f141d, #0c1018);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transform: translate(-50%, -50%);
+  transition: 160ms;
+}
+
+.trackspace-gnode:hover,
+.trackspace-gnode.is-sel {
+  border-color: var(--ts-accent);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(91, 208, 255, 0.25);
+}
+
+.trackspace-gnode:hover {
+  transform: translate(-50%, -50%) translateY(-2px);
+}
+
+.trackspace-gnode:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.trackspace-gnode.is-dim {
+  opacity: 0.26;
+  filter: saturate(0.4);
+}
+
+.trackspace-gnode-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.trackspace-gnode-name {
+  color: var(--ts-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.trackspace-gnode-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.trackspace-gnode-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trackspace-gnode-readiness {
+  color: var(--ts-dim);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.trackspace-gnode-bar {
+  display: block;
+  height: 3px;
+  margin-top: 7px;
+  border-radius: 2px;
+  background: #1a212d;
+  overflow: hidden;
+}
+
+.trackspace-gnode-bar span {
+  display: block;
+  height: 100%;
+}
+
+.trackspace-gnode-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackspace-gnode,
+  .trackspace-fchip {
+    transition: none;
+  }
 }
 
 @media (max-width: 900px) {
