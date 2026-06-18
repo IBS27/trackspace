@@ -52,6 +52,19 @@ describe("seed + load round-trip", () => {
     expect(loadDataset(db)).toBe(CURATED);
   });
 
+  it("round-trips capability metrics through the JSON column", () => {
+    const db = track(freshDb());
+    seedCurated(db);
+    const loaded = loadDataset(db);
+
+    const hls = loaded.capabilities.find((c) => c.id === "hls");
+    expect(hls?.metrics?.provider).toBe("SpaceX (Starship HLS)");
+    expect(hls?.metrics?.contract).toBe("fixed-price");
+    expect(hls?.metrics?.risk).toEqual({ likelihood: "high", severity: "high" });
+    // Every capability carries a risk assessment (the Step-3 risk register).
+    expect(loaded.capabilities.every((c) => c.metrics?.risk)).toBe(true);
+  });
+
   it("keeps milestones in their canonical order", () => {
     const db = track(freshDb());
     seedCurated(db);

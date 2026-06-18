@@ -21,25 +21,37 @@ const GRAPH_WIDTH = 1180;
 const GRAPH_HEIGHT = 760;
 
 const NODE_POSITIONS: Record<CapabilityId, { x: number; y: number }> = {
+  // Foundations — launch, propulsion, crew and power everything builds on.
   sls: { x: 150, y: 120 },
   esm: { x: 150, y: 255 },
   cryo: { x: 150, y: 390 },
   suit: { x: 150, y: 525 },
   power: { x: 150, y: 660 },
-  orion: { x: 430, y: 150 },
-  gateway: { x: 430, y: 300 },
-  hls: { x: 430, y: 440 },
-  ltv: { x: 430, y: 570 },
-  isru: { x: 430, y: 690 },
-  comms: { x: 730, y: 330 },
-  hab: { x: 1010, y: 560 },
+  // Enablers — reaching and moving around the surface, plus prospecting.
+  orion: { x: 430, y: 120 },
+  gateway: { x: 430, y: 255 },
+  hls: { x: 430, y: 390 },
+  ltv: { x: 430, y: 525 },
+  ice: { x: 430, y: 660 },
+  // Infrastructure — relay, resource processing, construction, thermal, storage.
+  comms: { x: 710, y: 120 },
+  isru: { x: 710, y: 255 },
+  build: { x: 710, y: 390 },
+  thermal: { x: 710, y: 525 },
+  night: { x: 710, y: 660 },
+  // Surface systems — keeping a crew alive against the lunar environment.
+  rad: { x: 990, y: 120 },
+  dust: { x: 990, y: 255 },
+  health: { x: 990, y: 390 },
+  eclss: { x: 990, y: 525 },
+  hab: { x: 990, y: 660 },
 };
 
 const COLUMN_HEADERS = [
   { x: 150, title: "Foundations" },
   { x: 430, title: "Enablers" },
-  { x: 730, title: "Relay" },
-  { x: 1010, title: "Surface" },
+  { x: 710, title: "Infrastructure" },
+  { x: 990, title: "Surface Systems" },
 ];
 
 function edgePath(from: CapabilityId, to: CapabilityId): string | null {

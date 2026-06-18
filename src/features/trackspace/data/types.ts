@@ -36,7 +36,15 @@ export type CapabilityId =
   | "comms"
   | "power"
   | "isru"
-  | "hab";
+  | "hab"
+  | "eclss"
+  | "rad"
+  | "dust"
+  | "night"
+  | "ice"
+  | "health"
+  | "build"
+  | "thermal";
 
 export type MilestoneId = "a1" | "a2" | "a3" | "gw" | "base";
 
@@ -70,6 +78,45 @@ export type ConfidenceMeta = {
   desc: string;
 };
 
+/** How a contract prices risk — fixed-price shifts overruns to the vendor. */
+export type ContractType =
+  | "fixed-price"
+  | "cost-plus"
+  | "milestone-based"
+  | "mixed";
+
+export type RiskLevel = "low" | "medium" | "high";
+
+export type RiskAssessment = {
+  /** Probability the capability slips, fails, or is descoped. */
+  likelihood: RiskLevel;
+  /** Consequence to the lunar-base critical path if it does. */
+  severity: RiskLevel;
+};
+
+/**
+ * Program dimensions beyond technical readiness: who builds a capability, how
+ * it is funded, what it must achieve, how far it has slipped, and its
+ * programmatic risk. Every field is optional and populated only where the
+ * public record supports it. Factual fields are drawn from the record's
+ * attached `sources`; `risk` is an evidence-based assessment, like `status`
+ * and `readiness`, kept deliberately separate from the readiness number.
+ */
+export type CapabilityMetrics = {
+  /** Lead provider(s) building the capability. */
+  provider?: string;
+  /** Contract structure, where one exists. */
+  contract?: ContractType;
+  /** Funding or contract value, free-form (e.g. "$4.0B, HLS Option A+B"). */
+  funding?: string;
+  /** Headline quantitative target with units (e.g. "100 kWe by ~FY2030"). */
+  target?: string;
+  /** Schedule slip versus the original baseline, where documented. */
+  slip?: string;
+  /** Programmatic risk, separate from the readiness number. */
+  risk?: RiskAssessment;
+};
+
 export type Capability = {
   id: CapabilityId;
   name: string;
@@ -84,6 +131,8 @@ export type Capability = {
   deps: CapabilityId[];
   /** The milestone this capability is tied to. */
   milestone: MilestoneId;
+  /** Program dimensions (provider, funding, targets, slip, risk); optional. */
+  metrics?: CapabilityMetrics;
   /** ISO date the record was last checked against its sources ("YYYY-MM-DD"). */
   lastVerified: string;
   sources: Source[];
