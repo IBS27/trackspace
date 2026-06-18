@@ -444,6 +444,7 @@
       <a href="#sources">Sources</a>
       <a href="#workflow">Workflow</a>
       <a href="#mvp">MVP</a>
+      <a href="#next-steps">Next Steps</a>
     </div>
   </nav>
 
@@ -1051,6 +1052,173 @@
             <li>Do not rely on social media clips or forum posts as source-backed facts.</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <section id="next-steps">
+      <div class="shell grid">
+        <div class="span-7">
+          <h2>Next Steps</h2>
+          <p>
+            The current dataset is a solid Artemis-readiness baseline: it answers <em>"is NASA's Artemis program on track?"</em>
+            But the product goal is broader &mdash; <strong>how close are we to a sustained lunar base?</strong> Today's records lean
+            heavily toward getting <em>to</em> the Moon (launch, crew vehicle, lander, refueling) and track a single actor on a
+            single dimension. The next phase should widen coverage along three axes without loosening the source-first discipline.
+          </p>
+          <div class="callout">
+            None of this changes the accuracy policy. Every new capability, milestone, and actor must carry the same source tiers,
+            confidence labels, and "last verified" provenance as the existing baseline. Breadth should not cost rigor.
+          </div>
+        </div>
+
+        <aside class="span-5 card">
+          <h3>Three axes to widen</h3>
+          <ul>
+            <li><strong>Deepen the taxonomy</strong> &mdash; track living <em>on</em> the Moon, not just reaching it.</li>
+            <li><strong>Go multi-actor</strong> &mdash; China ILRS, commercial landers, international partners, not NASA alone.</li>
+            <li><strong>Add dimensions</strong> &mdash; budget, schedule slip, and risk, not readiness alone.</li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="shell" style="margin-top: 26px;">
+        <h3>1. Missing capability domains (highest leverage)</h3>
+        <p class="muted">
+          The 12 capabilities today are transport-weighted. A sustained surface presence depends on a class of systems not yet tracked.
+        </p>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Why it is essential</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Life support / ECLSS</strong></td>
+              <td>Closed-loop air and water recycling is the line between visits and a base.</td>
+              <td>Not tracked at all &mdash; the single biggest omission.</td>
+            </tr>
+            <tr>
+              <td><strong>Radiation shielding</strong></td>
+              <td>Galactic cosmic rays plus solar particle events; habitat and transit both need it.</td>
+              <td>A hard limiter on crew stay duration.</td>
+            </tr>
+            <tr>
+              <td><strong>Lunar night survival</strong></td>
+              <td>14 days of dark at roughly &minus;170&deg;C demands energy <em>storage</em>, not just generation.</td>
+              <td>Current <code>power</code> tracks fission generation, not storage or thermal.</td>
+            </tr>
+            <tr>
+              <td><strong>Dust mitigation</strong></td>
+              <td>Regolith is abrasive and electrostatic &mdash; the top Apollo lesson; kills seals, suits, mechanisms, and lungs.</td>
+              <td>A cross-cutting risk that is currently invisible.</td>
+            </tr>
+            <tr>
+              <td><strong>Crew health &amp; medicine</strong></td>
+              <td>Bone and muscle loss, in-situ medical care, and food systems for long stays.</td>
+              <td>Human-factors readiness is unmodeled.</td>
+            </tr>
+            <tr>
+              <td><strong>Water / ice prospecting</strong></td>
+              <td>ISRU is meaningless until the ice is located and characterized in the polar PSRs.</td>
+              <td>VIPER's status is directly relevant here.</td>
+            </tr>
+            <tr>
+              <td><strong>Construction &amp; manufacturing</strong></td>
+              <td>Landing pads, berms, regolith sintering, and 3D printing precede "sustained."</td>
+              <td>Needed before the base phase is real.</td>
+            </tr>
+            <tr>
+              <td><strong>Thermal control, airlocks &amp; dust-locks</strong></td>
+              <td>Rejecting heat and keeping dust out of the habitat are daily-operations problems.</td>
+              <td>Supports nearly every surface capability.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="shell" style="margin-top: 26px;">
+        <h3>2. Broaden beyond a single actor</h3>
+        <p class="muted">
+          A serious "are we getting a lunar base" tracker is multi-program. This is the highest-payoff way to grow milestone and timeline density.
+        </p>
+        <div class="status-grid">
+          <div class="status block">
+            <b>China ILRS</b>
+            <span>International Lunar Research Station &mdash; Chang'e 7/8, base targeted ~2035. The direct competitor; conspicuously absent.</span>
+          </div>
+          <div class="status watch">
+            <b>CLPS landers</b>
+            <span>Intuitive Machines, Astrobotic, Firefly Blue Ghost. Flying now and de-risking everything downstream.</span>
+          </div>
+          <div class="status watch">
+            <b>Commercial vehicles</b>
+            <span>Blue Origin Blue Moon and the Starship test campaign deserve their own milestone tracks.</span>
+          </div>
+          <div class="status unknown">
+            <b>International partners</b>
+            <span>ESA beyond ESM, plus JAXA, ISRO, and CSA contributions to the architecture.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shell" style="margin-top: 26px;">
+        <h3>3. Track more than readiness</h3>
+        <p class="muted">
+          Programs are killed by money and time, not just technical maturity. Add these as first-class, source-backed fields.
+        </p>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>What it captures</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Budget / funding</strong></td>
+              <td>Appropriations, contract value, overruns. NASA OIG and GAO sources already contain much of this.</td>
+            </tr>
+            <tr>
+              <td><strong>Schedule slip</strong></td>
+              <td>Delta from the original baseline date and the trend over time. Events hint at slips but it is not a metric.</td>
+            </tr>
+            <tr>
+              <td><strong>Risk register</strong></td>
+              <td>Explicit likelihood &times; severity, kept separate from the readiness status.</td>
+            </tr>
+            <tr>
+              <td><strong>Provider / contractor</strong></td>
+              <td>Who is building each capability and the contract type &mdash; fixed-price vs. cost-plus matters a lot here.</td>
+            </tr>
+            <tr>
+              <td><strong>Quantitative targets</strong></td>
+              <td>kWe of surface power, kg of cargo to the surface, crew-days of habitation, number of crew.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="shell" style="margin-top: 26px;">
+        <h3>Suggested sequencing</h3>
+        <p class="muted">Do not boil the ocean. Scope as one feature branch per step, in priority order.</p>
+        <ol>
+          <li>
+            <strong>Fill the surface-systems capability gaps</strong> (life support, radiation, dust, night survival, water prospecting).
+            Cheap &mdash; same schema, more curated records &mdash; and it makes "lunar base" honest rather than "Artemis transport."
+            It also makes the Sustained-Presence Index mean what it claims.
+          </li>
+          <li>
+            <strong>Add the China ILRS and CLPS tracks.</strong> Biggest visible payoff for milestone and timeline density, and it
+            reframes the dashboard as a lunar-base race rather than one agency's status page.
+          </li>
+          <li>
+            <strong>Add the budget and schedule-slip dimensions</strong> once the entity set is richer, then layer in the risk register
+            and provider fields.
+          </li>
+        </ol>
       </div>
     </section>
   </main>
