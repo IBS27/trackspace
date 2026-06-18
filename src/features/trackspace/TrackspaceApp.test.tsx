@@ -21,6 +21,7 @@ describe("TrackspaceApp", () => {
       "Dependency Map",
       "Timeline",
       "Milestones",
+      "Program",
     ]) {
       expect(nav.textContent).toContain(name);
     }
@@ -37,6 +38,16 @@ describe("TrackspaceApp", () => {
     expect(screen.getByText("All caps")).toBeTruthy();
   });
 
+  it("activates the Program tab on click", () => {
+    render(<TrackspaceApp />);
+    const tab = screen.getByRole("button", { name: "Program" });
+
+    fireEvent.click(tab);
+
+    expect(screen.getByText(/Risk register/)).toBeTruthy();
+    expect(tab.getAttribute("aria-current")).toBe("page");
+  });
+
   it("switches views with the number keys", () => {
     render(<TrackspaceApp />);
 
@@ -45,6 +56,9 @@ describe("TrackspaceApp", () => {
 
     fireEvent.keyDown(window, { key: "4" });
     expect(screen.getByText("Missions / Phases")).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: "5" });
+    expect(screen.getByText(/Risk register/)).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "1" });
     expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();

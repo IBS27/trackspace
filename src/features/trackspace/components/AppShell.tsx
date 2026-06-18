@@ -131,7 +131,7 @@ function TabBar({
         </button>
       ))}
       <span className="trackspace-tabbar-hint" aria-hidden="true">
-        PRESS 1–4
+        PRESS 1–{navItems.length}
       </span>
     </nav>
   );
