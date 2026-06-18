@@ -1,8 +1,9 @@
 // Trackspace content model.
 //
-// Mission names are real (Artemis / Moon-to-Mars program); status,
-// readiness, and confidence values are invented for design purposes
-// and are NOT factual claims.
+// Mission names, statuses, readiness, and confidence values are sourced from
+// public NASA / OIG / GAO / ESA / contractor material and reputable reporting,
+// current as of each record's `lastVerified` date. Every record carries the
+// `sources` it is drawn from so a claim can always be traced to its evidence.
 
 export type Status = "ready" | "watch" | "blocker" | "unknown";
 
@@ -39,6 +40,21 @@ export type CapabilityId =
 
 export type MilestoneId = "a1" | "a2" | "a3" | "gw" | "base";
 
+/** Source tier per the accuracy policy (1 = official, 4 = discovery-only). */
+export type SourceTier = 1 | 2 | 3 | 4;
+
+export type Source = {
+  /** Publisher of the source, e.g. "NASA", "NASA OIG", "ESA", "SpaceNews". */
+  publisher: string;
+  title: string;
+  url: string;
+  tier: SourceTier;
+  /** Publication date, "YYYY-MM-DD" or "YYYY-MM". */
+  date?: string;
+  /** Optional short badge override; otherwise derived from the publisher. */
+  ico?: string;
+};
+
 export type StatusMeta = {
   id: Status;
   label: string;
@@ -68,13 +84,16 @@ export type Capability = {
   deps: CapabilityId[];
   /** The milestone this capability is tied to. */
   milestone: MilestoneId;
+  /** ISO date the record was last checked against its sources ("YYYY-MM-DD"). */
+  lastVerified: string;
+  sources: Source[];
 };
 
 export type Milestone = {
   id: MilestoneId;
   code: string;
   name: string;
-  /** Display date: "2022-12", "2026-Q2", "2028+", "2030s". */
+  /** Display date: "2022-12", "2027-Q4", "2028+", "2030s". */
   date: string;
   dateConf: Confidence;
   status: Status;
@@ -83,6 +102,8 @@ export type Milestone = {
   caps: CapabilityId[];
   critical: boolean;
   summary: string;
+  lastVerified: string;
+  sources: Source[];
 };
 
 export type TrackspaceEvent = {
@@ -101,12 +122,8 @@ export type TrackspaceEvent = {
   confirmed: string[];
   unknown: string[];
   downstream: string;
-};
-
-export type Source = {
-  ico: string;
-  title: string;
-  url: string;
+  lastVerified: string;
+  sources: Source[];
 };
 
 export type DependencyEdge = {
@@ -114,4 +131,15 @@ export type DependencyEdge = {
   to: CapabilityId;
   /** Status of the upstream (from) capability; drives the edge color. */
   status: Status;
+};
+
+/**
+ * A complete, self-contained snapshot of everything the screens render.
+ * Selectors operate over a Dataset so the UI can be fed either the curated
+ * baseline (compile-time) or a live snapshot loaded from SQLite (request-time).
+ */
+export type Dataset = {
+  capabilities: Capability[];
+  milestones: Milestone[];
+  events: TrackspaceEvent[];
 };

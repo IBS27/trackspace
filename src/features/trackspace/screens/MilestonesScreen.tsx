@@ -4,13 +4,14 @@ import { useState } from "react";
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
-import { MILESTONES, STATUS } from "../data/seed";
+import { useDataset } from "../data/dataset-context";
+import { STATUS } from "../data/seed";
 import {
-  CAPABILITY_BY_ID,
-  MILESTONE_BY_ID,
+  capabilityById,
   getEventsForMilestone,
   getMilestoneBlockers,
   getMilestoneReadyCount,
+  milestoneById,
 } from "../data/selectors";
 import type { MilestoneId, Status } from "../data/types";
 
@@ -23,17 +24,19 @@ type MilestonesScreenProps = {
 };
 
 export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
+  const dataset = useDataset();
   const [current, setCurrent] = useState<MilestoneId>("a3");
-  const milestone = MILESTONE_BY_ID[current];
-  const events = getEventsForMilestone(current);
-  const blockers = getMilestoneBlockers(current);
-  const readyCount = getMilestoneReadyCount(current);
+  const capById = capabilityById(dataset.capabilities);
+  const milestone = milestoneById(dataset.milestones)[current];
+  const events = getEventsForMilestone(current, dataset);
+  const blockers = getMilestoneBlockers(current, dataset);
+  const readyCount = getMilestoneReadyCount(current, dataset);
 
   return (
     <div className="trackspace-mst">
       <nav className="trackspace-msrail" aria-label="Missions and phases">
         <div className="trackspace-msrail-head">Missions / Phases</div>
-        {MILESTONES.map((item) => (
+        {dataset.milestones.map((item) => (
           <button
             type="button"
             key={item.id}
@@ -92,7 +95,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
               Required capabilities <b>{milestone.caps.length}</b>
             </h3>
             {milestone.caps.map((id) => {
-              const capability = CAPABILITY_BY_ID[id];
+              const capability = capById[id];
               return (
                 <button
                   type="button"

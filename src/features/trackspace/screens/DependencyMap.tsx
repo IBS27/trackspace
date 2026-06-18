@@ -4,13 +4,9 @@ import { useState } from "react";
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
-import {
-  CAPABILITIES,
-  CAPABILITY_GROUPS,
-  STATUS,
-  STATUS_LIST,
-} from "../data/seed";
-import { CAPABILITY_BY_ID, getDependencyEdges } from "../data/selectors";
+import { useDataset } from "../data/dataset-context";
+import { CAPABILITY_GROUPS, STATUS, STATUS_LIST } from "../data/seed";
+import { capabilityById, getDependencyEdges } from "../data/selectors";
 import type {
   Capability,
   CapabilityGroup,
@@ -46,8 +42,6 @@ const COLUMN_HEADERS = [
   { x: 1010, title: "Surface" },
 ];
 
-const EDGES = getDependencyEdges();
-
 function edgePath(from: CapabilityId, to: CapabilityId): string {
   const a = NODE_POSITIONS[from];
   const b = NODE_POSITIONS[to];
@@ -72,6 +66,9 @@ type DependencyMapProps = {
 };
 
 export function DependencyMap({ onOpen }: DependencyMapProps) {
+  const dataset = useDataset();
+  const capById = capabilityById(dataset.capabilities);
+  const edges = getDependencyEdges(dataset.capabilities);
   const [groupFilter, setGroupFilter] = useState<CapabilityGroup[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [hovered, setHovered] = useState<CapabilityId | null>(null);
@@ -169,10 +166,10 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                 <path d="M0,0 L7,3.5 L0,7 z" fill="#3a475c" />
               </marker>
             </defs>
-            {EDGES.map((edge) => {
+            {edges.map((edge) => {
               const active =
-                matches(CAPABILITY_BY_ID[edge.from]) &&
-                matches(CAPABILITY_BY_ID[edge.to]);
+                matches(capById[edge.from]) &&
+                matches(capById[edge.to]);
               const hot = hovered === edge.from || hovered === edge.to;
               return (
                 <path
@@ -197,8 +194,9 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
             })}
           </svg>
 
-          {CAPABILITIES.map((capability) => {
+          {dataset.capabilities.map((capability) => {
             const position = NODE_POSITIONS[capability.id];
+            if (!position) return null;
             const on = matches(capability);
             return (
               <button

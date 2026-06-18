@@ -1045,6 +1045,11 @@
   background: #0d1119;
   color: var(--ts-ink);
   font-size: 12px;
+  text-decoration: none;
+}
+
+.trackspace-source:hover {
+  border-color: var(--ts-line-3, var(--ts-accent));
 }
 
 .trackspace-source-ico {

@@ -1,53 +1,82 @@
-// Derived values over the seed data. Every number or list a screen
-// shows should come from here, not from copied display text.
+// Derived values over a Dataset. Every number or list a screen shows comes
+// from here, not from copied display text.
+//
+// Selectors take the data they read as an argument and default to the curated
+// baseline (CURATED). The screens pass whichever Dataset is active — the
+// compile-time baseline, or a live snapshot loaded from SQLite at request time
+// — so the same pure functions serve tests, standalone renders, and the app.
 
 import { CAPABILITIES, EVENTS, MILESTONES, STATUS_LIST } from "./seed";
 import type {
   Capability,
   CapabilityId,
-  Confidence,
+  Dataset,
   DependencyEdge,
   Milestone,
   MilestoneId,
-  Source,
   Status,
   TrackspaceEvent,
 } from "./types";
 
-export const CAPABILITY_BY_ID: Record<CapabilityId, Capability> =
-  Object.fromEntries(CAPABILITIES.map((c) => [c.id, c])) as Record<
+/** The curated, source-backed baseline rendered when no live snapshot is fed. */
+export const CURATED: Dataset = {
+  capabilities: CAPABILITIES,
+  milestones: MILESTONES,
+  events: EVENTS,
+};
+
+export function capabilityById(
+  capabilities: Capability[] = CAPABILITIES,
+): Record<CapabilityId, Capability> {
+  return Object.fromEntries(capabilities.map((c) => [c.id, c])) as Record<
     CapabilityId,
     Capability
   >;
+}
 
-export const MILESTONE_BY_ID: Record<MilestoneId, Milestone> =
-  Object.fromEntries(MILESTONES.map((m) => [m.id, m])) as Record<
+export function milestoneById(
+  milestones: Milestone[] = MILESTONES,
+): Record<MilestoneId, Milestone> {
+  return Object.fromEntries(milestones.map((m) => [m.id, m])) as Record<
     MilestoneId,
     Milestone
   >;
-
-export const EVENT_BY_ID: Record<string, TrackspaceEvent> = Object.fromEntries(
-  EVENTS.map((e) => [e.id, e]),
-);
-
-/** Composite readiness: mean capability readiness, rounded. */
-export function getOverallReadiness(): number {
-  const total = CAPABILITIES.reduce((sum, c) => sum + c.readiness, 0);
-  return Math.round(total / CAPABILITIES.length);
 }
 
-export function getStatusCounts(): Record<Status, number> {
+export function eventById(
+  events: TrackspaceEvent[] = EVENTS,
+): Record<string, TrackspaceEvent> {
+  return Object.fromEntries(events.map((e) => [e.id, e]));
+}
+
+/** Default-dataset index maps, for call sites that read the curated baseline. */
+export const CAPABILITY_BY_ID = capabilityById();
+export const MILESTONE_BY_ID = milestoneById();
+export const EVENT_BY_ID = eventById();
+
+/** Composite readiness: mean capability readiness, rounded. */
+export function getOverallReadiness(
+  capabilities: Capability[] = CAPABILITIES,
+): number {
+  if (capabilities.length === 0) return 0;
+  const total = capabilities.reduce((sum, c) => sum + c.readiness, 0);
+  return Math.round(total / capabilities.length);
+}
+
+export function getStatusCounts(
+  capabilities: Capability[] = CAPABILITIES,
+): Record<Status, number> {
   const counts = Object.fromEntries(STATUS_LIST.map((s) => [s, 0])) as Record<
     Status,
     number
   >;
-  for (const c of CAPABILITIES) counts[c.status] += 1;
+  for (const c of capabilities) counts[c.status] += 1;
   return counts;
 }
 
 /** Capabilities currently blocking downstream work. */
-export function getBlockers(): Capability[] {
-  return CAPABILITIES.filter((c) => c.status === "blocker");
+export function getBlockers(capabilities: Capability[] = CAPABILITIES): Capability[] {
+  return capabilities.filter((c) => c.status === "blocker");
 }
 
 /**
@@ -94,86 +123,100 @@ export function getNextMilestone(milestones: Milestone[] = MILESTONES): Mileston
 }
 
 /** Milestones not yet achieved, in date order. */
-export function getUpcomingMilestones(count = 3): Milestone[] {
-  return [...MILESTONES]
+export function getUpcomingMilestones(
+  count = 3,
+  milestones: Milestone[] = MILESTONES,
+): Milestone[] {
+  return [...milestones]
     .sort((a, b) => compareDates(a.date, b.date))
     .filter((m) => m.status !== "ready")
     .slice(0, count);
 }
 
 /** Past events, newest first. */
-export function getRecentChanges(count = 3): TrackspaceEvent[] {
-  return EVENTS.filter((e) => !e.future)
+export function getRecentChanges(
+  count = 3,
+  events: TrackspaceEvent[] = EVENTS,
+): TrackspaceEvent[] {
+  return events
+    .filter((e) => !e.future)
     .sort((a, b) => compareEventsChronologically(b, a))
     .slice(0, count);
 }
 
 /** All events in date order; future targets sort after past events. */
-export function getSortedEvents(): TrackspaceEvent[] {
-  return [...EVENTS].sort(compareEventsChronologically);
+export function getSortedEvents(
+  events: TrackspaceEvent[] = EVENTS,
+): TrackspaceEvent[] {
+  return [...events].sort(compareEventsChronologically);
 }
 
 /** Events touching a capability. */
-export function getEventsForCapability(id: CapabilityId): TrackspaceEvent[] {
-  return EVENTS.filter((e) => e.caps.includes(id));
+export function getEventsForCapability(
+  id: CapabilityId,
+  events: TrackspaceEvent[] = EVENTS,
+): TrackspaceEvent[] {
+  return events.filter((e) => e.caps.includes(id));
 }
 
 /** Events touching any capability required by a milestone. */
-export function getEventsForMilestone(id: MilestoneId): TrackspaceEvent[] {
-  const milestone = MILESTONE_BY_ID[id];
-  return EVENTS.filter((e) => e.caps.some((c) => milestone.caps.includes(c)));
+export function getEventsForMilestone(
+  id: MilestoneId,
+  dataset: Dataset = CURATED,
+): TrackspaceEvent[] {
+  const milestone = milestoneById(dataset.milestones)[id];
+  if (!milestone) return [];
+  return dataset.events.filter((e) =>
+    e.caps.some((c) => milestone.caps.includes(c)),
+  );
 }
 
 /** Dependency graph edges, colored by the upstream capability's status. */
-export function getDependencyEdges(): DependencyEdge[] {
+export function getDependencyEdges(
+  capabilities: Capability[] = CAPABILITIES,
+): DependencyEdge[] {
+  const byId = capabilityById(capabilities);
   const edges: DependencyEdge[] = [];
-  for (const node of CAPABILITIES) {
+  for (const node of capabilities) {
     for (const dep of node.deps) {
-      edges.push({ from: dep, to: node.id, status: CAPABILITY_BY_ID[dep].status });
+      const upstream = byId[dep];
+      if (!upstream) continue;
+      edges.push({ from: dep, to: node.id, status: upstream.status });
     }
   }
   return edges;
 }
 
 /** Capabilities that depend on the given one. */
-export function getDownstream(id: CapabilityId): Capability[] {
-  return CAPABILITIES.filter((c) => c.deps.includes(id));
+export function getDownstream(
+  id: CapabilityId,
+  capabilities: Capability[] = CAPABILITIES,
+): Capability[] {
+  return capabilities.filter((c) => c.deps.includes(id));
 }
 
 /** Required capabilities of a milestone that are hard blockers. */
-export function getMilestoneBlockers(id: MilestoneId): Capability[] {
-  return MILESTONE_BY_ID[id].caps
-    .map((c) => CAPABILITY_BY_ID[c])
-    .filter((c) => c.status === "blocker");
+export function getMilestoneBlockers(
+  id: MilestoneId,
+  dataset: Dataset = CURATED,
+): Capability[] {
+  const byId = capabilityById(dataset.capabilities);
+  const milestone = milestoneById(dataset.milestones)[id];
+  if (!milestone) return [];
+  return milestone.caps
+    .map((c) => byId[c])
+    .filter((c) => c && c.status === "blocker");
 }
 
 /** Count of a milestone's required capabilities that are ready. */
-export function getMilestoneReadyCount(id: MilestoneId): number {
-  return MILESTONE_BY_ID[id].caps.filter(
-    (c) => CAPABILITY_BY_ID[c].status === "ready",
-  ).length;
-}
-
-const SOURCE_POOL: Source[] = [
-  {
-    ico: "NASA",
-    title: "NASA Moon to Mars Architecture — capability brief",
-    url: "nasa.gov",
-  },
-  {
-    ico: "OIG",
-    title: "Office of Inspector General — program audit",
-    url: "oig.nasa.gov",
-  },
-  { ico: "GAO", title: "GAO assessment of major projects", url: "gao.gov" },
-  { ico: "PRESS", title: "Agency press kit & mission briefing", url: "nasa.gov" },
-];
-
-/** Provenance links shown in the drawer; stronger confidence cites more sources. */
-export function getSourcesForConfidence(conf: Confidence): Source[] {
-  const count =
-    conf === "confirmed" ? 3 : conf === "reported" || conf === "inferred" ? 2 : 1;
-  return SOURCE_POOL.slice(0, count);
+export function getMilestoneReadyCount(
+  id: MilestoneId,
+  dataset: Dataset = CURATED,
+): number {
+  const byId = capabilityById(dataset.capabilities);
+  const milestone = milestoneById(dataset.milestones)[id];
+  if (!milestone) return 0;
+  return milestone.caps.filter((c) => byId[c]?.status === "ready").length;
 }
 
 export type Summary = {
@@ -187,15 +230,15 @@ export type Summary = {
   milestoneCount: number;
 };
 
-export function getSummary(): Summary {
+export function getSummary(dataset: Dataset = CURATED): Summary {
   return {
-    overall: getOverallReadiness(),
+    overall: getOverallReadiness(dataset.capabilities),
     label: "Toward sustained lunar presence",
-    statusCounts: getStatusCounts(),
-    blockers: getBlockers(),
-    nextMilestone: getNextMilestone(),
-    recentChanges: getRecentChanges(),
-    capabilityCount: CAPABILITIES.length,
-    milestoneCount: MILESTONES.length,
+    statusCounts: getStatusCounts(dataset.capabilities),
+    blockers: getBlockers(dataset.capabilities),
+    nextMilestone: getNextMilestone(dataset.milestones),
+    recentChanges: getRecentChanges(3, dataset.events),
+    capabilityCount: dataset.capabilities.length,
+    milestoneCount: dataset.milestones.length,
   };
 }
