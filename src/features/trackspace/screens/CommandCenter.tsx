@@ -1,18 +1,23 @@
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
+import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
 import { getSummary, getUpcomingMilestones } from "../data/selectors";
 import { EarthMoonScene } from "../scene/EarthMoonScene";
-
-const SUMMARY = getSummary();
-const UPCOMING_MILESTONES = getUpcomingMilestones();
 
 type CommandCenterProps = {
   onOpen: (selection: DrawerSelection) => void;
 };
 
 export function CommandCenter({ onOpen }: CommandCenterProps) {
+  const dataset = useDataset();
+  const summary = getSummary(dataset);
+  const upcomingMilestones = getUpcomingMilestones(3, dataset.milestones);
+  // Milestones are in chronological order, so the last achieved one is the most
+  // recent program milestone reached — derived, not a hardcoded delta.
+  const lastAchieved = dataset.milestones.filter((m) => m.status === "ready").at(-1);
+
   return (
     <div className="trackspace-cc">
       <div className="trackspace-cc-stage">
@@ -34,24 +39,24 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
             </div>
             <div className="trackspace-hud-row">
               <span>Composite readiness</span>
-              <b>{SUMMARY.overall}%</b>
+              <b>{summary.overall}%</b>
             </div>
             <div className="trackspace-hud-row">
               <span>Hard blockers</span>
-              <b className="trackspace-blocker">{SUMMARY.blockers.length}</b>
+              <b className="trackspace-blocker">{summary.blockers.length}</b>
             </div>
             <div className="trackspace-hud-row">
               <span>Next crewed flight</span>
-              <b>{SUMMARY.nextMilestone.code}</b>
+              <b>{summary.nextMilestone.code}</b>
             </div>
             <div className="trackspace-hud-row">
               <span>Target window</span>
-              <b>{SUMMARY.nextMilestone.date}</b>
+              <b>{summary.nextMilestone.date}</b>
             </div>
           </div>
           <div className="trackspace-hud-hint">
-            ◦ {SUMMARY.capabilityCount} TRACKED CAPABILITIES ·{" "}
-            {SUMMARY.milestoneCount} MILESTONES · MODEL v0.1 ◦
+            ◦ {summary.capabilityCount} TRACKED CAPABILITIES ·{" "}
+            {summary.milestoneCount} MILESTONES · MODEL v0.1 ◦
           </div>
         </div>
       </div>
@@ -61,14 +66,18 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
           <h2>Lunar-Base Readiness</h2>
           <div className="trackspace-gauge">
             <div className="trackspace-gauge-num trackspace-tabular">
-              {SUMMARY.overall}
+              {summary.overall}
               <small>%</small>
             </div>
             <div className="trackspace-gauge-meta">
-              <div>{SUMMARY.label}</div>
-              <div className="trackspace-gauge-delta">▲ +3 pts / 90 days</div>
+              <div>{summary.label}</div>
+              {lastAchieved && (
+                <div className="trackspace-gauge-delta">
+                  ▲ {lastAchieved.code} achieved · {lastAchieved.date}
+                </div>
+              )}
               <div className="trackspace-gauge-note">
-                weighted across {SUMMARY.capabilityCount} caps
+                weighted across {summary.capabilityCount} caps
               </div>
             </div>
           </div>
@@ -78,7 +87,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
                 <span
                   className={`trackspace-status-count-num trackspace-tabular trackspace-${status}`}
                 >
-                  {SUMMARY.statusCounts[status]}
+                  {summary.statusCounts[status]}
                 </span>
                 <span className="trackspace-status-count-label">
                   <i
@@ -95,7 +104,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
         <section className="trackspace-panel">
           <h2>Top Blockers</h2>
           <div className="trackspace-blockers">
-            {SUMMARY.blockers.map((capability) => (
+            {summary.blockers.map((capability) => (
               <button
                 type="button"
                 className="trackspace-blocker-item"
@@ -121,7 +130,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
         <section className="trackspace-panel">
           <h2>Recent Changes</h2>
           <div className="trackspace-rows">
-            {SUMMARY.recentChanges.map((event) => (
+            {summary.recentChanges.map((event) => (
               <button
                 type="button"
                 className="trackspace-crow"
@@ -144,7 +153,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
         <section className="trackspace-panel">
           <h2>Next Milestones</h2>
           <div className="trackspace-rows">
-            {UPCOMING_MILESTONES.map((milestone) => (
+            {upcomingMilestones.map((milestone) => (
               <button
                 type="button"
                 className="trackspace-crow"

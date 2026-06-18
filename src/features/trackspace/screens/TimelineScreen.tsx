@@ -4,12 +4,10 @@ import { Fragment, useState } from "react";
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
+import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
 import { getSortedEvents } from "../data/selectors";
-import type { Impact, Status } from "../data/types";
-
-const EVENTS = getSortedEvents();
-const FIRST_FUTURE_INDEX = EVENTS.findIndex((e) => e.future);
+import type { Impact, Status, TrackspaceEvent } from "../data/types";
 
 const IMPACT_COLOR: Record<Impact, string> = {
   high: "var(--ts-watch)",
@@ -23,8 +21,8 @@ const MONTHS = [
 ];
 
 /** "now" marker label: the model knows events up to the latest logged one. */
-function epochLabel(): string {
-  const lastLogged = EVENTS.filter((e) => !e.future).at(-1);
+function epochLabel(events: TrackspaceEvent[]): string {
+  const lastLogged = events.filter((e) => !e.future).at(-1);
   if (!lastLogged) return "now · model epoch";
   const [year, month] = lastLogged.date.split("-");
   const name = MONTHS[Number(month) - 1] ?? month;
@@ -40,6 +38,9 @@ type TimelineScreenProps = {
 };
 
 export function TimelineScreen({ onOpen }: TimelineScreenProps) {
+  const dataset = useDataset();
+  const events = getSortedEvents(dataset.events);
+  const firstFutureIndex = events.findIndex((e) => e.future);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
 
   const toggle = (status: Status) =>
@@ -98,11 +99,11 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
       <div className="trackspace-tlscroll">
         <div className="trackspace-tlwrap">
           <div className="trackspace-tlspine" aria-hidden="true" />
-          {EVENTS.map((event, index) => (
+          {events.map((event, index) => (
             <Fragment key={event.id}>
-              {index === FIRST_FUTURE_INDEX && (
+              {index === firstFutureIndex && (
                 <div className="trackspace-tlnow">
-                  <span>{epochLabel()}</span>
+                  <span>{epochLabel(events)}</span>
                 </div>
               )}
               <div

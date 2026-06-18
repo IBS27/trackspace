@@ -1,21 +1,21 @@
 import { useEffect } from "react";
 
+import { useDataset } from "../data/dataset-context";
 import { STATUS } from "../data/seed";
 import {
-  CAPABILITY_BY_ID,
-  EVENT_BY_ID,
-  MILESTONE_BY_ID,
+  capabilityById,
+  eventById,
   getDownstream,
   getEventsForCapability,
   getEventsForMilestone,
-  getSourcesForConfidence,
+  milestoneById,
 } from "../data/selectors";
 import type {
   Capability,
   CapabilityId,
-  Confidence,
   Milestone,
   MilestoneId,
+  Source,
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
@@ -33,6 +33,8 @@ type DetailDrawerProps = {
 };
 
 export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) {
+  const dataset = useDataset();
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -47,7 +49,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
   let body: React.ReactNode;
 
   if (selection.type === "event") {
-    const event = EVENT_BY_ID[selection.id];
+    const event = eventById(dataset.events)[selection.id];
     if (!event) {
       console.error(`Trackspace: event not found: ${selection.id}`);
       return null;
@@ -65,7 +67,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
     );
     body = <EventBody event={event} onOpen={onOpen} />;
   } else if (selection.type === "capability") {
-    const capability = CAPABILITY_BY_ID[selection.id];
+    const capability = capabilityById(dataset.capabilities)[selection.id];
     if (!capability) {
       console.error(`Trackspace: capability not found: ${selection.id}`);
       return null;
@@ -81,7 +83,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
   } else {
-    const milestone = MILESTONE_BY_ID[selection.id];
+    const milestone = milestoneById(dataset.milestones)[selection.id];
     if (!milestone) {
       console.error(`Trackspace: milestone not found: ${selection.id}`);
       return null;
@@ -154,7 +156,8 @@ function CapabilityTag({
   id: CapabilityId;
   onOpen: (selection: DrawerSelection) => void;
 }) {
-  const capability = CAPABILITY_BY_ID[id];
+  const capability = capabilityById(useDataset().capabilities)[id];
+  if (!capability) return null;
   return (
     <button
       type="button"
@@ -170,15 +173,45 @@ function CapabilityTag({
   );
 }
 
-function SourceList({ confidence }: { confidence: Confidence }) {
+function sourceBadge(source: Source): string {
+  if (source.ico) return source.ico;
+  return source.publisher
+    .replace(/[^A-Za-z0-9 ]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 4)
+    .toUpperCase();
+}
+
+function sourceHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function SourceList({ sources }: { sources: Source[] }) {
+  if (sources.length === 0) {
+    return <p className="trackspace-muted">No sources linked yet.</p>;
+  }
   return (
     <div className="trackspace-sources">
-      {getSourcesForConfidence(confidence).map((source) => (
-        <span className="trackspace-source" key={source.title}>
-          <span className="trackspace-source-ico">{source.ico}</span>
+      {sources.map((source, index) => (
+        <a
+          className="trackspace-source"
+          key={`${source.url}-${index}`}
+          href={source.url}
+          target="_blank"
+          rel="noreferrer"
+          title={`${source.publisher} · Tier ${source.tier}${source.date ? ` · ${source.date}` : ""}`}
+        >
+          <span className="trackspace-source-ico">{sourceBadge(source)}</span>
           {source.title}
-          <span className="trackspace-source-url">↗ {source.url}</span>
-        </span>
+          <span className="trackspace-source-url">↗ {sourceHost(source.url)}</span>
+        </a>
       ))}
     </div>
   );
@@ -260,7 +293,7 @@ function EventBody({
         <div className="trackspace-downbox">{event.downstream}</div>
       </DrawerSection>
       <DrawerSection label="Sources & provenance">
-        <SourceList confidence={event.conf} />
+        <SourceList sources={event.sources} />
       </DrawerSection>
     </>
   );
@@ -273,9 +306,10 @@ function CapabilityBody({
   capability: Capability;
   onOpen: (selection: DrawerSelection) => void;
 }) {
-  const downstream = getDownstream(capability.id);
-  const events = getEventsForCapability(capability.id);
-  const milestone = MILESTONE_BY_ID[capability.milestone];
+  const dataset = useDataset();
+  const downstream = getDownstream(capability.id, dataset.capabilities);
+  const events = getEventsForCapability(capability.id, dataset.events);
+  const milestone = milestoneById(dataset.milestones)[capability.milestone];
 
   return (
     <>
@@ -319,20 +353,22 @@ function CapabilityBody({
           </p>
         )}
       </DrawerSection>
-      <DrawerSection label="Tied milestone">
-        <button
-          type="button"
-          className="trackspace-crow"
-          onClick={() => onOpen({ type: "milestone", id: milestone.id })}
-        >
-          <span className="trackspace-crow-date">{milestone.date}</span>
-          <span className="trackspace-crow-main">
-            <span className="trackspace-crow-title">
-              {milestone.code} · {milestone.name}
+      {milestone && (
+        <DrawerSection label="Tied milestone">
+          <button
+            type="button"
+            className="trackspace-crow"
+            onClick={() => onOpen({ type: "milestone", id: milestone.id })}
+          >
+            <span className="trackspace-crow-date">{milestone.date}</span>
+            <span className="trackspace-crow-main">
+              <span className="trackspace-crow-title">
+                {milestone.code} · {milestone.name}
+              </span>
             </span>
-          </span>
-        </button>
-      </DrawerSection>
+          </button>
+        </DrawerSection>
+      )}
       {events.length > 0 && (
         <DrawerSection label="Related events">
           <div className="trackspace-rows">
@@ -343,7 +379,7 @@ function CapabilityBody({
         </DrawerSection>
       )}
       <DrawerSection label="Sources & provenance">
-        <SourceList confidence={capability.conf} />
+        <SourceList sources={capability.sources} />
       </DrawerSection>
     </>
   );
@@ -356,7 +392,8 @@ function MilestoneBody({
   milestone: Milestone;
   onOpen: (selection: DrawerSelection) => void;
 }) {
-  const events = getEventsForMilestone(milestone.id);
+  const dataset = useDataset();
+  const events = getEventsForMilestone(milestone.id, dataset);
 
   return (
     <>
@@ -381,7 +418,7 @@ function MilestoneBody({
         </div>
       </DrawerSection>
       <DrawerSection label="Sources & provenance">
-        <SourceList confidence={milestone.dateConf} />
+        <SourceList sources={milestone.sources} />
       </DrawerSection>
     </>
   );
