@@ -1,4 +1,5 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Summary recorded for each ingestion run, so the pipeline keeps an audit
 // trail of what it refreshed and found. Defined here (not in src/ingest) so the
@@ -30,13 +31,19 @@ export type DiscoveryStatus = "new" | "reviewed" | "dismissed";
 // Discovery queue — unverified leads from feeds. Per the accuracy policy these
 // create a review task, never a public claim, so they live in their own table
 // and are not part of the Dataset the screens render.
-export const discoveries = sqliteTable("discoveries", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  url: text("url").notNull().unique(),
-  title: text("title").notNull(),
-  source: text("source").notNull(),
-  publishedAt: text("published_at"),
-  foundAt: text("found_at").notNull(),
-  status: text("status").notNull().$type<DiscoveryStatus>(),
-  note: text("note"),
-});
+export const discoveries = sqliteTable(
+  "discoveries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    url: text("url").notNull().unique(),
+    title: text("title").notNull(),
+    source: text("source").notNull(),
+    publishedAt: text("published_at"),
+    foundAt: text("found_at").notNull(),
+    status: text("status").notNull().$type<DiscoveryStatus>(),
+    note: text("note"),
+  },
+  (t) => [
+    check("discoveries_status_ck", sql`${t.status} in ('new', 'reviewed', 'dismissed')`),
+  ],
+);

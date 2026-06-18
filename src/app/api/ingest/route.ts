@@ -16,7 +16,12 @@ export const dynamic = "force-dynamic";
 
 function authorized(request: Request): boolean {
   const token = process.env.INGEST_TOKEN;
-  if (!token) return true;
+  if (!token) {
+    // Fail closed in production: a missing token must not leave a
+    // state-changing endpoint publicly triggerable. Allow it only in
+    // development for convenient local triggering.
+    return process.env.NODE_ENV !== "production";
+  }
   return request.headers.get("authorization") === `Bearer ${token}`;
 }
 

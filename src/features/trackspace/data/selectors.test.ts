@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CAPABILITIES, EVENTS, MILESTONES } from "./seed";
-import type { Milestone, TrackspaceEvent } from "./types";
+import type { Dataset, Milestone, TrackspaceEvent } from "./types";
 import {
   compareEventsChronologically,
   dateSortKey,
@@ -213,6 +213,46 @@ describe("every record carries at least one source", () => {
       expect(record.sources.length).toBeGreaterThan(0);
       expect(record.sources.every((s) => /^https?:\/\//.test(s.url))).toBe(true);
     }
+  });
+
+  it("never rests solely on tier-4 (discovery-only) sources", () => {
+    // Accuracy policy: tier-4 sources (e.g. Wikipedia) may not stand alone.
+    for (const record of [...CAPABILITIES, ...MILESTONES, ...EVENTS]) {
+      expect(record.sources.some((s) => s.tier <= 3)).toBe(true);
+    }
+  });
+});
+
+describe("selectors honor a passed-in dataset, not the curated globals", () => {
+  const synthetic: Dataset = {
+    capabilities: [
+      { ...CAPABILITIES[0], id: "sls", status: "watch", readiness: 50, deps: [], milestone: "a1" },
+    ],
+    milestones: [{ ...MILESTONES[0], id: "a1", status: "watch", caps: ["sls"] }],
+    events: [{ ...EVENTS[0], id: "synthetic-event", caps: ["sls"], future: false }],
+  };
+
+  it("getStatusCounts reads the passed capabilities", () => {
+    expect(getStatusCounts(synthetic.capabilities)).toEqual({
+      ready: 0,
+      watch: 1,
+      blocker: 0,
+      unknown: 0,
+    });
+  });
+
+  it("getSummary reads the passed dataset", () => {
+    const summary = getSummary(synthetic);
+    expect(summary.capabilityCount).toBe(1);
+    expect(summary.overall).toBe(50);
+    expect(summary.nextMilestone.id).toBe("a1");
+    expect(summary.blockers).toEqual([]);
+  });
+
+  it("getEventsForMilestone reads the passed dataset", () => {
+    expect(getEventsForMilestone("a1", synthetic).map((e) => e.id)).toEqual([
+      "synthetic-event",
+    ]);
   });
 });
 

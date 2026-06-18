@@ -1,4 +1,5 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type {
   CapabilityId,
@@ -9,16 +10,26 @@ import type {
 
 // Milestones — Artemis missions and later lunar buildout phases. Required
 // capability ids are stored as a JSON array.
-export const milestones = sqliteTable("milestones", {
-  id: text("id").primaryKey().$type<MilestoneId>(),
-  code: text("code").notNull(),
-  name: text("name").notNull(),
-  date: text("date").notNull(),
-  dateConf: text("date_conf").notNull().$type<Confidence>(),
-  status: text("status").notNull().$type<Status>(),
-  objective: text("objective").notNull(),
-  summary: text("summary").notNull(),
-  critical: integer("critical", { mode: "boolean" }).notNull(),
-  caps: text("caps", { mode: "json" }).notNull().$type<CapabilityId[]>(),
-  lastVerified: text("last_verified").notNull(),
-});
+export const milestones = sqliteTable(
+  "milestones",
+  {
+    id: text("id").primaryKey().$type<MilestoneId>(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    date: text("date").notNull(),
+    dateConf: text("date_conf").notNull().$type<Confidence>(),
+    status: text("status").notNull().$type<Status>(),
+    objective: text("objective").notNull(),
+    summary: text("summary").notNull(),
+    critical: integer("critical", { mode: "boolean" }).notNull(),
+    caps: text("caps", { mode: "json" }).notNull().$type<CapabilityId[]>(),
+    lastVerified: text("last_verified").notNull(),
+  },
+  (t) => [
+    check("milestones_status_ck", sql`${t.status} in ('ready', 'watch', 'blocker', 'unknown')`),
+    check(
+      "milestones_date_conf_ck",
+      sql`${t.dateConf} in ('confirmed', 'reported', 'inferred', 'conceptual', 'unverified')`,
+    ),
+  ],
+);

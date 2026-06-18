@@ -4,7 +4,7 @@
 // pipeline converges rather than duplicating. A record's sources are replaced
 // wholesale (delete-by-entity, then insert) to stay in sync with the baseline.
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 
 import { type TrackspaceDb } from "@/db";
 import {
@@ -122,6 +122,25 @@ export function seedCurated(
       .run();
     sourceCount += replaceSources(db, "event", e.id, e.sources);
   }
+
+  // Prune entities (and their orphaned sources) that the dataset no longer
+  // contains, so a reseed mirrors the dataset exactly rather than accumulating
+  // stale rows. (The ids are always non-empty, so notInArray is well-defined.)
+  const capIds = dataset.capabilities.map((c) => c.id);
+  const msIds = dataset.milestones.map((m) => m.id);
+  const evIds = dataset.events.map((e) => e.id);
+  db.delete(capabilities).where(notInArray(capabilities.id, capIds)).run();
+  db.delete(milestones).where(notInArray(milestones.id, msIds)).run();
+  db.delete(events).where(notInArray(events.id, evIds)).run();
+  db.delete(sources)
+    .where(and(eq(sources.entityType, "capability"), notInArray(sources.entityId, capIds)))
+    .run();
+  db.delete(sources)
+    .where(and(eq(sources.entityType, "milestone"), notInArray(sources.entityId, msIds)))
+    .run();
+  db.delete(sources)
+    .where(and(eq(sources.entityType, "event"), notInArray(sources.entityId, evIds)))
+    .run();
 
   return {
     capabilities: dataset.capabilities.length,

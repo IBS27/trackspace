@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3e97aa40-e5f1-46bb-af03-2e4448a8d86d",
+  "id": "bf4c9e2b-616f-4c78-9e25-7dd6b116ee38",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "capabilities": {
@@ -89,7 +89,24 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "capabilities_status_ck": {
+          "name": "capabilities_status_ck",
+          "value": "\"capabilities\".\"status\" in ('ready', 'watch', 'blocker', 'unknown')"
+        },
+        "capabilities_conf_ck": {
+          "name": "capabilities_conf_ck",
+          "value": "\"capabilities\".\"conf\" in ('confirmed', 'reported', 'inferred', 'conceptual', 'unverified')"
+        },
+        "capabilities_group_ck": {
+          "name": "capabilities_group_ck",
+          "value": "\"capabilities\".\"capability_group\" in ('launch', 'crew', 'landing', 'logistics', 'surface', 'comms')"
+        },
+        "capabilities_readiness_ck": {
+          "name": "capabilities_readiness_ck",
+          "value": "\"capabilities\".\"readiness\" between 0 and 100"
+        }
+      }
     },
     "events": {
       "name": "events",
@@ -190,7 +207,20 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "events_status_ck": {
+          "name": "events_status_ck",
+          "value": "\"events\".\"status\" in ('ready', 'watch', 'blocker', 'unknown')"
+        },
+        "events_conf_ck": {
+          "name": "events_conf_ck",
+          "value": "\"events\".\"conf\" in ('confirmed', 'reported', 'inferred', 'conceptual', 'unverified')"
+        },
+        "events_impact_ck": {
+          "name": "events_impact_ck",
+          "value": "\"events\".\"impact\" in ('high', 'med', 'low')"
+        }
+      }
     },
     "milestones": {
       "name": "milestones",
@@ -277,7 +307,16 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "milestones_status_ck": {
+          "name": "milestones_status_ck",
+          "value": "\"milestones\".\"status\" in ('ready', 'watch', 'blocker', 'unknown')"
+        },
+        "milestones_date_conf_ck": {
+          "name": "milestones_date_conf_ck",
+          "value": "\"milestones\".\"date_conf\" in ('confirmed', 'reported', 'inferred', 'conceptual', 'unverified')"
+        }
+      }
     },
     "sources": {
       "name": "sources",
@@ -361,12 +400,30 @@
             "entity_id"
           ],
           "isUnique": false
+        },
+        "sources_entity_position_unq": {
+          "name": "sources_entity_position_unq",
+          "columns": [
+            "entity_type",
+            "entity_id",
+            "position"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "sources_tier_ck": {
+          "name": "sources_tier_ck",
+          "value": "\"sources\".\"tier\" between 1 and 4"
+        },
+        "sources_entity_type_ck": {
+          "name": "sources_entity_type_ck",
+          "value": "\"sources\".\"entity_type\" in ('capability', 'milestone', 'event')"
+        }
+      }
     },
     "discoveries": {
       "name": "discoveries",
@@ -440,7 +497,12 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "discoveries_status_ck": {
+          "name": "discoveries_status_ck",
+          "value": "\"discoveries\".\"status\" in ('new', 'reviewed', 'dismissed')"
+        }
+      }
     },
     "ingestion_runs": {
       "name": "ingestion_runs",

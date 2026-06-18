@@ -48,6 +48,9 @@ function milestoneForLaunch(launch: Ll2Launch): MilestoneId | null {
 
 function withTimeout(signal?: AbortSignal): { signal: AbortSignal; done: () => void } {
   const controller = new AbortController();
+  // Propagate an already-aborted caller signal immediately; the "abort"
+  // listener below would otherwise never fire for it.
+  if (signal?.aborted) controller.abort();
   const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
   if (signal) signal.addEventListener("abort", () => controller.abort(), { once: true });
   return { signal: controller.signal, done: () => clearTimeout(timer) };

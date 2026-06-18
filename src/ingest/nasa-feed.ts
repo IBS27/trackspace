@@ -80,22 +80,33 @@ export function isLunarRelevant(item: FeedItem): boolean {
   );
 }
 
-/** Fetch and parse NASA feed items. Throws on a non-OK response. */
+/**
+ * Fetch and parse NASA feed items. A single failing feed is tolerated — its
+ * error is collected and the other feeds still contribute. Throws only when
+ * every feed fails, so the pipeline records one warning instead of losing all
+ * discovery on a transient error.
+ */
 export async function fetchNasaItems(opts?: {
   signal?: AbortSignal;
   feeds?: string[];
 }): Promise<FeedItem[]> {
   const feeds = opts?.feeds ?? DEFAULT_FEEDS;
   const all: FeedItem[] = [];
+  const errors: string[] = [];
   for (const feed of feeds) {
-    const res = await fetch(feed, {
-      signal: opts?.signal,
-      headers: { "User-Agent": "trackspace-ingest (lunar readiness tracker)" },
-    });
-    if (!res.ok) {
-      throw new Error(`NASA feed ${feed} responded ${res.status}`);
+    try {
+      const res = await fetch(feed, {
+        signal: opts?.signal,
+        headers: { "User-Agent": "trackspace-ingest (lunar readiness tracker)" },
+      });
+      if (!res.ok) throw new Error(`${feed} responded ${res.status}`);
+      all.push(...parseFeedItems(await res.text()));
+    } catch (error) {
+      errors.push((error as Error).message);
     }
-    all.push(...parseFeedItems(await res.text()));
+  }
+  if (all.length === 0 && errors.length > 0) {
+    throw new Error(`all NASA feeds failed: ${errors.join("; ")}`);
   }
   return all;
 }

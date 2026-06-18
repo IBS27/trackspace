@@ -178,7 +178,7 @@ const SRC = {
   wikiFlight12: {
     publisher: "Wikipedia",
     ico: "WIKI",
-    tier: 3,
+    tier: 4,
     date: "2026-05",
     title: "Starship flight test 12",
     url: "https://en.wikipedia.org/wiki/Starship_flight_test_12",
@@ -186,7 +186,7 @@ const SRC = {
   propTransfer: {
     publisher: "Wikipedia",
     ico: "WIKI",
-    tier: 3,
+    tier: 4,
     date: "2026",
     title: "Starship Propellant Transfer Demonstration",
     url: "https://en.wikipedia.org/wiki/Starship_Propellant_Transfer_Demonstration",
@@ -659,7 +659,7 @@ export const EVENTS: TrackspaceEvent[] = [
     downstream:
       "Partial progress on the HLS long pole; the harder two-ship demo still has not flown.",
     lastVerified: VERIFIED,
-    sources: [SRC.propTransfer],
+    sources: [SRC.oigHls, SRC.propTransfer],
   },
   {
     id: "orion-heatshield-findings",

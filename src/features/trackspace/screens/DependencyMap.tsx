@@ -42,9 +42,10 @@ const COLUMN_HEADERS = [
   { x: 1010, title: "Surface" },
 ];
 
-function edgePath(from: CapabilityId, to: CapabilityId): string {
+function edgePath(from: CapabilityId, to: CapabilityId): string | null {
   const a = NODE_POSITIONS[from];
   const b = NODE_POSITIONS[to];
+  if (!a || !b) return null;
   const x1 = a.x + NODE_WIDTH / 2;
   const x2 = b.x - NODE_WIDTH / 2;
   const mx = (x1 + x2) / 2;
@@ -167,6 +168,8 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
               </marker>
             </defs>
             {edges.map((edge) => {
+              const path = edgePath(edge.from, edge.to);
+              if (!path) return null;
               const active =
                 matches(capById[edge.from]) &&
                 matches(capById[edge.to]);
@@ -174,7 +177,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
               return (
                 <path
                   key={`${edge.from}-${edge.to}`}
-                  d={edgePath(edge.from, edge.to)}
+                  d={path}
                   fill="none"
                   markerEnd="url(#trackspace-arrowhead)"
                   strokeDasharray={

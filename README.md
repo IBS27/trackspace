@@ -59,8 +59,9 @@ Per the accuracy policy, feed data refreshes provenance and creates review leads
 Trigger a refresh on a schedule by POSTing to the route handler (set `INGEST_TOKEN` to require a bearer token):
 
 ```bash
-curl -X POST http://localhost:3000/api/ingest        # refresh now
-curl http://localhost:3000/api/ingest                # last-run status
+# When INGEST_TOKEN is set, POST must carry a matching bearer token:
+curl -X POST -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest
+curl http://localhost:3000/api/ingest                # last-run status (open)
 ```
 
 For example, a cron entry that refreshes hourly:

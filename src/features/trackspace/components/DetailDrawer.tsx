@@ -199,10 +199,10 @@ function SourceList({ sources }: { sources: Source[] }) {
   }
   return (
     <div className="trackspace-sources">
-      {sources.map((source) => (
+      {sources.map((source, index) => (
         <a
           className="trackspace-source"
-          key={source.url}
+          key={`${source.url}-${index}`}
           href={source.url}
           target="_blank"
           rel="noreferrer"

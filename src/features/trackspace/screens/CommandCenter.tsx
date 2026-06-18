@@ -14,6 +14,9 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
   const dataset = useDataset();
   const summary = getSummary(dataset);
   const upcomingMilestones = getUpcomingMilestones(3, dataset.milestones);
+  // Milestones are in chronological order, so the last achieved one is the most
+  // recent program milestone reached — derived, not a hardcoded delta.
+  const lastAchieved = dataset.milestones.filter((m) => m.status === "ready").at(-1);
 
   return (
     <div className="trackspace-cc">
@@ -68,7 +71,11 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
             </div>
             <div className="trackspace-gauge-meta">
               <div>{summary.label}</div>
-              <div className="trackspace-gauge-delta">▲ Artemis II flown · Apr 2026</div>
+              {lastAchieved && (
+                <div className="trackspace-gauge-delta">
+                  ▲ {lastAchieved.code} achieved · {lastAchieved.date}
+                </div>
+              )}
               <div className="trackspace-gauge-note">
                 weighted across {summary.capabilityCount} caps
               </div>
