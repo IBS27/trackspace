@@ -64,7 +64,13 @@ export function loadDataset(database: TrackspaceDb = db): Dataset {
     const sourcesByEntity = groupSources(srcRows);
 
     const capList: Capability[] = capRows
-      .map((c) => ({ ...c, sources: sourcesByEntity.get(`capability:${c.id}`) ?? [] }))
+      .map((c) => ({
+        ...c,
+        // Normalize SQL NULL back to an absent field so the curated baseline
+        // (which omits metrics) round-trips identically.
+        metrics: c.metrics ?? undefined,
+        sources: sourcesByEntity.get(`capability:${c.id}`) ?? [],
+      }))
       .sort(byOrder(CAP_ORDER));
 
     const msList: Milestone[] = msRows

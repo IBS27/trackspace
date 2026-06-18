@@ -13,8 +13,10 @@ import {
 import type {
   Capability,
   CapabilityId,
+  CapabilityMetrics,
   Milestone,
   MilestoneId,
+  RiskLevel,
   Source,
   TrackspaceEvent,
 } from "../data/types";
@@ -299,6 +301,67 @@ function EventBody({
   );
 }
 
+const RISK_TONE: Record<RiskLevel, string> = {
+  low: "ready",
+  medium: "watch",
+  high: "blocker",
+};
+
+function RiskBadge({ level }: { level: RiskLevel }) {
+  return (
+    <span className={`trackspace-riskchip trackspace-bg-${RISK_TONE[level]}`}>
+      {level}
+    </span>
+  );
+}
+
+function MetricRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="trackspace-metric">
+      <span className="trackspace-metric-label">{label}</span>
+      <span className="trackspace-metric-value">{children}</span>
+    </div>
+  );
+}
+
+function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
+  const { provider, contract, funding, target, slip, risk } = metrics;
+  return (
+    <DrawerSection label="Funding, schedule & risk">
+      <div className="trackspace-metrics">
+        {provider && (
+          <MetricRow label="Provider">
+            {provider}
+            {contract && (
+              <span className="trackspace-metric-tag">{contract}</span>
+            )}
+          </MetricRow>
+        )}
+        {funding && <MetricRow label="Funding">{funding}</MetricRow>}
+        {target && <MetricRow label="Target">{target}</MetricRow>}
+        {slip && <MetricRow label="Schedule slip">{slip}</MetricRow>}
+        {risk && (
+          <MetricRow label="Risk">
+            <RiskBadge level={risk.likelihood} />
+            <span className="trackspace-metric-muted">likelihood</span>
+            <span className="trackspace-metric-x" aria-hidden="true">
+              ×
+            </span>
+            <RiskBadge level={risk.severity} />
+            <span className="trackspace-metric-muted">severity</span>
+          </MetricRow>
+        )}
+      </div>
+    </DrawerSection>
+  );
+}
+
 function CapabilityBody({
   capability,
   onOpen,
@@ -327,6 +390,9 @@ function CapabilityBody({
           {capability.readiness}% · {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
+      {capability.metrics && (
+        <CapabilityMetricsSection metrics={capability.metrics} />
+      )}
       <DrawerSection label="Depends on (upstream)">
         {capability.deps.length ? (
           <div className="trackspace-capset">

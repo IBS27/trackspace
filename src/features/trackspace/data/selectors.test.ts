@@ -39,10 +39,12 @@ describe("getStatusCounts", () => {
 
   it("counts the curated statuses", () => {
     // Artemis II has flown, so SLS/Orion/ESM are ready; the landing chain
-    // (HLS, cryo, suit) blocks, and paused Gateway is unknown.
+    // (HLS, cryo, suit) blocks, and paused Gateway is unknown. The eight
+    // surface-systems gaps (life support, radiation, dust, night, ice, crew
+    // health, construction, thermal) are all watch.
     expect(getStatusCounts()).toEqual({
       ready: 3,
-      watch: 5,
+      watch: 13,
       blocker: 3,
       unknown: 1,
     });
@@ -190,8 +192,20 @@ describe("getDependencyEdges", () => {
 
 describe("getDownstream", () => {
   it("finds capabilities that depend on the given one", () => {
-    expect(getDownstream("power").map((c) => c.id)).toEqual(["isru", "hab"]);
+    // Power feeds ISRU, the habitat, life support, night survival, construction
+    // and thermal control; nothing depends on the habitat itself.
+    expect(getDownstream("power").map((c) => c.id)).toEqual([
+      "isru",
+      "hab",
+      "eclss",
+      "night",
+      "build",
+      "thermal",
+    ]);
     expect(getDownstream("hab")).toEqual([]);
+    // Construction enables regolith-berm radiation shielding; thermal feeds the habitat.
+    expect(getDownstream("build").map((c) => c.id)).toEqual(["rad"]);
+    expect(getDownstream("thermal").map((c) => c.id)).toEqual(["hab"]);
   });
 });
 

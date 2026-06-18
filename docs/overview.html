@@ -1220,6 +1220,21 @@
           </li>
         </ol>
       </div>
+
+      <div class="shell" style="margin-top: 26px;">
+        <h3>Open problem: keeping curated data fresh</h3>
+        <p class="muted">
+          Every capability and metric here is <em>verified at curation time</em> and stamped with <code>lastVerified</code>, but it does
+          not refresh itself. Live ingestion only reconciles the Artemis launch milestones (I&ndash;III) against Launch Library&nbsp;2 and
+          queues NASA&nbsp;RSS items as review leads &mdash; it never rewrites a capability's readiness, status, or the provider / funding /
+          risk fields. When the real world moves, those stay stale until someone re-checks the sources and re-seeds.
+        </p>
+        <div class="callout">
+          Worth doing next, smallest first: surface <code>lastVerified</code> age in the UI as a staleness badge; run the ingest on a
+          schedule; surface the discovery queue so leads are actionable; and extend reconciliation to <em>flag</em> drift on capabilities
+          and metrics for human review &mdash; never auto-publishing nuanced judgements like risk or readiness.
+        </div>
+      </div>
     </section>
   </main>
 

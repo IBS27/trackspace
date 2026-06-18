@@ -70,6 +70,7 @@ export function seedCurated(
       blurb: c.blurb,
       milestone: c.milestone,
       deps: c.deps,
+      metrics: c.metrics ?? null,
       lastVerified: c.lastVerified,
     };
     db.insert(capabilities)

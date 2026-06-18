@@ -4,6 +4,7 @@ import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type {
   CapabilityGroup,
   CapabilityId,
+  CapabilityMetrics,
   Confidence,
   MilestoneId,
   Status,
@@ -25,6 +26,9 @@ export const capabilities = sqliteTable(
     blurb: text("blurb").notNull(),
     milestone: text("milestone").notNull().$type<MilestoneId>(),
     deps: text("deps", { mode: "json" }).notNull().$type<CapabilityId[]>(),
+    // Optional Step-3 program dimensions (provider, funding, targets, slip,
+    // risk), stored as JSON; null for records without curated metrics.
+    metrics: text("metrics", { mode: "json" }).$type<CapabilityMetrics>(),
     lastVerified: text("last_verified").notNull(),
   },
   (t) => [
