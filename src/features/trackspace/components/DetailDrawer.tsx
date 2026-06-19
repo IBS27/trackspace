@@ -16,11 +16,11 @@ import type {
   CapabilityMetrics,
   Milestone,
   MilestoneId,
-  RiskLevel,
   Source,
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { RiskChip } from "./RiskChip";
 import { StatusChip } from "./StatusChip";
 
 export type DrawerSelection =
@@ -301,20 +301,6 @@ function EventBody({
   );
 }
 
-const RISK_TONE: Record<RiskLevel, string> = {
-  low: "ready",
-  medium: "watch",
-  high: "blocker",
-};
-
-function RiskBadge({ level }: { level: RiskLevel }) {
-  return (
-    <span className={`trackspace-riskchip trackspace-bg-${RISK_TONE[level]}`}>
-      {level}
-    </span>
-  );
-}
-
 function MetricRow({
   label,
   children,
@@ -348,12 +334,12 @@ function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
         {slip && <MetricRow label="Schedule slip">{slip}</MetricRow>}
         {risk && (
           <MetricRow label="Risk">
-            <RiskBadge level={risk.likelihood} />
+            <RiskChip level={risk.likelihood} />
             <span className="trackspace-metric-muted">likelihood</span>
             <span className="trackspace-metric-x" aria-hidden="true">
               ×
             </span>
-            <RiskBadge level={risk.severity} />
+            <RiskChip level={risk.severity} />
             <span className="trackspace-metric-muted">severity</span>
           </MetricRow>
         )}

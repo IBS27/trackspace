@@ -13,8 +13,15 @@ import {
   getMilestoneBlockers,
   getMilestoneReadyCount,
   getNextMilestone,
+  RISK_LIKELIHOODS_DESC,
+  RISK_SEVERITIES_ASC,
   getOverallReadiness,
+  getProgramSummary,
   getRecentChanges,
+  getRiskBand,
+  getRiskMatrix,
+  getRiskRegister,
+  getRiskScore,
   getSortedEvents,
   getStatusCounts,
   getSummary,
@@ -278,5 +285,101 @@ describe("getSummary", () => {
     expect(summary.nextMilestone.id).toBe("a3");
     expect(summary.capabilityCount).toBe(CAPABILITIES.length);
     expect(summary.milestoneCount).toBe(MILESTONES.length);
+  });
+});
+
+describe("getRiskScore", () => {
+  it("is likelihood × severity on a 1–9 scale", () => {
+    expect(getRiskScore({ likelihood: "low", severity: "low" })).toBe(1);
+    expect(getRiskScore({ likelihood: "low", severity: "high" })).toBe(3);
+    expect(getRiskScore({ likelihood: "high", severity: "high" })).toBe(9);
+  });
+});
+
+describe("getRiskBand", () => {
+  it("maps a score onto the status palette", () => {
+    expect(getRiskBand(9)).toBe("blocker");
+    expect(getRiskBand(6)).toBe("blocker");
+    expect(getRiskBand(4)).toBe("watch");
+    expect(getRiskBand(3)).toBe("watch");
+    expect(getRiskBand(2)).toBe("ready");
+  });
+});
+
+describe("getRiskRegister", () => {
+  it("includes every capability that carries a risk assessment", () => {
+    const withRisk = CAPABILITIES.filter((c) => c.metrics?.risk);
+    expect(getRiskRegister().length).toBe(withRisk.length);
+  });
+
+  it("ranks by score descending, then by lower readiness", () => {
+    const register = getRiskRegister();
+    for (let i = 1; i < register.length; i += 1) {
+      const prev = register[i - 1];
+      const curr = register[i];
+      expect(prev.score).toBeGreaterThanOrEqual(curr.score);
+      if (prev.score === curr.score) {
+        expect(prev.capability.readiness).toBeLessThanOrEqual(
+          curr.capability.readiness,
+        );
+      }
+    }
+  });
+
+  it("computes each entry's score from its risk", () => {
+    for (const entry of getRiskRegister()) {
+      expect(entry.score).toBe(getRiskScore(entry.risk));
+    }
+  });
+});
+
+describe("getProgramSummary", () => {
+  it("counts only capabilities that carry program metrics", () => {
+    const summary = getProgramSummary();
+    expect(summary.tracked).toBe(
+      CAPABILITIES.filter((c) => c.metrics).length,
+    );
+    expect(summary.critical).toBe(
+      CAPABILITIES.filter(
+        (c) => c.metrics?.risk && getRiskScore(c.metrics.risk) === 9,
+      ).length,
+    );
+    expect(summary.elevatedRisk).toBe(
+      CAPABILITIES.filter(
+        (c) => c.metrics?.risk && getRiskScore(c.metrics.risk) >= 6,
+      ).length,
+    );
+    expect(summary.withSlip).toBe(
+      CAPABILITIES.filter((c) => c.metrics?.slip).length,
+    );
+    expect(summary.withFunding).toBe(
+      CAPABILITIES.filter((c) => c.metrics?.funding).length,
+    );
+  });
+});
+
+describe("getRiskMatrix", () => {
+  it("is a 3×3 grid in row-major likelihood→severity order", () => {
+    const matrix = getRiskMatrix();
+    expect(matrix.length).toBe(9);
+    matrix.forEach((cell, i) => {
+      const row = Math.floor(i / RISK_SEVERITIES_ASC.length);
+      const col = i % RISK_SEVERITIES_ASC.length;
+      expect(cell.likelihood).toBe(RISK_LIKELIHOODS_DESC[row]);
+      expect(cell.severity).toBe(RISK_SEVERITIES_ASC[col]);
+      expect(cell.score).toBe(getRiskScore(cell));
+    });
+  });
+
+  it("places every risk-bearing capability in exactly one cell", () => {
+    const matrix = getRiskMatrix();
+    const placed = matrix.reduce((sum, cell) => sum + cell.capabilities.length, 0);
+    expect(placed).toBe(getRiskRegister().length);
+    for (const cell of matrix) {
+      for (const cap of cell.capabilities) {
+        expect(cap.metrics?.risk?.likelihood).toBe(cell.likelihood);
+        expect(cap.metrics?.risk?.severity).toBe(cell.severity);
+      }
+    }
   });
 });

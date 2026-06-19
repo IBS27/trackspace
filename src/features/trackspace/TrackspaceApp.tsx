@@ -12,15 +12,22 @@ import type { Dataset } from "./data/types";
 import { CommandCenter } from "./screens/CommandCenter";
 import { DependencyMap } from "./screens/DependencyMap";
 import { MilestonesScreen } from "./screens/MilestonesScreen";
+import { ProgramScreen } from "./screens/ProgramScreen";
 import { TimelineScreen } from "./screens/TimelineScreen";
 
-type TrackspaceView = "command" | "dependency" | "timeline" | "milestones";
+type TrackspaceView =
+  | "command"
+  | "dependency"
+  | "timeline"
+  | "milestones"
+  | "program";
 
 const NAV_ITEMS: TrackspaceNavItem[] = [
   { id: "command", icon: "⊕", name: "Command Center" },
   { id: "dependency", icon: "⧉", name: "Dependency Map" },
   { id: "timeline", icon: "≣", name: "Timeline" },
   { id: "milestones", icon: "◎", name: "Milestones" },
+  { id: "program", icon: "⚠", name: "Program" },
 ];
 
 export function TrackspaceApp({ dataset = CURATED }: { dataset?: Dataset }) {
@@ -101,8 +108,10 @@ export function TrackspaceApp({ dataset = CURATED }: { dataset?: Dataset }) {
           <DependencyMap onOpen={setSelection} />
         ) : activeView === "timeline" ? (
           <TimelineScreen onOpen={setSelection} />
-        ) : (
+        ) : activeView === "milestones" ? (
           <MilestonesScreen onOpen={setSelection} />
+        ) : (
+          <ProgramScreen onOpen={setSelection} />
         )}
       </AppShell>
     </DatasetProvider>
@@ -114,6 +123,7 @@ function isTrackspaceView(view: string): view is TrackspaceView {
     view === "command" ||
     view === "dependency" ||
     view === "timeline" ||
-    view === "milestones"
+    view === "milestones" ||
+    view === "program"
   );
 }
