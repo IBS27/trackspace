@@ -407,7 +407,7 @@
 .trackspace-cc {
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 1px;
   background: var(--ts-line);
 }
@@ -499,12 +499,57 @@
   min-width: 0;
   overflow-y: auto;
   background: var(--ts-bg-2);
+  box-shadow: inset 1px 0 0 rgba(91, 208, 255, 0.04);
+}
+
+.trackspace-cc-side .trackspace-panel {
+  padding: 16px 16px 15px;
+  border-bottom-color: rgba(38, 48, 63, 0.72);
+}
+
+.trackspace-cc-side .trackspace-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: #8ea5bd;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.trackspace-cc-side .trackspace-panel h2::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 1px;
+  background: var(--ts-accent);
+  box-shadow: 0 0 9px rgba(91, 208, 255, 0.55);
 }
 
 .trackspace-gauge {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.trackspace-cc-side .trackspace-gauge {
+  position: relative;
+  gap: 14px;
+  align-items: flex-end;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(38, 48, 63, 0.72);
+}
+
+.trackspace-cc-side .trackspace-gauge::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: var(--trackspace-readiness, 0%);
+  height: 1px;
+  background: linear-gradient(90deg, var(--ts-watch), var(--ts-accent));
+  box-shadow: 0 0 10px rgba(91, 208, 255, 0.38);
 }
 
 .trackspace-gauge-num {
@@ -515,9 +560,20 @@
   line-height: 1;
 }
 
+.trackspace-cc-side .trackspace-gauge-num {
+  font-size: 39px;
+  letter-spacing: 0;
+}
+
 .trackspace-gauge-num small {
   color: var(--ts-dim);
   font-size: 16px;
+}
+
+.trackspace-cc-side .trackspace-gauge-num small {
+  margin-left: 2px;
+  color: var(--ts-faint);
+  font-size: 15px;
 }
 
 .trackspace-gauge-meta {
@@ -525,6 +581,12 @@
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
   line-height: 1.6;
+}
+
+.trackspace-cc-side .trackspace-gauge-meta {
+  min-width: 0;
+  padding-bottom: 1px;
+  line-height: 1.55;
 }
 
 .trackspace-gauge-delta {
@@ -541,6 +603,15 @@
   margin-top: 13px;
 }
 
+.trackspace-cc-side .trackspace-status-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 13px;
+  border-top: 1px solid rgba(38, 48, 63, 0.72);
+  border-bottom: 1px solid rgba(38, 48, 63, 0.72);
+}
+
 .trackspace-status-count {
   flex: 1;
   display: flex;
@@ -551,11 +622,42 @@
   border-radius: 5px;
 }
 
+.trackspace-cc-side .trackspace-status-count {
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px dashed rgba(38, 48, 63, 0.78);
+  border-radius: 0;
+}
+
+.trackspace-cc-side .trackspace-status-count:nth-child(odd) {
+  padding-right: 12px;
+  border-right: 1px solid rgba(38, 48, 63, 0.72);
+}
+
+.trackspace-cc-side .trackspace-status-count:nth-child(even) {
+  padding-left: 12px;
+}
+
+.trackspace-cc-side .trackspace-status-count:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
 .trackspace-status-count-num {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 22px;
   font-weight: 500;
   line-height: 1;
+}
+
+.trackspace-cc-side .trackspace-status-count-num {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 17px;
 }
 
 .trackspace-status-count-label {
@@ -567,6 +669,15 @@
   font-size: 8.5px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
+}
+
+.trackspace-cc-side .trackspace-status-count-label {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  color: var(--ts-dim);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
 }
 
 .trackspace-status-count-dot {
@@ -587,6 +698,11 @@
   gap: 8px;
 }
 
+.trackspace-cc-side .trackspace-blockers {
+  gap: 0;
+  border-top: 1px solid rgba(38, 48, 63, 0.72);
+}
+
 .trackspace-blocker-item {
   display: block;
   width: 100%;
@@ -603,10 +719,42 @@
     transform 150ms ease;
 }
 
+.trackspace-cc-side .trackspace-blocker-item {
+  position: relative;
+  padding: 10px 0 11px 15px;
+  border: 0;
+  border-bottom: 1px dashed rgba(38, 48, 63, 0.78);
+  border-radius: 0;
+  background: transparent;
+  transition: none;
+}
+
+.trackspace-cc-side .trackspace-blocker-item::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ts-blocker);
+  box-shadow: 0 0 9px rgba(255, 84, 104, 0.54);
+}
+
 .trackspace-blocker-item:hover {
   background: #11161f;
   border-color: var(--ts-accent-dim);
   transform: translateX(2px);
+}
+
+.trackspace-cc-side .trackspace-blocker-item:hover {
+  background: transparent;
+  border-bottom-color: rgba(91, 208, 255, 0.32);
+  transform: none;
+}
+
+.trackspace-cc-side .trackspace-blocker-item:hover::before {
+  box-shadow: 0 0 0 2px rgba(255, 84, 104, 0.12);
 }
 
 .trackspace-blocker-item:focus-visible {
@@ -627,10 +775,25 @@
   font-weight: 600;
 }
 
+.trackspace-cc-side .trackspace-blocker-name {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.trackspace-cc-side .trackspace-blocker-item:hover .trackspace-blocker-name {
+  color: var(--ts-accent);
+}
+
 .trackspace-blocker-readiness {
   color: var(--ts-blocker);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
+}
+
+.trackspace-cc-side .trackspace-blocker-readiness {
+  padding-left: 8px;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
 }
 
 .trackspace-blocker-desc {
@@ -641,11 +804,25 @@
   line-height: 1.45;
 }
 
+.trackspace-cc-side .trackspace-blocker-desc {
+  display: -webkit-box;
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--ts-dim);
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 /* ===== Change / milestone rows ===== */
 
 .trackspace-rows {
   display: flex;
   flex-direction: column;
+}
+
+.trackspace-cc-side .trackspace-rows {
+  border-top: 1px solid rgba(38, 48, 63, 0.72);
 }
 
 .trackspace-crow {
@@ -659,6 +836,17 @@
   color: inherit;
   cursor: pointer;
   text-align: left;
+}
+
+.trackspace-cc-side .trackspace-crow {
+  gap: 11px;
+  padding: 10px 0;
+  transition: none;
+}
+
+.trackspace-cc-side .trackspace-crow:hover {
+  background: transparent;
+  border-bottom-color: rgba(91, 208, 255, 0.3);
 }
 
 .trackspace-crow:last-child {
@@ -681,6 +869,11 @@
   color: var(--ts-faint);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
+}
+
+.trackspace-cc-side .trackspace-crow-date {
+  width: 64px;
+  font-size: 9.5px;
 }
 
 .trackspace-crow-main {

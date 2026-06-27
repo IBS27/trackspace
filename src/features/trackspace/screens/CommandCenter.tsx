@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
@@ -64,7 +66,12 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
       <div className="trackspace-cc-side">
         <section className="trackspace-panel">
           <h2>Lunar-Base Readiness</h2>
-          <div className="trackspace-gauge">
+          <div
+            className="trackspace-gauge"
+            style={
+              { "--trackspace-readiness": `${summary.overall}%` } as CSSProperties
+            }
+          >
             <div className="trackspace-gauge-num trackspace-tabular">
               {summary.overall}
               <small>%</small>
