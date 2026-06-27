@@ -301,34 +301,72 @@ export function getRiskRegister(
 export type ProgramSummary = {
   /** Capabilities carrying any program metrics. */
   tracked: number;
-  /** Risk score === 9 (high likelihood × high severity). */
-  critical: number;
-  /** Risk score ≥ 6 (medium-high and above). */
-  elevatedRisk: number;
+  /** Tracked capabilities that are hard blockers. */
+  blockers: number;
+  /** Tracked capabilities that need watching. */
+  watch: number;
+  /** Tracked capabilities already marked ready. */
+  ready: number;
   /** Has a documented schedule slip. */
   withSlip: number;
   /** Has a public funding or contract-value figure. */
   withFunding: number;
 };
 
+export type ProgramEntry = {
+  capability: Capability;
+  status: Status;
+  hasScheduleSignal: boolean;
+  hasFundingSignal: boolean;
+};
+
+const PROGRAM_STATUS_RANK: Record<Status, number> = {
+  blocker: 0,
+  watch: 1,
+  unknown: 2,
+  ready: 3,
+};
+
+/**
+ * Capabilities with public program data, ranked by the same status model used
+ * everywhere else in the app. The Program page deliberately avoids a separate
+ * risk score so the read stays consistent with Command and Milestones.
+ */
+export function getProgramRegister(
+  capabilities: Capability[] = CAPABILITIES,
+): ProgramEntry[] {
+  return capabilities
+    .filter((capability) => capability.metrics)
+    .map((capability) => ({
+      capability,
+      status: capability.status,
+      hasScheduleSignal: Boolean(capability.metrics?.slip),
+      hasFundingSignal: Boolean(capability.metrics?.funding),
+    }))
+    .sort(
+      (a, b) =>
+        PROGRAM_STATUS_RANK[a.status] - PROGRAM_STATUS_RANK[b.status] ||
+        a.capability.readiness - b.capability.readiness,
+    );
+}
+
 export function getProgramSummary(
   capabilities: Capability[] = CAPABILITIES,
 ): ProgramSummary {
   const summary: ProgramSummary = {
     tracked: 0,
-    critical: 0,
-    elevatedRisk: 0,
+    blockers: 0,
+    watch: 0,
+    ready: 0,
     withSlip: 0,
     withFunding: 0,
   };
-  for (const { metrics } of capabilities) {
+  for (const { metrics, status } of capabilities) {
     if (!metrics) continue;
     summary.tracked += 1;
-    if (metrics.risk) {
-      const score = getRiskScore(metrics.risk);
-      if (score === 9) summary.critical += 1;
-      if (score >= 6) summary.elevatedRisk += 1;
-    }
+    if (status === "blocker") summary.blockers += 1;
+    if (status === "watch") summary.watch += 1;
+    if (status === "ready") summary.ready += 1;
     if (metrics.slip) summary.withSlip += 1;
     if (metrics.funding) summary.withFunding += 1;
   }

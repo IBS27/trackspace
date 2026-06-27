@@ -4,43 +4,20 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CAPABILITIES } from "../data/seed";
-import { getProgramSummary, getRiskRegister } from "../data/selectors";
+import { getProgramRegister, getProgramSummary } from "../data/selectors";
 import { ProgramScreen } from "./ProgramScreen";
 
 afterEach(cleanup);
 
-const cards = (root: HTMLElement) =>
-  Array.from(root.querySelectorAll<HTMLElement>(".trackspace-prog-card"));
-
-const cells = (root: HTMLElement) =>
-  Array.from(root.querySelectorAll<HTMLElement>(".trackspace-prog-cell"));
+const rows = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(".trackspace-prog-row"));
 
 describe("ProgramScreen", () => {
   it("renders the program heading", () => {
     render(<ProgramScreen onOpen={() => {}} />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-      "Risk, Funding & Schedule",
+      "Program Health",
     );
-  });
-
-  it("lists one register card per capability with a risk assessment", () => {
-    const { container } = render(<ProgramScreen onOpen={() => {}} />);
-    expect(cards(container).length).toBe(getRiskRegister().length);
-  });
-
-  it("renders register cards in non-increasing risk-score order", () => {
-    // Read the scores straight from the rendered badges, not from the selector,
-    // so an accidental reorder in the screen (a stray reverse/re-sort) fails.
-    const { container } = render(<ProgramScreen onOpen={() => {}} />);
-    const scores = cards(container).map((card) =>
-      Number(card.querySelector(".trackspace-prog-score")?.textContent),
-    );
-
-    expect(scores.length).toBe(getRiskRegister().length);
-    expect(scores[0]).toBe(getRiskRegister()[0].score);
-    for (let i = 1; i < scores.length; i += 1) {
-      expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
-    }
   });
 
   it("summarizes how many capabilities carry program data", () => {
@@ -48,37 +25,39 @@ describe("ProgramScreen", () => {
     const summary = getProgramSummary();
 
     expect(
-      screen.getByText(`${summary.tracked} / ${CAPABILITIES.length}`),
+      screen.getByText(`${summary.tracked}/${CAPABILITIES.length} tracked`),
     ).toBeTruthy();
   });
 
-  it("filters the register to a matrix cell, then restores", () => {
+  it("shows blockers and watch items by default", () => {
     const { container } = render(<ProgramScreen onOpen={() => {}} />);
-    const full = getRiskRegister().length;
-    expect(cards(container).length).toBe(full);
+    const attention = getProgramRegister().filter(
+      (entry) => entry.status === "blocker" || entry.status === "watch",
+    );
 
-    // Cells render high→low × low→high, so index 2 is high likelihood × high
-    // severity — the most-exposed cluster.
-    const highHigh = getRiskRegister().filter(
-      (e) => e.risk.likelihood === "high" && e.risk.severity === "high",
-    ).length;
-    fireEvent.click(cells(container)[2]);
-    expect(cards(container).length).toBe(highHigh);
+    expect(rows(container).length).toBe(attention.length);
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: /show all/i }));
-    expect(cards(container).length).toBe(full);
+  it("switches to all tracked program records", () => {
+    const { container } = render(<ProgramScreen onOpen={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /All tracked/i }));
+
+    expect(rows(container).length).toBe(getProgramRegister().length);
   });
 
   it("opens the drawer for a clicked capability", () => {
     const onOpen = vi.fn();
     const { container } = render(<ProgramScreen onOpen={onOpen} />);
-    const top = getRiskRegister()[0];
+    const top = getProgramRegister().find(
+      (entry) => entry.status === "blocker" || entry.status === "watch",
+    );
 
-    fireEvent.click(cards(container)[0]);
+    fireEvent.click(rows(container)[0]);
 
     expect(onOpen).toHaveBeenCalledWith({
       type: "capability",
-      id: top.capability.id,
+      id: top?.capability.id,
     });
   });
 });

@@ -16,6 +16,7 @@ import {
   RISK_LIKELIHOODS_DESC,
   RISK_SEVERITIES_ASC,
   getOverallReadiness,
+  getProgramRegister,
   getProgramSummary,
   getRecentChanges,
   getRiskBand,
@@ -339,15 +340,14 @@ describe("getProgramSummary", () => {
     expect(summary.tracked).toBe(
       CAPABILITIES.filter((c) => c.metrics).length,
     );
-    expect(summary.critical).toBe(
-      CAPABILITIES.filter(
-        (c) => c.metrics?.risk && getRiskScore(c.metrics.risk) === 9,
-      ).length,
+    expect(summary.blockers).toBe(
+      CAPABILITIES.filter((c) => c.metrics && c.status === "blocker").length,
     );
-    expect(summary.elevatedRisk).toBe(
-      CAPABILITIES.filter(
-        (c) => c.metrics?.risk && getRiskScore(c.metrics.risk) >= 6,
-      ).length,
+    expect(summary.watch).toBe(
+      CAPABILITIES.filter((c) => c.metrics && c.status === "watch").length,
+    );
+    expect(summary.ready).toBe(
+      CAPABILITIES.filter((c) => c.metrics && c.status === "ready").length,
     );
     expect(summary.withSlip).toBe(
       CAPABILITIES.filter((c) => c.metrics?.slip).length,
@@ -355,6 +355,30 @@ describe("getProgramSummary", () => {
     expect(summary.withFunding).toBe(
       CAPABILITIES.filter((c) => c.metrics?.funding).length,
     );
+  });
+});
+
+describe("getProgramRegister", () => {
+  it("includes every capability that carries program metrics", () => {
+    expect(getProgramRegister().length).toBe(
+      CAPABILITIES.filter((c) => c.metrics).length,
+    );
+  });
+
+  it("ranks by shared status first, then lower readiness", () => {
+    const rank = { blocker: 0, watch: 1, unknown: 2, ready: 3 };
+    const register = getProgramRegister();
+
+    for (let i = 1; i < register.length; i += 1) {
+      const prev = register[i - 1];
+      const curr = register[i];
+      expect(rank[prev.status]).toBeLessThanOrEqual(rank[curr.status]);
+      if (rank[prev.status] === rank[curr.status]) {
+        expect(prev.capability.readiness).toBeLessThanOrEqual(
+          curr.capability.readiness,
+        );
+      }
+    }
   });
 });
 

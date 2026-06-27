@@ -44,7 +44,7 @@ describe("TrackspaceApp", () => {
 
     fireEvent.click(tab);
 
-    expect(screen.getByText(/Risk register/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
     expect(tab.getAttribute("aria-current")).toBe("page");
   });
 
@@ -58,7 +58,7 @@ describe("TrackspaceApp", () => {
     expect(screen.getByText("Missions / Phases")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "5" });
-    expect(screen.getByText(/Risk register/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "1" });
     expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();

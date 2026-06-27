@@ -1,286 +1,381 @@
 "use client";
 
-import { Fragment, type ReactNode, useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { DrawerSelection } from "../components/DetailDrawer";
-import { RiskChip } from "../components/RiskChip";
+import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import {
-  RISK_LIKELIHOODS_DESC,
-  RISK_SEVERITIES_ASC,
-  type RiskCell,
-  type RiskEntry,
+  getProgramRegister,
   getProgramSummary,
-  getRiskBand,
-  getRiskMatrix,
-  getRiskRegister,
+  type ProgramEntry,
 } from "../data/selectors";
-import type { RiskLevel } from "../data/types";
+import type { Capability, Status } from "../data/types";
 
 type ProgramScreenProps = {
   onOpen: (selection: DrawerSelection) => void;
 };
 
-type CellKey = { likelihood: RiskLevel; severity: RiskLevel };
+type ProgramLens = "attention" | "schedule" | "funding" | "ready" | "all";
 
-/** Short axis labels that fit the matrix gutters. */
-const AXIS_LABEL: Record<RiskLevel, string> = {
-  low: "LOW",
-  medium: "MED",
-  high: "HIGH",
+type ProgramFact = {
+  label: string;
+  value: ReactNode;
 };
-
-const sameCell = (a: CellKey | null, b: CellKey) =>
-  !!a && a.likelihood === b.likelihood && a.severity === b.severity;
 
 export function ProgramScreen({ onOpen }: ProgramScreenProps) {
   const dataset = useDataset();
-  const register = getRiskRegister(dataset.capabilities);
-  const matrix = getRiskMatrix(dataset.capabilities);
+  const register = getProgramRegister(dataset.capabilities);
   const summary = getProgramSummary(dataset.capabilities);
-  const [active, setActive] = useState<CellKey | null>(null);
+  const [lens, setLens] = useState<ProgramLens>("attention");
 
-  const shown = active
-    ? register.filter((e) => sameCell(active, e.risk))
-    : register;
+  const attention = register.filter(
+    (entry) => entry.status === "blocker" || entry.status === "watch",
+  );
+  const schedule = register.filter((entry) => entry.hasScheduleSignal);
+  const funding = register.filter((entry) => entry.hasFundingSignal);
+  const ready = register.filter((entry) => entry.status === "ready");
+  const signals = register.filter(
+    (entry) => entry.hasScheduleSignal || entry.hasFundingSignal,
+  );
 
-  const toggle = (cell: RiskCell) => {
-    if (!cell.capabilities.length) return;
-    setActive((cur) => (sameCell(cur, cell) ? null : { ...cell }));
-  };
+  const visible =
+    lens === "attention"
+      ? attention
+      : lens === "schedule"
+        ? schedule
+        : lens === "funding"
+          ? funding
+          : lens === "ready"
+            ? ready
+            : register;
+
+  const lensRows: {
+    id: ProgramLens;
+    label: string;
+    detail: string;
+    count: number;
+    status?: Status;
+  }[] = [
+    {
+      id: "attention",
+      label: "Needs attention",
+      detail: `${summary.blockers} blockers · ${summary.watch} watch`,
+      count: attention.length,
+      status: summary.blockers > 0 ? "blocker" : "watch",
+    },
+    {
+      id: "schedule",
+      label: "Schedule signals",
+      detail: "Documented slips and timing pressure",
+      count: schedule.length,
+      status: "watch",
+    },
+    {
+      id: "funding",
+      label: "Funding signals",
+      detail: "Public contract or budget figures",
+      count: funding.length,
+      status: "ready",
+    },
+    {
+      id: "ready",
+      label: "Stable",
+      detail: "Tracked records already marked ready",
+      count: ready.length,
+      status: "ready",
+    },
+    {
+      id: "all",
+      label: "All tracked",
+      detail: `${summary.tracked} of ${dataset.capabilities.length} capabilities`,
+      count: register.length,
+    },
+  ];
+  const currentLens = lensRows.find((row) => row.id === lens) ?? lensRows[0];
 
   return (
     <div className="trackspace-prog">
-      <aside className="trackspace-prog-rail">
-        <div className="trackspace-prog-head">
-          <div className="trackspace-prog-kicker">Program · beyond readiness</div>
-          <h1>Risk, Funding &amp; Schedule</h1>
-          <p className="trackspace-prog-intro">
-            Programs are killed by money and time, not just technical maturity.
-            Risk is likelihood × severity, kept separate from the readiness
-            number.
-          </p>
-        </div>
-
-        <section>
-          <div className="trackspace-prog-sectlabel">Risk matrix</div>
-          <div className="trackspace-prog-axiscap">
-            rows ↓ likelihood · columns → severity
-          </div>
-          <div className="trackspace-prog-matrix">
-            <span className="trackspace-corner trackspace-corner-tl" />
-            <span className="trackspace-corner trackspace-corner-tr" />
-            <span className="trackspace-corner trackspace-corner-bl" />
-            <span className="trackspace-corner trackspace-corner-br" />
-            <div className="trackspace-prog-grid">
-              <span className="trackspace-prog-axis trackspace-prog-axis-corner">
-                caps
+      <nav className="trackspace-prog-rail" aria-label="Program views">
+        <div className="trackspace-prog-rail-head">Program Views</div>
+        {lensRows.map((row) => (
+          <button
+            type="button"
+            key={row.id}
+            className={`trackspace-prog-lens${lens === row.id ? " is-on" : ""}`}
+            aria-current={lens === row.id ? "true" : undefined}
+            onClick={() => setLens(row.id)}
+          >
+            <span className="trackspace-prog-lens-main">
+              <span className="trackspace-prog-lens-label">{row.label}</span>
+              <span className="trackspace-prog-lens-detail">{row.detail}</span>
+            </span>
+            <span className="trackspace-prog-lens-side">
+              <span className="trackspace-prog-lens-count trackspace-tabular">
+                {row.count}
               </span>
-              {RISK_SEVERITIES_ASC.map((sev) => (
-                <span key={sev} className="trackspace-prog-axis">
-                  {AXIS_LABEL[sev]}
-                </span>
-              ))}
-              {RISK_LIKELIHOODS_DESC.map((lk, r) => (
-                <Fragment key={lk}>
-                  <span className="trackspace-prog-axis trackspace-prog-axis-row">
-                    {AXIS_LABEL[lk]}
-                  </span>
-                  {RISK_SEVERITIES_ASC.map((sev, c) => {
-                    const cell = matrix[r * RISK_SEVERITIES_ASC.length + c];
-                    const n = cell.capabilities.length;
-                    const on = sameCell(active, cell);
-                    return (
-                      <button
-                        type="button"
-                        key={sev}
-                        className={`trackspace-prog-cell trackspace-cellbg-${cell.band}${
-                          on ? " is-active" : ""
-                        }${n ? "" : " is-empty"}`}
-                        onClick={() => toggle(cell)}
-                        disabled={n === 0}
-                        aria-pressed={on}
-                        aria-label={`${lk} likelihood × ${sev} severity — ${n} capabilities`}
-                      >
-                        {n > 0 && (
-                          <span className="trackspace-prog-cell-n">{n}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </div>
-          </div>
-          <div className="trackspace-prog-legend">
-            <span>
-              <i className="trackspace-bg-ready" /> low
+              <span
+                className="trackspace-prog-lens-dot"
+                style={{
+                  background: row.status
+                    ? `var(--ts-${row.status})`
+                    : "var(--ts-accent)",
+                  boxShadow: row.status
+                    ? `0 0 7px var(--ts-${row.status})`
+                    : "0 0 7px var(--ts-accent)",
+                }}
+                aria-hidden="true"
+              />
             </span>
-            <span>
-              <i className="trackspace-bg-watch" /> elevated
-            </span>
-            <span>
-              <i className="trackspace-bg-blocker" /> critical
-            </span>
-            <span className="trackspace-prog-legend-hint">click a cell to filter</span>
-          </div>
-        </section>
+          </button>
+        ))}
+      </nav>
 
-        <section className="trackspace-prog-readout">
-          <div className="trackspace-prog-readout-title">Program exposure</div>
-          <ReadoutRow
-            label="Tracked"
-            value={`${summary.tracked} / ${dataset.capabilities.length}`}
-          />
-          <ReadoutRow label="Critical · 9" value={summary.critical} tone="blocker" />
-          <ReadoutRow
-            label="Elevated · ≥6"
-            value={summary.elevatedRisk}
-            tone="watch"
-          />
-          <ReadoutRow label="Schedule slips" value={summary.withSlip} />
-          <ReadoutRow label="Funding figures" value={summary.withFunding} />
-        </section>
-      </aside>
-
-      <div className="trackspace-prog-list">
-        <header className="trackspace-prog-listhead">
-          <div className="trackspace-prog-sectlabel">
-            Risk register ·{" "}
-            {active
-              ? `${active.likelihood} × ${active.severity} likelihood–severity`
-              : "most exposed first"}
-          </div>
-          <div className="trackspace-prog-listmeta">
-            <span className="trackspace-prog-count trackspace-tabular">
-              {shown.length}
-            </span>
-            {active && (
-              <button
-                type="button"
-                className="trackspace-prog-clear"
-                onClick={() => setActive(null)}
-              >
-                show all
-              </button>
-            )}
-          </div>
-        </header>
-        <div className="trackspace-prog-cards">
-          {shown.map((entry) => (
-            <RegisterCard
-              key={entry.capability.id}
-              entry={entry}
-              onOpen={onOpen}
-            />
-          ))}
+      <div className="trackspace-prog-page">
+        <div className="trackspace-prog-kicker">
+          Program · funding + schedule
         </div>
+        <h1>Program Health</h1>
+        <div className="trackspace-prog-meta">
+          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+            {summary.tracked}/{dataset.capabilities.length} tracked
+          </span>
+          <StatusChip status="blocker" />
+          <span className="trackspace-cchip trackspace-cchip-up trackspace-cchip-critical trackspace-tabular">
+            {summary.blockers} blockers
+          </span>
+          <StatusChip status="watch" />
+          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+            {summary.watch} watch
+          </span>
+          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+            {summary.withSlip} schedule
+          </span>
+          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+            {summary.withFunding} funding
+          </span>
+        </div>
+
+        <p className="trackspace-prog-objective">
+          Public program data for the capabilities that carry funding,
+          provider, target, or schedule records. Blocker and watch records show
+          where schedule, hardware, or contract pressure is currently
+          concentrated.
+        </p>
+
+        <div className="trackspace-assess trackspace-prog-assess">
+          <span className="trackspace-assess-label">CURRENT READ</span>
+          {programRead(summary, attention)}
+        </div>
+
+        <div className="trackspace-prog-cols">
+          <section className="trackspace-mssec">
+            <h3>
+              Needs attention <b>{attention.length}</b>
+            </h3>
+            <div className="trackspace-rows">
+              {attention.length > 0 ? (
+                attention.slice(0, 6).map((entry) => (
+                  <ProgramCompactRow
+                    key={entry.capability.id}
+                    entry={entry}
+                    onOpen={onOpen}
+                  />
+                ))
+              ) : (
+                <p className="trackspace-mssec-empty">
+                  No blockers or watch items in the tracked program records.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section className="trackspace-mssec">
+            <h3>
+              Schedule / funding <b>{signals.length}</b>
+            </h3>
+            <div className="trackspace-rows">
+              {signals.length > 0 ? (
+                signals.slice(0, 6).map((entry) => (
+                  <ProgramSignalRow
+                    key={entry.capability.id}
+                    entry={entry}
+                    onOpen={onOpen}
+                  />
+                ))
+              ) : (
+                <p className="trackspace-mssec-empty">
+                  No schedule or funding signal is attached to the current
+                  tracked records.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <section className="trackspace-mssec trackspace-prog-register">
+          <h3>
+            {currentLens.label} <b>{visible.length}</b>
+          </h3>
+          <div className="trackspace-prog-list">
+            {visible.map((entry) => (
+              <ProgramCapabilityRow
+                key={entry.capability.id}
+                entry={entry}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function ReadoutRow({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  tone?: "blocker" | "watch";
-}) {
-  return (
-    <div className="trackspace-prog-readout-row">
-      <span>{label}</span>
-      <b className={tone ? `trackspace-${tone}` : undefined}>{value}</b>
-    </div>
-  );
+function programRead(
+  summary: ReturnType<typeof getProgramSummary>,
+  attention: ProgramEntry[],
+): string {
+  if (attention.length === 0) {
+    return `${summary.ready} tracked capabilities are marked ready, with no blockers or watch items in the program records.`;
+  }
+
+  const lead = attention
+    .slice(0, 3)
+    .map((entry) => entry.capability.short)
+    .join(", ");
+  return `${summary.blockers} blockers and ${summary.watch} watch items need attention first. Highest-pressure records: ${lead}.`;
 }
 
-function RegisterCard({
+function ProgramCompactRow({
   entry,
   onOpen,
 }: {
-  entry: RiskEntry;
+  entry: ProgramEntry;
   onOpen: (selection: DrawerSelection) => void;
 }) {
-  const { capability, risk, score } = entry;
-  const m = capability.metrics;
-  const band = getRiskBand(score);
-
-  const facts: { label: string; value: ReactNode }[] = [];
-  if (m?.provider) {
-    facts.push({
-      label: "Provider",
-      value: (
-        <>
-          {m.provider}
-          {m.contract && (
-            <span className="trackspace-metric-tag">{m.contract}</span>
-          )}
-        </>
-      ),
-    });
-  }
-  if (m?.funding) facts.push({ label: "Funding", value: m.funding });
-  if (m?.slip) facts.push({ label: "Slip", value: m.slip });
-  if (m?.target) facts.push({ label: "Target", value: m.target });
+  const fact = primaryProgramFact(entry.capability);
 
   return (
     <button
       type="button"
-      className="trackspace-prog-card"
-      onClick={() => onOpen({ type: "capability", id: capability.id })}
+      className="trackspace-crow trackspace-prog-crow"
+      onClick={() => onOpen({ type: "capability", id: entry.capability.id })}
     >
-      <span className="trackspace-prog-card-top">
-        <span className={`trackspace-prog-score trackspace-cellbg-${band}`}>
-          <i
-            className="trackspace-prog-dot"
-            style={{
-              background: `var(--ts-${band})`,
-              boxShadow: `0 0 8px var(--ts-${band})`,
-            }}
-            aria-hidden="true"
-          />
-          {score}
-        </span>
-        <span className="trackspace-prog-card-id">
-          <span className="trackspace-prog-card-name">{capability.name}</span>
-          <span className="trackspace-prog-card-sub">
-            {capability.group} · {capability.short}
+      <span className="trackspace-crow-date">{entry.capability.short}</span>
+      <span className="trackspace-crow-main">
+        <span className="trackspace-crow-title">{entry.capability.name}</span>
+        <span className="trackspace-crow-meta">
+          <StatusChip status={entry.status} />
+          <span className="trackspace-cchip trackspace-tabular">
+            {entry.capability.readiness}% ready
           </span>
-        </span>
-        <span className="trackspace-prog-card-risk">
-          <RiskChip level={risk.likelihood} />
-          <span className="trackspace-metric-x" aria-hidden="true">
-            ×
-          </span>
-          <RiskChip level={risk.severity} />
+          <span className="trackspace-cchip">{fact.label}</span>
         </span>
       </span>
+    </button>
+  );
+}
 
-      <span className="trackspace-prog-card-bar">
+function ProgramSignalRow({
+  entry,
+  onOpen,
+}: {
+  entry: ProgramEntry;
+  onOpen: (selection: DrawerSelection) => void;
+}) {
+  const facts = signalFacts(entry.capability);
+
+  return (
+    <button
+      type="button"
+      className="trackspace-crow trackspace-prog-crow"
+      onClick={() => onOpen({ type: "capability", id: entry.capability.id })}
+    >
+      <span className="trackspace-crow-date">{entry.capability.short}</span>
+      <span className="trackspace-crow-main">
+        <span className="trackspace-crow-title">{entry.capability.name}</span>
+        <span className="trackspace-prog-signal-lines">
+          {facts.map((fact) => (
+            <span className="trackspace-prog-signal-line" key={fact.label}>
+              <span>{fact.label}</span>
+              {fact.value}
+            </span>
+          ))}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ProgramCapabilityRow({
+  entry,
+  onOpen,
+}: {
+  entry: ProgramEntry;
+  onOpen: (selection: DrawerSelection) => void;
+}) {
+  const capability = entry.capability;
+  const fact = primaryProgramFact(capability);
+
+  return (
+    <button
+      type="button"
+      className="trackspace-prog-row"
+      onClick={() => onOpen({ type: "capability", id: capability.id })}
+    >
+      <span
+        className="trackspace-prog-row-dot"
+        style={{ background: `var(--ts-${entry.status})` }}
+        aria-hidden="true"
+      />
+      <span className="trackspace-prog-row-main">
+        <span className="trackspace-prog-row-name">{capability.name}</span>
+        <span className="trackspace-prog-row-sub">
+          {capability.group} · {capability.short}
+        </span>
+      </span>
+      <span className="trackspace-prog-row-status">
+        <StatusChip status={entry.status} />
+      </span>
+      <span className="trackspace-prog-row-fact">
+        <span className="trackspace-prog-fact-label">{fact.label}</span>
+        <span className="trackspace-prog-fact-val">{fact.value}</span>
+      </span>
+      <span className="trackspace-prog-row-readiness">
         <span className="trackspace-readiness-bar">
           <span
             className={`trackspace-bg-${capability.status}`}
             style={{ width: `${capability.readiness}%` }}
           />
         </span>
-        <span className="trackspace-prog-card-pct trackspace-tabular">
+        <span className="trackspace-prog-row-pct trackspace-tabular">
           {capability.readiness}%
         </span>
       </span>
-
-      {facts.length > 0 && (
-        <span className="trackspace-prog-facts">
-          {facts.map((f) => (
-            <span className="trackspace-prog-fact" key={f.label}>
-              <span className="trackspace-prog-fact-label">{f.label}</span>
-              <span className="trackspace-prog-fact-val">{f.value}</span>
-            </span>
-          ))}
-        </span>
-      )}
     </button>
   );
+}
+
+function primaryProgramFact(capability: Capability): ProgramFact {
+  const metrics = capability.metrics;
+  if (metrics?.slip) return { label: "Schedule", value: metrics.slip };
+  if (metrics?.funding) return { label: "Funding", value: metrics.funding };
+  if (metrics?.target) return { label: "Target", value: metrics.target };
+  if (metrics?.provider) return { label: "Provider", value: metrics.provider };
+  return { label: "Program", value: "Tracked" };
+}
+
+function signalFacts(capability: Capability): ProgramFact[] {
+  const metrics = capability.metrics;
+  if (!metrics) return [];
+
+  const facts: ProgramFact[] = [];
+  if (metrics.slip) facts.push({ label: "Schedule", value: metrics.slip });
+  if (metrics.funding) facts.push({ label: "Funding", value: metrics.funding });
+  if (facts.length === 0 && metrics.target) {
+    facts.push({ label: "Target", value: metrics.target });
+  }
+
+  return facts;
 }

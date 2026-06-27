@@ -20,7 +20,6 @@ import type {
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
-import { RiskChip } from "./RiskChip";
 import { StatusChip } from "./StatusChip";
 
 export type DrawerSelection =
@@ -317,9 +316,9 @@ function MetricRow({
 }
 
 function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
-  const { provider, contract, funding, target, slip, risk } = metrics;
+  const { provider, contract, funding, target, slip } = metrics;
   return (
-    <DrawerSection label="Funding, schedule & risk">
+    <DrawerSection label="Funding & schedule">
       <div className="trackspace-metrics">
         {provider && (
           <MetricRow label="Provider">
@@ -332,17 +331,6 @@ function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
         {funding && <MetricRow label="Funding">{funding}</MetricRow>}
         {target && <MetricRow label="Target">{target}</MetricRow>}
         {slip && <MetricRow label="Schedule slip">{slip}</MetricRow>}
-        {risk && (
-          <MetricRow label="Risk">
-            <RiskChip level={risk.likelihood} />
-            <span className="trackspace-metric-muted">likelihood</span>
-            <span className="trackspace-metric-x" aria-hidden="true">
-              ×
-            </span>
-            <RiskChip level={risk.severity} />
-            <span className="trackspace-metric-muted">severity</span>
-          </MetricRow>
-        )}
       </div>
     </DrawerSection>
   );
