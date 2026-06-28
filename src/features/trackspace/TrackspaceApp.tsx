@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
 import { AppShell, type TrackspaceNavItem } from "./components/AppShell";
 import {
   DetailDrawer,
@@ -14,6 +15,7 @@ import { DependencyMap } from "./screens/DependencyMap";
 import { MilestonesScreen } from "./screens/MilestonesScreen";
 import { ProgramScreen } from "./screens/ProgramScreen";
 import { TimelineScreen } from "./screens/TimelineScreen";
+import { api } from "@/lib/convex";
 
 type TrackspaceView =
   | "command"
@@ -30,7 +32,23 @@ const NAV_ITEMS: TrackspaceNavItem[] = [
   { id: "program", icon: "⚠", name: "Program" },
 ];
 
-export function TrackspaceApp({ dataset = CURATED }: { dataset?: Dataset }) {
+export function TrackspaceApp({
+  dataset = CURATED,
+  live = false,
+}: {
+  dataset?: Dataset;
+  live?: boolean;
+}) {
+  if (live) return <LiveTrackspaceApp fallback={dataset} />;
+  return <TrackspaceWorkspace dataset={dataset} />;
+}
+
+function LiveTrackspaceApp({ fallback }: { fallback: Dataset }) {
+  const liveDataset = useQuery(api.trackspace.dataset);
+  return <TrackspaceWorkspace dataset={liveDataset ?? fallback} />;
+}
+
+function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [utcTime, setUtcTime] = useState("00:00:00");

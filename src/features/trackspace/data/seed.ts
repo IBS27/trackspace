@@ -7,8 +7,8 @@
 // assessments, not invented values; `lastVerified` is the curation date.
 //
 // This file is the compile-time baseline. At runtime the same shape can be
-// loaded from SQLite (see src/ingest), which the ingestion pipeline keeps
-// current from live feeds. See selectors.ts for the CURATED Dataset export.
+// loaded from Convex, which the ingestion pipeline keeps current from live
+// feeds. See selectors.ts for the CURATED Dataset export.
 
 import type {
   Capability,

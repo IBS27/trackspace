@@ -1,17 +1,24 @@
-// CLI entry point for the ingestion pipeline.
+// CLI entry point for the Convex ingestion pipeline.
 //
 //   npm run ingest             # load baseline + refresh from live feeds
 //   npm run ingest -- --offline  # load and verify the curated baseline only
 //
-// Schedule the online form (e.g. via cron) to keep the database current.
+// Convex also runs the online form hourly via convex/crons.ts.
 
-import { runIngest } from "@/ingest/pipeline";
+import { loadEnvConfig } from "@next/env";
+
+import { api } from "../convex/_generated/api";
+import { getConvexHttpClient } from "../src/lib/convex-server";
 
 async function main(): Promise<void> {
+  loadEnvConfig(process.cwd());
   const offline = process.argv.includes("--offline");
   console.log(`[trackspace] ingest starting${offline ? " (offline)" : ""}…`);
 
-  const summary = await runIngest(undefined, { offline });
+  const summary = await getConvexHttpClient().action(api.ingest.runManual, {
+    offline,
+    token: process.env.INGEST_TOKEN,
+  });
 
   console.log("[trackspace] ingest complete:");
   console.log(`  capabilities : ${summary.capabilities}`);

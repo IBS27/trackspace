@@ -4,12 +4,8 @@
 // is unset the route is open (fine for local development). GET reports the most
 // recent run so a scheduler can check status without triggering work.
 
-import { desc } from "drizzle-orm";
-
-import { getDb } from "@/db";
-import { ensureSchema } from "@/db/migrate";
-import { ingestionRuns } from "@/db/schema";
-import { runIngest } from "@/ingest/pipeline";
+import { api } from "@/lib/convex";
+import { getConvexHttpClient } from "@/lib/convex-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,8 +28,10 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const offline = url.searchParams.get("offline") === "1";
-    const db = getDb();
-    const summary = await runIngest(db, { offline });
+    const summary = await getConvexHttpClient().action(api.ingest.runManual, {
+      offline,
+      token: process.env.INGEST_TOKEN,
+    });
     return Response.json({ ok: summary.warnings.length === 0, summary });
   } catch (error) {
     return Response.json(
@@ -45,14 +43,7 @@ export async function POST(request: Request): Promise<Response> {
 
 export async function GET(): Promise<Response> {
   try {
-    const db = getDb();
-    ensureSchema(db);
-    const last = db
-      .select()
-      .from(ingestionRuns)
-      .orderBy(desc(ingestionRuns.id))
-      .limit(1)
-      .get();
+    const last = await getConvexHttpClient().query(api.ingest.lastRun);
     return Response.json({ lastRun: last ?? null });
   } catch (error) {
     return Response.json(

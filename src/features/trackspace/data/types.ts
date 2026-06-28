@@ -215,7 +215,7 @@ export type DependencyEdge = {
 /**
  * A complete, self-contained snapshot of everything the screens render.
  * Selectors operate over a Dataset so the UI can be fed either the curated
- * baseline (compile-time) or a live snapshot loaded from SQLite (request-time).
+ * baseline (compile-time) or a live snapshot from Convex.
  */
 export type Dataset = {
   capabilities: Capability[];

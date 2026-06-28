@@ -249,18 +249,13 @@
             </tr>
             <tr>
               <td>Database</td>
-              <td>File-based <code>SQLite</code> (via <code>better-sqlite3</code>)</td>
-              <td>Read-mostly curated MVP dataset needs zero infra. Spatial anchors are plain <code>lat</code>/<code>lng</code> numeric columns &mdash; no PostGIS until a real spatial query exists. Schema stays portable to Postgres later.</td>
-            </tr>
-            <tr>
-              <td>Database access</td>
-              <td><code>Drizzle ORM</code></td>
-              <td>Typed schema, SQL-friendly queries, migrations, and one schema that targets SQLite now and Postgres later with minimal change.</td>
+              <td><code>Convex</code></td>
+              <td>Realtime document store for the curated dataset, ingestion-run history, and discovery queue. Spatial anchors remain plain <code>lat</code>/<code>lng</code> numeric fields until a real spatial query exists.</td>
             </tr>
             <tr>
               <td>Server/client data</td>
-              <td><code>TanStack Query</code></td>
-              <td>Cache, loading, refetch, and error states for timeline/map/detail data.</td>
+              <td><code>convex/react</code></td>
+              <td>Live queries push ingestion updates into the dashboard without polling or cache invalidation code.</td>
             </tr>
             <tr>
               <td>Local UI state</td>
@@ -292,7 +287,7 @@
             <li><code>tailwindcss</code></li>
             <li><code>three</code>, <code>@react-three/fiber</code>, <code>@react-three/drei</code></li>
             <li><code>@xyflow/react</code></li>
-            <li><code>drizzle-orm</code>, <code>drizzle-kit</code>, <code>better-sqlite3</code></li>
+            <li><code>convex</code></li>
             <li><code>@tanstack/react-query</code>, <code>zustand</code>, <code>zod</code></li>
           </ul>
           <p class="muted" style="margin-top: 12px;">
@@ -307,25 +302,19 @@
           <h3>Defer</h3>
           <p class="muted">Useful later, but not needed for the MVP.</p>
           <ul>
-            <li><code>PostgreSQL</code> (Dockerized or managed) once the dataset grows or ingestion lands.</li>
             <li><code>PostGIS</code> only when a feature needs real spatial queries (radius, polygon, intersection).</li>
             <li><code>CesiumJS</code> for high-fidelity geospatial visualization.</li>
             <li>Auth, users, saved dashboards, and alerts.</li>
-            <li>Automated ingestion workers beyond seed/manual scripts.</li>
-            <li>Search infrastructure beyond the database's built-in full-text search (SQLite FTS5, later Postgres FTS).</li>
-            <li>Realtime updates or websockets.</li>
+            <li>Search infrastructure beyond Convex indexes when full-text search becomes a real product need.</li>
           </ul>
         </div>
 
         <div class="card full">
           <h3>Database Stance</h3>
           <p>
-            Start on file-based <code>SQLite</code>. The MVP is a small, curated, read-mostly dataset, so there is no payoff to running
-            a Postgres container during the build phase &mdash; SQLite gets the app running with zero infra and no "is Docker up?" friction.
-            Spatial anchors are stored as plain <code>lat</code>/<code>lng</code> numeric columns and rendered directly in the 3D scene;
-            none of the four screens needs real spatial SQL, so <code>PostGIS</code> is deferred until a feature actually requires it.
-            Keep the Drizzle schema portable so it can move to any managed Postgres provider when the dataset grows, ingestion lands, or the app goes public.
-            Supabase is not required: no user-specific features, no auth, no realtime.
+            Use <code>Convex</code> as the backend of record. The dataset is small and source-backed, but the app benefits from live
+            updates after ingestion runs and from scheduled backend jobs without a separate cron service. Spatial anchors stay as plain
+            <code>lat</code>/<code>lng</code> numeric fields until a feature actually needs real spatial queries.
           </p>
         </div>
       </div>
@@ -390,7 +379,7 @@
             <tr>
               <td><span class="tag ok">Now</span></td>
               <td>Static MVP data</td>
-              <td>SQLite file, Drizzle schema, seed data, four app screens, event drawer.</td>
+              <td>Convex schema, seed data, four app screens, event drawer.</td>
             </tr>
             <tr>
               <td><span class="tag ok">Now</span></td>
@@ -398,19 +387,19 @@
               <td>3D Earth/Moon scene, dependency map, timeline filtering, selected-object panel.</td>
             </tr>
             <tr>
-              <td><span class="tag later">Later</span></td>
+              <td><span class="tag ok">Now</span></td>
               <td>Ingestion scripts</td>
-              <td>NASA feeds, FAA updates, Launch Library 2, contractor news, manual review queue.</td>
+              <td>NASA feeds, Launch Library 2, scheduled Convex refresh, manual review queue.</td>
             </tr>
             <tr>
               <td><span class="tag later">Later</span></td>
               <td>Deployment</td>
-              <td>Migrate the portable Drizzle schema from SQLite to managed Postgres when the app needs to be public.</td>
+              <td>Link the Convex deployment to the production app and set matching ingest secrets.</td>
             </tr>
             <tr>
               <td><span class="tag no">Avoid</span></td>
               <td>Premature platform features</td>
-              <td>No auth, no user accounts, no realtime, no alert system until the core tracker works.</td>
+              <td>No auth, no user accounts, no alert system until the core tracker works.</td>
             </tr>
           </tbody>
         </table>

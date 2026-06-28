@@ -3,7 +3,7 @@
 //
 // Selectors take the data they read as an argument and default to the curated
 // baseline (CURATED). The screens pass whichever Dataset is active — the
-// compile-time baseline, or a live snapshot loaded from SQLite at request time
+// compile-time baseline, or a live snapshot from Convex
 // — so the same pure functions serve tests, standalone renders, and the app.
 
 import { CAPABILITIES, EVENTS, LOCATIONS, MILESTONES, STATUS_LIST } from "./seed";
