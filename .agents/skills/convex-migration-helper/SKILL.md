@@ -168,7 +168,9 @@ covering:
 - [ ] Update code to write the new format for new documents
 - [ ] Deploy widened schema and updated code
 - [ ] Define migration using the `@convex-dev/migrations` component
-- [ ] Test with `npx convex run migrations:myMigration '{"dryRun": true}'`
+- [ ] Test with `npx convex run migrations:myMigration '{"dryRun":true}'`
+      in POSIX shells or PowerShell. In `cmd.exe`, use
+      `npx convex run migrations:myMigration "{\"dryRun\":true}"`.
 - [ ] Run migration directly with `npx convex run migrations:myMigration` and
       monitor status
 - [ ] Verify all documents are migrated

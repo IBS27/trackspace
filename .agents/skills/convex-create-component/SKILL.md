@@ -153,8 +153,8 @@ export default app;
 ```ts
 // convex/notifications.ts  (app-side wrapper)
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { components } from "./_generated/api";
+import { mutation, query } from "./_generated/server.js";
+import { components } from "./_generated/api.js";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const sendNotification = mutation({

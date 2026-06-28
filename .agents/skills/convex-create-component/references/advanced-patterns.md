@@ -12,6 +12,7 @@ or in a workflow.
 ```ts
 // App side: create a handle and pass it to the component
 import { createFunctionHandle } from "convex/server";
+import { internal } from "./_generated/api.js";
 
 export const startJob = mutation({
   handler: async (ctx) => {
@@ -100,7 +101,7 @@ For components with many functions or configuration options, a class-based
 client provides a cleaner API. This pattern is common in published components.
 
 ```ts
-// src/client/index.ts
+// src/client/index.ts in a published component package
 import type { GenericMutationCtx, GenericDataModel } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
 
@@ -122,9 +123,9 @@ export class Notifications {
 ```
 
 ```ts
-// App usage
+// App usage for a published package
 import { Notifications } from "@convex-dev/notifications";
-import { components } from "./_generated/api";
+import { components } from "./_generated/api.js";
 
 const notifications = new Notifications(components.notifications, {
   defaultChannel: "alerts",
@@ -138,3 +139,7 @@ export const send = mutation({
   },
 });
 ```
+
+For a local component, import `Notifications` from your local client wrapper
+instead of `@convex-dev/notifications`. Keep the `ComponentApi` import in that
+wrapper pointed at the component package's own generated API file.

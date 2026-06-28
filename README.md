@@ -27,7 +27,7 @@ Useful scripts:
 npm run lint
 npm run test -- --run
 npm run build
-npm run ingest            # load + refresh the data store (see below)
+INGEST_TOKEN=<token> npm run ingest  # load + refresh the data store (see below)
 ```
 
 ## Data
@@ -54,12 +54,12 @@ Per the accuracy policy, feed data refreshes provenance and creates review leads
 
 ### Keeping it current
 
-Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler (set `INGEST_TOKEN` in both the app environment and Convex with `npx convex env set INGEST_TOKEN <token>` to require a bearer token):
+Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler. Manual refreshes require the same `INGEST_TOKEN` in both the app environment and Convex (`npx convex env set INGEST_TOKEN <token>`):
 
 ```bash
-# When INGEST_TOKEN is set, POST must carry a matching bearer token:
 curl -X POST -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest
-curl http://localhost:3000/api/ingest                # last-run status (open)
+curl -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest
+INGEST_TOKEN=$INGEST_TOKEN npm run ingest -- --offline
 ```
 
 See `docs/overview.html` and `docs/implementation.html` for the product and technical direction.

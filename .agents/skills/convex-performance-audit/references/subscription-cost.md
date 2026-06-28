@@ -193,8 +193,7 @@ const heartbeats = defineTable({
 ```
 
 Queries that only need `name` and `email` no longer re-run on every heartbeat.
-Queries that actually need online status fetch the heartbeat document
-explicitly.
+For online status, fetch the heartbeat document explicitly.
 
 For an even further optimization, if you only need a coarse online/offline
 boolean rather than the exact `lastSeen` timestamp, add a separate presence

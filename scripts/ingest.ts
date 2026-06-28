@@ -3,6 +3,7 @@
 //   npm run ingest             # load baseline + refresh from live feeds
 //   npm run ingest -- --offline  # load and verify the curated baseline only
 //
+// Manual runs require INGEST_TOKEN in the local app env and Convex deployment.
 // Convex also runs the online form hourly via convex/crons.ts.
 
 import { loadEnvConfig } from "@next/env";
@@ -13,11 +14,18 @@ import { getConvexHttpClient } from "../src/lib/convex-server";
 async function main(): Promise<void> {
   loadEnvConfig(process.cwd());
   const offline = process.argv.includes("--offline");
+  const token = process.env.INGEST_TOKEN;
+  if (!token) {
+    throw new Error(
+      "INGEST_TOKEN is required for manual ingestion. Set the same token locally and in Convex.",
+    );
+  }
+
   console.log(`[trackspace] ingest starting${offline ? " (offline)" : ""}…`);
 
   const summary = await getConvexHttpClient().action(api.ingest.runManual, {
     offline,
-    token: process.env.INGEST_TOKEN,
+    token,
   });
 
   console.log("[trackspace] ingest complete:");

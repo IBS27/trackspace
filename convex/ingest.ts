@@ -197,7 +197,9 @@ function isLunarRelevant(item: FeedItem): boolean {
   );
 }
 
-async function fetchNasaItems(signal: AbortSignal): Promise<FeedItem[]> {
+async function fetchNasaItems(
+  signal: AbortSignal,
+): Promise<{ items: FeedItem[]; warnings: string[] }> {
   const all: FeedItem[] = [];
   const errors: string[] = [];
   for (const feed of NASA_FEEDS) {
@@ -215,7 +217,10 @@ async function fetchNasaItems(signal: AbortSignal): Promise<FeedItem[]> {
   if (all.length === 0 && errors.length > 0) {
     throw new Error(`all NASA feeds failed: ${errors.join("; ")}`);
   }
-  return all;
+  return {
+    items: all,
+    warnings: errors.map((message) => `NASA feed partial failure: ${message}`),
+  };
 }
 
 async function reconcileLaunches(
@@ -290,7 +295,8 @@ async function discoverFromFeeds(
 ): Promise<{ leads: DiscoveryLead[]; warnings: string[] }> {
   const { signal: timed, done } = withTimeout(signal);
   try {
-    const leads = (await fetchNasaItems(timed))
+    const result = await fetchNasaItems(timed);
+    const leads = result.items
       .filter(isLunarRelevant)
       .map((item) => ({
         url: item.link,
@@ -299,7 +305,7 @@ async function discoverFromFeeds(
         foundAt: runStamp,
         ...(item.publishedAt ? { publishedAt: item.publishedAt } : {}),
       }));
-    return { leads, warnings: [] };
+    return { leads, warnings: result.warnings };
   } catch (error) {
     return {
       leads: [],
@@ -321,7 +327,10 @@ function countSources(dataset: StoredDataset): number {
 
 function authorizeManual(token?: string): void {
   const required = env.INGEST_TOKEN;
-  if (required && token !== required) {
+  if (!required) {
+    throw new Error("INGEST_TOKEN is not configured");
+  }
+  if (token !== required) {
     throw new Error("unauthorized");
   }
 }

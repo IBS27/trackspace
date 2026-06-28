@@ -87,6 +87,10 @@ Then call it with the full function name:
 npx convex run migrations:run '{"fn": "migrations:addDefaultRole"}'
 ```
 
+The JSON examples use POSIX shell or PowerShell quoting. In `cmd.exe`, wrap the
+argument in double quotes and escape the inner quotes, for example:
+`"{\"fn\":\"migrations:addDefaultRole\"}"`.
+
 Programmatically from another Convex function:
 
 ```typescript
@@ -133,7 +137,10 @@ await migrations.runSerially(ctx, [
 Test a migration before committing changes:
 
 ```bash
-npx convex run migrations:addDefaultRole '{"dryRun": true}'
+npx convex run migrations:addDefaultRole '{"dryRun":true}'
+
+# cmd.exe
+npx convex run migrations:addDefaultRole "{\"dryRun\":true}"
 ```
 
 This runs one batch and then rolls back, so you can see what it would do without
@@ -144,7 +151,7 @@ changing any data.
 Pass `reset: true` to restart a migration from the beginning:
 
 ```bash
-npx convex run migrations:addDefaultRole '{"reset": true}'
+npx convex run migrations:addDefaultRole '{"reset":true}'
 ```
 
 If you specify `next` or run a defined series, `reset: true` resets the cursor

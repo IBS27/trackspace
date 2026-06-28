@@ -39,13 +39,13 @@ export function TrackspaceApp({
   dataset?: Dataset;
   live?: boolean;
 }) {
-  if (live) return <LiveTrackspaceApp fallback={dataset} />;
+  if (live) return <LiveTrackspaceApp initialDataset={dataset} />;
   return <TrackspaceWorkspace dataset={dataset} />;
 }
 
-function LiveTrackspaceApp({ fallback }: { fallback: Dataset }) {
+function LiveTrackspaceApp({ initialDataset }: { initialDataset: Dataset }) {
   const liveDataset = useQuery(api.trackspace.dataset);
-  return <TrackspaceWorkspace dataset={liveDataset ?? fallback} />;
+  return <TrackspaceWorkspace dataset={liveDataset ?? initialDataset} />;
 }
 
 function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
