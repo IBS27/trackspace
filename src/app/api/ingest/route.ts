@@ -6,7 +6,7 @@
 
 import { desc } from "drizzle-orm";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { ensureSchema } from "@/db/migrate";
 import { ingestionRuns } from "@/db/schema";
 import { runIngest } from "@/ingest/pipeline";
@@ -32,6 +32,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const offline = url.searchParams.get("offline") === "1";
+    const db = getDb();
     const summary = await runIngest(db, { offline });
     return Response.json({ ok: summary.warnings.length === 0, summary });
   } catch (error) {
@@ -44,6 +45,7 @@ export async function POST(request: Request): Promise<Response> {
 
 export async function GET(): Promise<Response> {
   try {
+    const db = getDb();
     ensureSchema(db);
     const last = db
       .select()

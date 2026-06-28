@@ -15,7 +15,7 @@
 
 import { eq, sql } from "drizzle-orm";
 
-import { db, type TrackspaceDb } from "@/db";
+import { getDb, type TrackspaceDb } from "@/db";
 import { ensureSchema } from "@/db/migrate";
 import {
   discoveries,
@@ -174,7 +174,7 @@ export type RunIngestOptions = {
 };
 
 export async function runIngest(
-  database: TrackspaceDb = db,
+  database: TrackspaceDb = getDb(),
   options: RunIngestOptions = {},
 ): Promise<IngestRunSummary> {
   const startedAt = new Date().toISOString();

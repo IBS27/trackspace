@@ -5,6 +5,8 @@ import * as schema from "./schema";
 
 export type TrackspaceDb = BetterSQLite3Database<typeof schema>;
 
+let sharedDb: TrackspaceDb | undefined;
+
 /** Open a Drizzle client over a SQLite file (or ":memory:" for tests). */
 export function createDb(
   fileName: string = process.env.DB_FILE_NAME ?? "local.db",
@@ -14,5 +16,8 @@ export function createDb(
   return drizzle({ client: sqlite, schema });
 }
 
-/** Shared client over the default database file. */
-export const db = createDb();
+/** Shared client over the default database file, opened only when requested. */
+export function getDb(): TrackspaceDb {
+  sharedDb ??= createDb();
+  return sharedDb;
+}

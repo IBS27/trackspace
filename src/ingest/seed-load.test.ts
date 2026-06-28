@@ -25,6 +25,17 @@ afterEach(() => {
 });
 
 describe("seed + load round-trip", () => {
+  it("falls back when the default database cannot be opened", () => {
+    const original = process.env.DB_FILE_NAME;
+    process.env.DB_FILE_NAME = "/definitely/missing/trackspace/local.db";
+    try {
+      expect(loadDataset()).toBe(CURATED);
+    } finally {
+      if (original === undefined) delete process.env.DB_FILE_NAME;
+      else process.env.DB_FILE_NAME = original;
+    }
+  });
+
   it("reconstructs the curated dataset exactly through SQLite", () => {
     const db = track(freshDb());
     const counts = seedCurated(db);

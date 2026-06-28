@@ -6,7 +6,7 @@
 
 import { asc } from "drizzle-orm";
 
-import { db, type TrackspaceDb } from "@/db";
+import { getDb, type TrackspaceDb } from "@/db";
 import { capabilities, events, locations, milestones, sources } from "@/db/schema";
 import { CURATED } from "@/features/trackspace/data/selectors";
 import type {
@@ -51,8 +51,9 @@ function groupSources(
   return grouped;
 }
 
-export function loadDataset(database: TrackspaceDb = db): Dataset {
+export function loadDataset(database?: TrackspaceDb): Dataset {
   try {
+    database ??= getDb();
     const capRows = database.select().from(capabilities).all();
     if (capRows.length === 0) return CURATED;
 
