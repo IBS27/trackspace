@@ -10,6 +10,7 @@ import { type TrackspaceDb } from "@/db";
 import {
   capabilities,
   events,
+  locations,
   milestones,
   sources,
   type SourceEntity,
@@ -49,6 +50,7 @@ export type SeedCounts = {
   capabilities: number;
   milestones: number;
   events: number;
+  locations: number;
   sources: number;
 };
 
@@ -124,15 +126,41 @@ export function seedCurated(
     sourceCount += replaceSources(db, "event", e.id, e.sources);
   }
 
+  for (const location of dataset.locations) {
+    const row = {
+      id: location.id,
+      name: location.name,
+      body: location.body,
+      kind: location.kind,
+      lat: location.lat ?? null,
+      lon: location.lon ?? null,
+      radiusKm: location.radiusKm ?? null,
+      status: location.status,
+      conf: location.conf,
+      summary: location.summary,
+      relatedCapabilities: location.relatedCapabilities,
+      relatedEvents: location.relatedEvents,
+      relatedMilestones: location.relatedMilestones,
+      lastVerified: location.lastVerified,
+    };
+    db.insert(locations)
+      .values(row)
+      .onConflictDoUpdate({ target: locations.id, set: row })
+      .run();
+    sourceCount += replaceSources(db, "location", location.id, location.sources);
+  }
+
   // Prune entities (and their orphaned sources) that the dataset no longer
   // contains, so a reseed mirrors the dataset exactly rather than accumulating
   // stale rows. (The ids are always non-empty, so notInArray is well-defined.)
   const capIds = dataset.capabilities.map((c) => c.id);
   const msIds = dataset.milestones.map((m) => m.id);
   const evIds = dataset.events.map((e) => e.id);
+  const locIds = dataset.locations.map((location) => location.id);
   db.delete(capabilities).where(notInArray(capabilities.id, capIds)).run();
   db.delete(milestones).where(notInArray(milestones.id, msIds)).run();
   db.delete(events).where(notInArray(events.id, evIds)).run();
+  db.delete(locations).where(notInArray(locations.id, locIds)).run();
   db.delete(sources)
     .where(and(eq(sources.entityType, "capability"), notInArray(sources.entityId, capIds)))
     .run();
@@ -142,11 +170,15 @@ export function seedCurated(
   db.delete(sources)
     .where(and(eq(sources.entityType, "event"), notInArray(sources.entityId, evIds)))
     .run();
+  db.delete(sources)
+    .where(and(eq(sources.entityType, "location"), notInArray(sources.entityId, locIds)))
+    .run();
 
   return {
     capabilities: dataset.capabilities.length,
     milestones: dataset.milestones.length,
     events: dataset.events.length,
+    locations: dataset.locations.length,
     sources: sourceCount,
   };
 }

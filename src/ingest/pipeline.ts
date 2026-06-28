@@ -206,6 +206,7 @@ export async function runIngest(
     capabilities: seeded.capabilities,
     milestones: seeded.milestones,
     events: seeded.events,
+    locations: seeded.locations,
     sources: sourceCount?.count ?? seeded.sources,
     reconciled,
     discoveries: discovered,

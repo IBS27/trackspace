@@ -428,6 +428,56 @@
   display: block;
 }
 
+.trackspace-scene-tooltip {
+  position: absolute;
+  z-index: 4;
+  max-width: min(260px, calc(100% - 32px));
+  transform: translate(14px, -50%);
+  pointer-events: none;
+  border: 1px solid rgba(91, 208, 255, 0.38);
+  border-radius: 6px;
+  background: rgba(5, 8, 14, 0.9);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+  padding: 8px 10px;
+  color: var(--ts-ink);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.trackspace-scene-tooltip span,
+.trackspace-scene-tooltip i {
+  display: block;
+  color: var(--ts-dim);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.trackspace-scene-tooltip b {
+  display: block;
+  margin: 3px 0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.trackspace-scene-tooltip-ready {
+  border-color: rgba(141, 240, 173, 0.48);
+}
+
+.trackspace-scene-tooltip-watch {
+  border-color: rgba(255, 209, 102, 0.48);
+}
+
+.trackspace-scene-tooltip-blocker {
+  border-color: rgba(255, 84, 104, 0.52);
+}
+
+.trackspace-scene-tooltip-unknown {
+  border-color: rgba(143, 162, 189, 0.48);
+}
+
 .trackspace-hud {
   position: absolute;
   inset: 0;

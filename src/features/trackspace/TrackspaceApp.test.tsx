@@ -7,7 +7,15 @@ import { TrackspaceApp } from "./TrackspaceApp";
 
 // The Command Center's three.js scene needs WebGL, which jsdom lacks.
 vi.mock("./scene/EarthMoonScene", () => ({
-  EarthMoonScene: () => null,
+  EarthMoonScene: ({
+    onLocationOpen,
+  }: {
+    onLocationOpen: (id: string) => void;
+  }) => (
+    <button type="button" onClick={() => onLocationOpen("ksc-lc39b")}>
+      Mock scene marker
+    </button>
+  ),
 }));
 
 afterEach(cleanup);
@@ -68,5 +76,14 @@ describe("TrackspaceApp", () => {
     render(<TrackspaceApp />);
     fireEvent.keyDown(window, { key: "3", metaKey: true });
     expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();
+  });
+
+  it("opens a location drawer from a scene marker", () => {
+    render(<TrackspaceApp />);
+    fireEvent.click(screen.getByRole("button", { name: "Mock scene marker" }));
+    expect(
+      screen.getByRole("dialog", { name: "Kennedy Space Center · LC-39B" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Spatial anchor")).toBeTruthy();
   });
 });

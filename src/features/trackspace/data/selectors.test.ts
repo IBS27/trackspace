@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CAPABILITIES, EVENTS, MILESTONES } from "./seed";
+import { CAPABILITIES, EVENTS, LOCATIONS, MILESTONES } from "./seed";
 import type { Dataset, Milestone, TrackspaceEvent } from "./types";
 import {
   compareEventsChronologically,
@@ -10,6 +10,9 @@ import {
   getDownstream,
   getEventsForCapability,
   getEventsForMilestone,
+  getLocationsForCapability,
+  getLocationsForEvent,
+  getLocationsForMilestone,
   getMilestoneBlockers,
   getMilestoneReadyCount,
   getNextMilestone,
@@ -24,6 +27,7 @@ import {
   getRiskRegister,
   getRiskScore,
   getSortedEvents,
+  getSceneLocations,
   getStatusCounts,
   getSummary,
   getUpcomingMilestones,
@@ -231,7 +235,7 @@ describe("milestone roll-ups", () => {
 
 describe("every record carries at least one source", () => {
   it("never shows a claim without provenance", () => {
-    for (const record of [...CAPABILITIES, ...MILESTONES, ...EVENTS]) {
+    for (const record of [...CAPABILITIES, ...MILESTONES, ...EVENTS, ...LOCATIONS]) {
       expect(record.sources.length).toBeGreaterThan(0);
       expect(record.sources.every((s) => /^https?:\/\//.test(s.url))).toBe(true);
     }
@@ -239,9 +243,29 @@ describe("every record carries at least one source", () => {
 
   it("never rests solely on tier-4 (discovery-only) sources", () => {
     // Accuracy policy: tier-4 sources (e.g. Wikipedia) may not stand alone.
-    for (const record of [...CAPABILITIES, ...MILESTONES, ...EVENTS]) {
+    for (const record of [...CAPABILITIES, ...MILESTONES, ...EVENTS, ...LOCATIONS]) {
       expect(record.sources.some((s) => s.tier <= 3)).toBe(true);
     }
+  });
+});
+
+describe("spatial selectors", () => {
+  it("returns only Earth/Moon locations with coordinates for the scene", () => {
+    const sceneLocations = getSceneLocations();
+    expect(sceneLocations.length).toBe(LOCATIONS.length);
+    expect(sceneLocations.every((location) => location.body !== "cislunar")).toBe(true);
+    expect(sceneLocations.every((location) => typeof location.lat === "number")).toBe(true);
+    expect(sceneLocations.every((location) => typeof location.lon === "number")).toBe(true);
+  });
+
+  it("links curated sites to the relevant records", () => {
+    expect(getLocationsForCapability("hls").map((l) => l.id)).toContain("starbase");
+    expect(getLocationsForEvent("starship-v3-debut-fails").map((l) => l.id)).toEqual([
+      "starbase",
+    ]);
+    expect(getLocationsForMilestone("base").map((l) => l.id)).toContain(
+      "lunar-south-pole",
+    );
   });
 });
 
@@ -252,6 +276,15 @@ describe("selectors honor a passed-in dataset, not the curated globals", () => {
     ],
     milestones: [{ ...MILESTONES[0], id: "a1", status: "watch", caps: ["sls"] }],
     events: [{ ...EVENTS[0], id: "synthetic-event", caps: ["sls"], future: false }],
+    locations: [
+      {
+        ...LOCATIONS[0],
+        id: "synthetic-location",
+        relatedCapabilities: ["sls"],
+        relatedEvents: ["synthetic-event"],
+        relatedMilestones: ["a1"],
+      },
+    ],
   };
 
   it("getStatusCounts reads the passed capabilities", () => {
@@ -274,6 +307,21 @@ describe("selectors honor a passed-in dataset, not the curated globals", () => {
   it("getEventsForMilestone reads the passed dataset", () => {
     expect(getEventsForMilestone("a1", synthetic).map((e) => e.id)).toEqual([
       "synthetic-event",
+    ]);
+  });
+
+  it("location selectors read the passed dataset", () => {
+    expect(getSceneLocations(synthetic).map((location) => location.id)).toEqual([
+      "synthetic-location",
+    ]);
+    expect(getLocationsForCapability("sls", synthetic).map((l) => l.id)).toEqual([
+      "synthetic-location",
+    ]);
+    expect(getLocationsForEvent("synthetic-event", synthetic).map((l) => l.id)).toEqual([
+      "synthetic-location",
+    ]);
+    expect(getLocationsForMilestone("a1", synthetic).map((l) => l.id)).toEqual([
+      "synthetic-location",
     ]);
   });
 });

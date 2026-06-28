@@ -24,6 +24,16 @@ export type CapabilityGroup =
 
 export type Impact = "high" | "med" | "low";
 
+export type SpatialBody = "earth" | "moon" | "cislunar";
+
+export type LocationKind =
+  | "launch-site"
+  | "test-site"
+  | "contractor-site"
+  | "landing-region"
+  | "surface-site"
+  | "orbit";
+
 export type CapabilityId =
   | "sls"
   | "orion"
@@ -175,6 +185,26 @@ export type TrackspaceEvent = {
   sources: Source[];
 };
 
+export type Location = {
+  id: string;
+  name: string;
+  body: SpatialBody;
+  kind: LocationKind;
+  /** Planetographic / selenographic degrees; absent for orbit-only anchors. */
+  lat?: number;
+  lon?: number;
+  /** Optional region radius for broad landing zones or exploration areas. */
+  radiusKm?: number;
+  status: Status;
+  conf: Confidence;
+  summary: string;
+  relatedCapabilities: CapabilityId[];
+  relatedEvents: string[];
+  relatedMilestones: MilestoneId[];
+  lastVerified: string;
+  sources: Source[];
+};
+
 export type DependencyEdge = {
   from: CapabilityId;
   to: CapabilityId;
@@ -191,4 +221,5 @@ export type Dataset = {
   capabilities: Capability[];
   milestones: Milestone[];
   events: TrackspaceEvent[];
+  locations: Location[];
 };

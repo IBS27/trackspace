@@ -32,6 +32,7 @@ describe("seed + load round-trip", () => {
     expect(counts.capabilities).toBe(CURATED.capabilities.length);
     expect(counts.milestones).toBe(CURATED.milestones.length);
     expect(counts.events).toBe(CURATED.events.length);
+    expect(counts.locations).toBe(CURATED.locations.length);
 
     // Every field, every source, in the canonical order.
     expect(loadDataset(db)).toEqual(CURATED);

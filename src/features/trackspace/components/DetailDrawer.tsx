@@ -8,12 +8,17 @@ import {
   getDownstream,
   getEventsForCapability,
   getEventsForMilestone,
+  getLocationsForCapability,
+  getLocationsForEvent,
+  getLocationsForMilestone,
+  locationById,
   milestoneById,
 } from "../data/selectors";
 import type {
   Capability,
   CapabilityId,
   CapabilityMetrics,
+  Location,
   Milestone,
   MilestoneId,
   Source,
@@ -25,7 +30,8 @@ import { StatusChip } from "./StatusChip";
 export type DrawerSelection =
   | { type: "capability"; id: CapabilityId }
   | { type: "event"; id: string }
-  | { type: "milestone"; id: MilestoneId };
+  | { type: "milestone"; id: MilestoneId }
+  | { type: "location"; id: string };
 
 type DetailDrawerProps = {
   selection: DrawerSelection;
@@ -83,7 +89,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
-  } else {
+  } else if (selection.type === "milestone") {
     const milestone = milestoneById(dataset.milestones)[selection.id];
     if (!milestone) {
       console.error(`Trackspace: milestone not found: ${selection.id}`);
@@ -105,6 +111,21 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       </>
     );
     body = <MilestoneBody milestone={milestone} onOpen={onOpen} />;
+  } else {
+    const location = locationById(dataset.locations)[selection.id];
+    if (!location) {
+      console.error(`Trackspace: location not found: ${selection.id}`);
+      return null;
+    }
+    kicker = `${location.body.toUpperCase()} · ${formatLocationKind(location.kind)}`;
+    title = location.name;
+    meta = (
+      <>
+        <StatusChip status={location.status} />
+        <ConfidenceChip confidence={location.conf} />
+      </>
+    );
+    body = <LocationBody location={location} onOpen={onOpen} />;
   }
 
   return (
@@ -245,6 +266,50 @@ function EventRow({
   );
 }
 
+function LocationRow({
+  location,
+  onOpen,
+}: {
+  location: Location;
+  onOpen: (selection: DrawerSelection) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="trackspace-crow"
+      onClick={() => onOpen({ type: "location", id: location.id })}
+    >
+      <span className="trackspace-crow-date">{location.body.toUpperCase()}</span>
+      <span className="trackspace-crow-main">
+        <span className="trackspace-crow-title">{location.name}</span>
+        <span className="trackspace-crow-meta">
+          <StatusChip status={location.status} />
+          <ConfidenceChip confidence={location.conf} />
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function LocationRows({
+  locations,
+  onOpen,
+}: {
+  locations: Location[];
+  onOpen: (selection: DrawerSelection) => void;
+}) {
+  if (locations.length === 0) return null;
+  return (
+    <DrawerSection label="Related locations">
+      <div className="trackspace-rows">
+        {locations.map((location) => (
+          <LocationRow key={location.id} location={location} onOpen={onOpen} />
+        ))}
+      </div>
+    </DrawerSection>
+  );
+}
+
 function EventBody({
   event,
   onOpen,
@@ -252,6 +317,9 @@ function EventBody({
   event: TrackspaceEvent;
   onOpen: (selection: DrawerSelection) => void;
 }) {
+  const dataset = useDataset();
+  const locations = getLocationsForEvent(event.id, dataset);
+
   return (
     <>
       <DrawerSection label="What happened">
@@ -290,6 +358,7 @@ function EventBody({
           ))}
         </div>
       </DrawerSection>
+      <LocationRows locations={locations} onOpen={onOpen} />
       <DrawerSection label="Possible downstream impact">
         <div className="trackspace-downbox">{event.downstream}</div>
       </DrawerSection>
@@ -346,6 +415,7 @@ function CapabilityBody({
   const dataset = useDataset();
   const downstream = getDownstream(capability.id, dataset.capabilities);
   const events = getEventsForCapability(capability.id, dataset.events);
+  const locations = getLocationsForCapability(capability.id, dataset);
   const milestone = milestoneById(dataset.milestones)[capability.milestone];
 
   return (
@@ -418,8 +488,113 @@ function CapabilityBody({
           </div>
         </DrawerSection>
       )}
+      <LocationRows locations={locations} onOpen={onOpen} />
       <DrawerSection label="Sources & provenance">
         <SourceList sources={capability.sources} />
+      </DrawerSection>
+    </>
+  );
+}
+
+function formatLocationKind(kind: Location["kind"]): string {
+  return kind.replaceAll("-", " ");
+}
+
+function formatCoordinate(value: number, positive: string, negative: string): string {
+  const suffix = value >= 0 ? positive : negative;
+  return `${Math.abs(value).toFixed(2)}°${suffix}`;
+}
+
+function LocationBody({
+  location,
+  onOpen,
+}: {
+  location: Location;
+  onOpen: (selection: DrawerSelection) => void;
+}) {
+  const dataset = useDataset();
+  const byCapability = capabilityById(dataset.capabilities);
+  const byMilestone = milestoneById(dataset.milestones);
+  const events = location.relatedEvents
+    .map((id) => eventById(dataset.events)[id])
+    .filter((event): event is TrackspaceEvent => Boolean(event));
+
+  const coordinates =
+    typeof location.lat === "number" && typeof location.lon === "number"
+      ? `${formatCoordinate(location.lat, "N", "S")} · ${formatCoordinate(
+          location.lon,
+          "E",
+          "W",
+        )}`
+      : "Orbit / region context";
+
+  return (
+    <>
+      <DrawerSection label="Spatial anchor">
+        <p>{location.summary}</p>
+      </DrawerSection>
+      <DrawerSection label="Coordinates">
+        <div className="trackspace-metrics">
+          <MetricRow label="Body">{location.body}</MetricRow>
+          <MetricRow label="Type">{formatLocationKind(location.kind)}</MetricRow>
+          <MetricRow label="Position">{coordinates}</MetricRow>
+          {location.radiusKm && (
+            <MetricRow label="Region radius">
+              {location.radiusKm.toLocaleString()} km
+            </MetricRow>
+          )}
+        </div>
+      </DrawerSection>
+      {location.relatedCapabilities.length > 0 && (
+        <DrawerSection label="Related capabilities">
+          <div className="trackspace-capset">
+            {location.relatedCapabilities.map((id) =>
+              byCapability[id] ? (
+                <CapabilityTag key={id} id={id} onOpen={onOpen} />
+              ) : null,
+            )}
+          </div>
+        </DrawerSection>
+      )}
+      {events.length > 0 && (
+        <DrawerSection label="Related events">
+          <div className="trackspace-rows">
+            {events.map((event) => (
+              <EventRow key={event.id} event={event} onOpen={onOpen} />
+            ))}
+          </div>
+        </DrawerSection>
+      )}
+      {location.relatedMilestones.length > 0 && (
+        <DrawerSection label="Related milestones">
+          <div className="trackspace-rows">
+            {location.relatedMilestones.map((id) => {
+              const milestone = byMilestone[id];
+              if (!milestone) return null;
+              return (
+                <button
+                  type="button"
+                  className="trackspace-crow"
+                  key={id}
+                  onClick={() => onOpen({ type: "milestone", id })}
+                >
+                  <span className="trackspace-crow-date">{milestone.date}</span>
+                  <span className="trackspace-crow-main">
+                    <span className="trackspace-crow-title">
+                      {milestone.code} · {milestone.name}
+                    </span>
+                    <span className="trackspace-crow-meta">
+                      <StatusChip status={milestone.status} />
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </DrawerSection>
+      )}
+      <DrawerSection label="Sources & provenance">
+        <SourceList sources={location.sources} />
       </DrawerSection>
     </>
   );
@@ -434,6 +609,7 @@ function MilestoneBody({
 }) {
   const dataset = useDataset();
   const events = getEventsForMilestone(milestone.id, dataset);
+  const locations = getLocationsForMilestone(milestone.id, dataset);
 
   return (
     <>
@@ -457,6 +633,7 @@ function MilestoneBody({
           ))}
         </div>
       </DrawerSection>
+      <LocationRows locations={locations} onOpen={onOpen} />
       <DrawerSection label="Sources & provenance">
         <SourceList sources={milestone.sources} />
       </DrawerSection>

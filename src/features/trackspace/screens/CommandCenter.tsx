@@ -1,11 +1,15 @@
-import type { CSSProperties } from "react";
+import { useCallback, useMemo, type CSSProperties } from "react";
 
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
-import { getSummary, getUpcomingMilestones } from "../data/selectors";
+import {
+  getSceneLocations,
+  getSummary,
+  getUpcomingMilestones,
+} from "../data/selectors";
 import { EarthMoonScene } from "../scene/EarthMoonScene";
 
 type CommandCenterProps = {
@@ -16,6 +20,11 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
   const dataset = useDataset();
   const summary = getSummary(dataset);
   const upcomingMilestones = getUpcomingMilestones(3, dataset.milestones);
+  const sceneLocations = useMemo(() => getSceneLocations(dataset), [dataset]);
+  const openLocation = useCallback(
+    (id: string) => onOpen({ type: "location", id }),
+    [onOpen],
+  );
   // Milestones are in chronological order, so the last achieved one is the most
   // recent program milestone reached — derived, not a hardcoded delta.
   const lastAchieved = dataset.milestones.filter((m) => m.status === "ready").at(-1);
@@ -23,7 +32,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
   return (
     <div className="trackspace-cc">
       <div className="trackspace-cc-stage">
-        <EarthMoonScene />
+        <EarthMoonScene locations={sceneLocations} onLocationOpen={openLocation} />
         <span className="trackspace-corner trackspace-corner-tl" />
         <span className="trackspace-corner trackspace-corner-tr" />
         <span className="trackspace-corner trackspace-corner-bl" />
@@ -33,6 +42,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
             <div className="trackspace-hud-lead">EARTH · MOON SYSTEM</div>
             <div>VIEW · CISLUNAR / LIVE ORBIT</div>
             <div>DRAG TO ORBIT · SCROLL TO ZOOM</div>
+            <div>CLICK MARKERS FOR SOURCE-BACKED SITES</div>
             <div>DBL-CLICK EARTH / MOON TO REFOCUS</div>
           </div>
           <div className="trackspace-hud-readout">
@@ -58,6 +68,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
           </div>
           <div className="trackspace-hud-hint">
             ◦ {summary.capabilityCount} TRACKED CAPABILITIES ·{" "}
+            {sceneLocations.length} SPATIAL SITES ·{" "}
             {summary.milestoneCount} MILESTONES · MODEL v0.1 ◦
           </div>
         </div>

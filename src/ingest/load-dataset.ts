@@ -7,11 +7,12 @@
 import { asc } from "drizzle-orm";
 
 import { db, type TrackspaceDb } from "@/db";
-import { capabilities, events, milestones, sources } from "@/db/schema";
+import { capabilities, events, locations, milestones, sources } from "@/db/schema";
 import { CURATED } from "@/features/trackspace/data/selectors";
 import type {
   Capability,
   Dataset,
+  Location,
   Milestone,
   Source,
   TrackspaceEvent,
@@ -21,6 +22,7 @@ import type {
 // to match it (anything new sorts last) so the rail and graph stay stable.
 const CAP_ORDER = new Map(CURATED.capabilities.map((c, i) => [c.id, i]));
 const MS_ORDER = new Map(CURATED.milestones.map((m, i) => [m.id, i]));
+const LOC_ORDER = new Map(CURATED.locations.map((location, i) => [location.id, i]));
 
 function byOrder<T extends { id: string }>(order: Map<string, number>) {
   return (a: T, b: T) =>
@@ -56,6 +58,7 @@ export function loadDataset(database: TrackspaceDb = db): Dataset {
 
     const msRows = database.select().from(milestones).all();
     const evRows = database.select().from(events).all();
+    const locRows = database.select().from(locations).all();
     const srcRows = database
       .select()
       .from(sources)
@@ -82,7 +85,32 @@ export function loadDataset(database: TrackspaceDb = db): Dataset {
       sources: sourcesByEntity.get(`event:${e.id}`) ?? [],
     }));
 
-    return { capabilities: capList, milestones: msList, events: evList };
+    const locList: Location[] = locRows
+      .map((location) => ({
+        id: location.id,
+        name: location.name,
+        body: location.body,
+        kind: location.kind,
+        ...(location.lat !== null ? { lat: location.lat } : {}),
+        ...(location.lon !== null ? { lon: location.lon } : {}),
+        ...(location.radiusKm !== null ? { radiusKm: location.radiusKm } : {}),
+        status: location.status,
+        conf: location.conf,
+        summary: location.summary,
+        relatedCapabilities: location.relatedCapabilities,
+        relatedEvents: location.relatedEvents,
+        relatedMilestones: location.relatedMilestones,
+        lastVerified: location.lastVerified,
+        sources: sourcesByEntity.get(`location:${location.id}`) ?? [],
+      }))
+      .sort(byOrder(LOC_ORDER));
+
+    return {
+      capabilities: capList,
+      milestones: msList,
+      events: evList,
+      locations: locList,
+    };
   } catch {
     // Missing/locked DB, unmigrated schema, etc. — render the baseline.
     return CURATED;

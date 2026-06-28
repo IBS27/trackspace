@@ -10,7 +10,7 @@ import {
 
 import type { SourceTier } from "@/features/trackspace/data/types";
 
-export type SourceEntity = "capability" | "milestone" | "event";
+export type SourceEntity = "capability" | "milestone" | "event" | "location";
 
 // Provenance — one row per (record, source) pair. `position` preserves the
 // citation order; (entityType, entityId) groups a record's sources together,
@@ -39,7 +39,7 @@ export const sources = sqliteTable(
     check("sources_tier_ck", sql`${table.tier} between 1 and 4`),
     check(
       "sources_entity_type_ck",
-      sql`${table.entityType} in ('capability', 'milestone', 'event')`,
+      sql`${table.entityType} in ('capability', 'milestone', 'event', 'location')`,
     ),
   ],
 );

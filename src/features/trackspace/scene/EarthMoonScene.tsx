@@ -9,8 +9,10 @@
 // Sizes are to scale (Moon ≈ 0.27 Earth radii); the orbital distance is
 // compressed so both bodies stay in frame.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+
+import type { Location, LocationKind, SpatialBody, Status } from "../data/types";
 
 const ACCENT = "#5bd0ff";
 
@@ -23,25 +25,73 @@ const ORBIT_INCLINATION = 0.09; // 5.1°
 const ORBIT_SEMI_MINOR =
   ORBIT_SEMI_MAJOR * Math.sqrt(1 - ORBIT_ECCENTRICITY * ORBIT_ECCENTRICITY);
 const ORBIT_FOCUS_OFFSET = ORBIT_SEMI_MAJOR * ORBIT_ECCENTRICITY;
+const MARKER_DOT_RADIUS = 0.022;
+const MARKER_RING_INNER_RADIUS = 0.046;
+const MARKER_RING_OUTER_RADIUS = 0.064;
+const MARKER_HIT_RADIUS_PX = 36;
 
-// Launch / tracking sites highlighted on the globe.
+const STATUS_COLORS: Record<Status, string> = {
+  ready: "#8df0ad",
+  watch: "#ffd166",
+  blocker: "#ff5468",
+  unknown: "#8fa2bd",
+};
+
+const LOCATION_KIND_LABEL: Record<LocationKind, string> = {
+  "launch-site": "Launch site",
+  "test-site": "Test site",
+  "contractor-site": "Contractor site",
+  "landing-region": "Landing region",
+  "surface-site": "Surface site",
+  orbit: "Orbit",
+};
+
+type SceneHover = {
+  id: string;
+  name: string;
+  body: SpatialBody;
+  kind: LocationKind;
+  status: Status;
+  x: number;
+  y: number;
+};
+
 type TrackspaceCanvas = HTMLCanvasElement & {
   __trackspace?: {
     readonly focus: "earth" | "moon";
     earthScreen: () => { x: number; y: number };
     moonScreen: () => { x: number; y: number };
+    locationScreens: () => Array<{
+      id: string;
+      x: number;
+      y: number;
+      visible: boolean;
+    }>;
   };
 };
 
-const MARKER_SITES = [
-  { lat: 28.6, lon: -80.6 }, // KSC
-  { lat: 34.7, lon: -120.6 }, // Vandenberg
-  { lat: 5.2, lon: -52.8 }, // Kourou
-  { lat: 2.9, lon: -89.5 }, // mid-pacific tracking
-  { lat: -25, lon: 131 }, // deep space network analog
-];
+type SceneCallbacks = {
+  onLocationOpen: (id: string) => void;
+  onHoverChange: (hover: SceneHover | null) => void;
+};
 
-function createEarthMoonScene(canvas: HTMLCanvasElement) {
+function surfacePoint(radius: number, lat: number, lon: number): THREE.Vector3 {
+  const phi = ((90 - lat) * Math.PI) / 180;
+  // SphereGeometry's equirectangular UV seam sits at -180°, so geographic
+  // longitude must be shifted before converting to local sphere coordinates.
+  const theta = ((lon + 180) * Math.PI) / 180;
+  return new THREE.Vector3(
+    -radius * Math.sin(phi) * Math.cos(theta),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta),
+  );
+}
+
+function createEarthMoonScene(
+  canvas: HTMLCanvasElement,
+  locations: readonly Location[],
+  callbacks: SceneCallbacks,
+) {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -164,36 +214,6 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
   earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
   disposables.push(atmoGeo, atmoMat);
 
-  // Tracking-site markers (HUD overlay, not part of the imagery).
-  const markerGroup = new THREE.Group();
-  earth.add(markerGroup);
-  const markerGeo = new THREE.SphereGeometry(0.016, 12, 12);
-  const markerMat = new THREE.MeshBasicMaterial({ color: accent });
-  const ringGeo = new THREE.RingGeometry(0.028, 0.04, 18);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: accent,
-    transparent: true,
-    opacity: 0.45,
-    side: THREE.DoubleSide,
-  });
-  disposables.push(markerGeo, markerMat, ringGeo, ringMat);
-  for (const site of MARKER_SITES) {
-    const phi = ((90 - site.lat) * Math.PI) / 180;
-    const th = ((site.lon + 180) * Math.PI) / 180;
-    const v = new THREE.Vector3(
-      -(EARTH_RADIUS * 1.015) * Math.sin(phi) * Math.cos(th),
-      EARTH_RADIUS * 1.015 * Math.cos(phi),
-      EARTH_RADIUS * 1.015 * Math.sin(phi) * Math.sin(th),
-    );
-    const m = new THREE.Mesh(markerGeo, markerMat);
-    m.position.copy(v);
-    markerGroup.add(m);
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.position.copy(v);
-    ring.lookAt(v.clone().multiplyScalar(2));
-    markerGroup.add(ring);
-  }
-
   // MOON -------------------------------------------------------------------
   // Inclined orbital plane; Earth sits at one focus of the ellipse.
   const orbitPlane = new THREE.Group();
@@ -221,6 +241,87 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
     moon.rotation.y = moonAngle + Math.PI / 2;
   }
   placeMoon();
+
+  // Data-driven location markers. The scene owns only projection and
+  // interaction; site selection and provenance live in the Dataset.
+  type MarkerEntry = {
+    location: Location;
+    body: "earth" | "moon";
+    root: THREE.Group;
+    marker: THREE.Mesh;
+    ring: THREE.Mesh;
+  };
+  const markerEntries: MarkerEntry[] = [];
+  const markerGeo = new THREE.SphereGeometry(MARKER_DOT_RADIUS, 16, 16);
+  const ringGeo = new THREE.RingGeometry(
+    MARKER_RING_INNER_RADIUS,
+    MARKER_RING_OUTER_RADIUS,
+    28,
+  );
+  const markerMaterials = Object.fromEntries(
+    Object.entries(STATUS_COLORS).map(([status, color]) => [
+      status,
+      new THREE.MeshBasicMaterial({ color }),
+    ]),
+  ) as Record<Status, THREE.MeshBasicMaterial>;
+  const ringMaterials = Object.fromEntries(
+    Object.entries(STATUS_COLORS).map(([status, color]) => [
+      status,
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.46,
+        side: THREE.DoubleSide,
+      }),
+    ]),
+  ) as Record<Status, THREE.MeshBasicMaterial>;
+  disposables.push(
+    markerGeo,
+    ringGeo,
+    ...Object.values(markerMaterials),
+    ...Object.values(ringMaterials),
+  );
+
+  function addLocationMarker(
+    location: Location,
+    body: "earth" | "moon",
+    parent: THREE.Object3D,
+    radius: number,
+  ) {
+    if (typeof location.lat !== "number" || typeof location.lon !== "number") {
+      return;
+    }
+    const position = surfacePoint(radius * 1.018, location.lat, location.lon);
+    const rootMarker = new THREE.Group();
+    rootMarker.position.copy(position);
+    rootMarker.lookAt(position.clone().multiplyScalar(2));
+    parent.add(rootMarker);
+
+    const marker = new THREE.Mesh(markerGeo, markerMaterials[location.status]);
+    const ring = new THREE.Mesh(ringGeo, ringMaterials[location.status]);
+    rootMarker.add(marker, ring);
+
+    const scale = body === "moon" ? 0.72 : 1;
+    marker.scale.setScalar(scale);
+    ring.scale.setScalar(scale);
+    marker.userData.locationId = location.id;
+    ring.userData.locationId = location.id;
+    markerEntries.push({
+      location,
+      body,
+      root: rootMarker,
+      marker,
+      ring,
+    });
+  }
+
+  for (const location of locations) {
+    if (location.body === "earth") {
+      addLocationMarker(location, "earth", earth, EARTH_RADIUS);
+    } else if (location.body === "moon") {
+      addLocationMarker(location, "moon", moon, MOON_RADIUS);
+    }
+  }
 
   // Orbit path (faint HUD line matching the actual ellipse).
   {
@@ -314,6 +415,9 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
   let dragging = false;
   let px = 0;
   let py = 0;
+  let downX = 0;
+  let downY = 0;
+  let pointerMoved = false;
   let idle = 0;
 
   // The camera orbits and zooms around the focused body. Double-clicking a
@@ -329,6 +433,68 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const focusPoint = new THREE.Vector3();
+  const markerWorld = new THREE.Vector3();
+  const bodyWorld = new THREE.Vector3();
+  const surfaceNormal = new THREE.Vector3();
+  const cameraVector = new THREE.Vector3();
+
+  function markerFacesCamera(entry: MarkerEntry): boolean {
+    entry.root.getWorldPosition(markerWorld);
+    if (entry.body === "moon") moon.getWorldPosition(bodyWorld);
+    else bodyWorld.set(0, 0, 0);
+    surfaceNormal.copy(markerWorld).sub(bodyWorld).normalize();
+    cameraVector.copy(camera.position).sub(markerWorld).normalize();
+    return surfaceNormal.dot(cameraVector) > 0.08;
+  }
+
+  function findMarker(clientX: number, clientY: number): MarkerEntry | null {
+    const r = canvas.getBoundingClientRect();
+    let best: MarkerEntry | null = null;
+    let bestDistance = MARKER_HIT_RADIUS_PX;
+    for (const entry of markerEntries) {
+      entry.root.getWorldPosition(markerWorld);
+      const projected = toScreen(markerWorld);
+      if (
+        projected.z <= -1 ||
+        projected.z >= 1 ||
+        projected.x < 0 ||
+        projected.x > 1 ||
+        projected.y < 0 ||
+        projected.y > 1 ||
+        !markerFacesCamera(entry)
+      ) {
+        continue;
+      }
+      const x = r.left + projected.x * r.width;
+      const y = r.top + projected.y * r.height;
+      const distance = Math.hypot(clientX - x, clientY - y);
+      if (distance <= bestDistance) {
+        best = entry;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function hoverPayload(entry: MarkerEntry, clientX: number, clientY: number): SceneHover {
+    const r = canvas.getBoundingClientRect();
+    const x = THREE.MathUtils.clamp(clientX - r.left, 8, Math.max(8, r.width - 280));
+    const y = THREE.MathUtils.clamp(clientY - r.top, 36, Math.max(36, r.height - 36));
+    return {
+      id: entry.location.id,
+      name: entry.location.name,
+      body: entry.location.body,
+      kind: entry.location.kind,
+      status: entry.location.status,
+      x,
+      y,
+    };
+  }
+
+  const toScreen = (world: THREE.Vector3) => {
+    const v = world.project(camera);
+    return { x: (v.x + 1) / 2, y: (1 - v.y) / 2, z: v.z };
+  };
 
   function applyCam() {
     camera.position.x = target.x + dist * Math.cos(elev) * Math.sin(azim);
@@ -339,6 +505,17 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
 
   const point = (e: MouseEvent | TouchEvent) =>
     "touches" in e ? e.touches[0] : e;
+  const releasePoint = (e: MouseEvent | TouchEvent) =>
+    "changedTouches" in e && e.changedTouches.length > 0
+      ? e.changedTouches[0]
+      : point(e);
+  function activateMarkerAt(clientX: number, clientY: number): boolean {
+    const hit = findMarker(clientX, clientY);
+    if (!hit) return false;
+    callbacks.onLocationOpen(hit.location.id);
+    callbacks.onHoverChange(null);
+    return true;
+  }
   function onDown(e: MouseEvent | TouchEvent) {
     dragging = true;
     idle = 0;
@@ -347,20 +524,40 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
     const t = point(e);
     px = t.clientX;
     py = t.clientY;
+    downX = t.clientX;
+    downY = t.clientY;
+    pointerMoved = false;
     canvas.style.cursor = "grabbing";
   }
   function onMove(e: MouseEvent | TouchEvent) {
     if (!dragging) return;
     const t = point(e);
+    if (Math.hypot(t.clientX - downX, t.clientY - downY) > 5) {
+      pointerMoved = true;
+    }
     azim -= (t.clientX - px) * 0.006;
     elev = Math.max(-0.9, Math.min(0.95, elev + (t.clientY - py) * 0.006));
     px = t.clientX;
     py = t.clientY;
     idle = 0;
   }
-  function onUp() {
+  function onUp(e: MouseEvent | TouchEvent) {
+    const t = releasePoint(e);
     dragging = false;
     canvas.style.cursor = "grab";
+    if (!pointerMoved && t) {
+      activateMarkerAt(t.clientX, t.clientY);
+    }
+  }
+  function onMouseMove(e: MouseEvent) {
+    if (dragging) return;
+    const hit = findMarker(e.clientX, e.clientY);
+    canvas.style.cursor = hit ? "pointer" : "grab";
+    callbacks.onHoverChange(hit ? hoverPayload(hit, e.clientX, e.clientY) : null);
+  }
+  function onMouseLeave() {
+    callbacks.onHoverChange(null);
+    if (!dragging) canvas.style.cursor = "grab";
   }
   function onWheel(e: WheelEvent) {
     e.preventDefault();
@@ -370,6 +567,7 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
     idle = 0;
   }
   function onDblClick(e: MouseEvent) {
+    if (findMarker(e.clientX, e.clientY)) return;
     const r = canvas.getBoundingClientRect();
     ndc.set(
       ((e.clientX - r.left) / r.width) * 2 - 1,
@@ -394,6 +592,8 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
     }
   }
   canvas.addEventListener("dblclick", onDblClick);
+  canvas.addEventListener("mousemove", onMouseMove);
+  canvas.addEventListener("mouseleave", onMouseLeave);
   canvas.addEventListener("mousedown", onDown);
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
@@ -429,10 +629,9 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
       clouds.rotation.y += dt * 0.062;
       moonAngle += dt * 0.012;
       placeMoon();
-      markerGroup.children.forEach((m, i) => {
-        if ((m as THREE.Mesh).geometry === ringGeo) {
-          m.scale.setScalar(1 + Math.sin(now * 0.003 + i) * 0.18);
-        }
+      markerEntries.forEach((entry, i) => {
+        const base = entry.body === "moon" ? 0.72 : 1;
+        entry.ring.scale.setScalar(base * (1 + Math.sin(now * 0.003 + i) * 0.18));
       });
     }
     // Ease the camera target onto the focused body (the Moon keeps moving,
@@ -470,25 +669,34 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
 
   // Introspection hook for automated tests: current focus plus each body's
   // projected screen position (fractions of the canvas size).
-  const toScreen = (world: THREE.Vector3) => {
-    const v = world.project(camera);
-    return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 };
-  };
-  (canvas as TrackspaceCanvas).__trackspace = {
+  const debugApi: TrackspaceCanvas["__trackspace"] = {
     get focus() {
       return focus;
     },
     earthScreen: () => toScreen(new THREE.Vector3(0, 0, 0)),
     moonScreen: () => toScreen(moon.getWorldPosition(new THREE.Vector3())),
+    locationScreens: () =>
+      markerEntries.map((entry) => {
+        entry.root.getWorldPosition(markerWorld);
+        return {
+          id: entry.location.id,
+          ...toScreen(markerWorld),
+          visible: markerFacesCamera(entry),
+        };
+      }),
   };
+  (canvas as TrackspaceCanvas).__trackspace = debugApi;
 
   return {
     destroy() {
       delete (canvas as TrackspaceCanvas).__trackspace;
+      callbacks.onHoverChange(null);
       running = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
       canvas.removeEventListener("dblclick", onDblClick);
+      canvas.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("mouseleave", onMouseLeave);
       canvas.removeEventListener("mousedown", onDown);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
@@ -502,21 +710,50 @@ function createEarthMoonScene(canvas: HTMLCanvasElement) {
   };
 }
 
-export function EarthMoonScene() {
+type EarthMoonSceneProps = {
+  locations: readonly Location[];
+  onLocationOpen: (id: string) => void;
+};
+
+export function EarthMoonScene({
+  locations,
+  onLocationOpen,
+}: EarthMoonSceneProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const openRef = useRef(onLocationOpen);
+  const [hover, setHover] = useState<SceneHover | null>(null);
+
+  useEffect(() => {
+    openRef.current = onLocationOpen;
+  }, [onLocationOpen]);
 
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const scene = createEarthMoonScene(canvas);
+    const scene = createEarthMoonScene(canvas, locations, {
+      onLocationOpen: (id) => openRef.current(id),
+      onHoverChange: setHover,
+    });
     return () => scene.destroy();
-  }, []);
+  }, [locations]);
 
   return (
-    <canvas
-      ref={ref}
-      className="trackspace-scene-canvas"
-      aria-label="Earth and Moon orbit view"
-    />
+    <>
+      <canvas
+        ref={ref}
+        className="trackspace-scene-canvas"
+        aria-label="Interactive Earth and Moon orbit view with source-backed locations"
+      />
+      {hover && (
+        <div
+          className={`trackspace-scene-tooltip trackspace-scene-tooltip-${hover.status}`}
+          style={{ left: hover.x, top: hover.y }}
+        >
+          <span>{LOCATION_KIND_LABEL[hover.kind]}</span>
+          <b>{hover.name}</b>
+          <i>{hover.body.toUpperCase()}</i>
+        </div>
+      )}
+    </>
   );
 }

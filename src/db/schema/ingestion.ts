@@ -8,6 +8,7 @@ export type IngestRunSummary = {
   capabilities: number;
   milestones: number;
   events: number;
+  locations: number;
   sources: number;
   /** Records whose date/status was refreshed from a live feed. */
   reconciled: string[];

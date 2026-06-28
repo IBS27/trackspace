@@ -17,6 +17,7 @@ async function main(): Promise<void> {
   console.log(`  capabilities : ${summary.capabilities}`);
   console.log(`  milestones   : ${summary.milestones}`);
   console.log(`  events       : ${summary.events}`);
+  console.log(`  locations    : ${summary.locations}`);
   console.log(`  sources      : ${summary.sources}`);
   console.log(`  reconciled   : ${summary.reconciled.join(", ") || "—"}`);
   console.log(`  discoveries  : ${summary.discoveries} new lead(s)`);

@@ -6,12 +6,13 @@
 // compile-time baseline, or a live snapshot loaded from SQLite at request time
 // — so the same pure functions serve tests, standalone renders, and the app.
 
-import { CAPABILITIES, EVENTS, MILESTONES, STATUS_LIST } from "./seed";
+import { CAPABILITIES, EVENTS, LOCATIONS, MILESTONES, STATUS_LIST } from "./seed";
 import type {
   Capability,
   CapabilityId,
   Dataset,
   DependencyEdge,
+  Location,
   Milestone,
   MilestoneId,
   RiskAssessment,
@@ -25,6 +26,7 @@ export const CURATED: Dataset = {
   capabilities: CAPABILITIES,
   milestones: MILESTONES,
   events: EVENTS,
+  locations: LOCATIONS,
 };
 
 export function capabilityById(
@@ -51,10 +53,17 @@ export function eventById(
   return Object.fromEntries(events.map((e) => [e.id, e]));
 }
 
+export function locationById(
+  locations: Location[] = LOCATIONS,
+): Record<string, Location> {
+  return Object.fromEntries(locations.map((l) => [l.id, l]));
+}
+
 /** Default-dataset index maps, for call sites that read the curated baseline. */
 export const CAPABILITY_BY_ID = capabilityById();
 export const MILESTONE_BY_ID = milestoneById();
 export const EVENT_BY_ID = eventById();
+export const LOCATION_BY_ID = locationById();
 
 /** Composite readiness: mean capability readiness, rounded. */
 export function getOverallReadiness(
@@ -170,6 +179,43 @@ export function getEventsForMilestone(
   if (!milestone) return [];
   return dataset.events.filter((e) =>
     e.caps.some((c) => milestone.caps.includes(c)),
+  );
+}
+
+/** Body-surface locations with valid coordinates for the 3D scene. */
+export function getSceneLocations(dataset: Dataset = CURATED): Location[] {
+  return dataset.locations.filter(
+    (location) =>
+      (location.body === "earth" || location.body === "moon") &&
+      typeof location.lat === "number" &&
+      typeof location.lon === "number",
+  );
+}
+
+export function getLocationsForCapability(
+  id: CapabilityId,
+  dataset: Dataset = CURATED,
+): Location[] {
+  return dataset.locations.filter((location) =>
+    location.relatedCapabilities.includes(id),
+  );
+}
+
+export function getLocationsForEvent(
+  id: string,
+  dataset: Dataset = CURATED,
+): Location[] {
+  return dataset.locations.filter((location) =>
+    location.relatedEvents.includes(id),
+  );
+}
+
+export function getLocationsForMilestone(
+  id: MilestoneId,
+  dataset: Dataset = CURATED,
+): Location[] {
+  return dataset.locations.filter((location) =>
+    location.relatedMilestones.includes(id),
   );
 }
 

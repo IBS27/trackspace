@@ -4,5 +4,6 @@
 export * from "./capabilities";
 export * from "./milestones";
 export * from "./events";
+export * from "./locations";
 export * from "./sources";
 export * from "./ingestion";
