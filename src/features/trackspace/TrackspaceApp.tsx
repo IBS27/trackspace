@@ -29,7 +29,7 @@ const NAV_ITEMS: TrackspaceNavItem[] = [
   { id: "dependency", icon: "⧉", name: "Dependency Map" },
   { id: "timeline", icon: "≣", name: "Timeline" },
   { id: "milestones", icon: "◎", name: "Milestones" },
-  { id: "program", icon: "⚠", name: "Program" },
+  { id: "program", icon: "⌘", name: "Program" },
 ];
 
 export function TrackspaceApp({

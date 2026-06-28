@@ -124,7 +124,10 @@ function TabBar({
           onClick={() => onNavChange(item.id)}
           aria-current={item.id === activeView ? "page" : undefined}
         >
-          <span className="trackspace-tab-icon" aria-hidden="true">
+          <span
+            className={`trackspace-tab-icon trackspace-tab-icon-${item.id}`}
+            aria-hidden="true"
+          >
             {item.icon}
           </span>
           {item.name}

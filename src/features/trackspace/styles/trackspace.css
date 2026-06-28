@@ -266,6 +266,11 @@
   color: var(--ts-accent);
 }
 
+.trackspace-tab-icon-program {
+  top: 1px;
+  font-size: 15px;
+}
+
 .trackspace-screen {
   min-width: 0;
   min-height: 0;
