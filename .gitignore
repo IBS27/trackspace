@@ -40,10 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local sqlite database
-local.db
-local.db-*
-*.sqlite
-
 # claude code
 /.claude

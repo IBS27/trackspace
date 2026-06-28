@@ -1,13 +1,27 @@
+import { connection } from "next/server";
+import { ConvexClientProvider } from "./ConvexClientProvider";
 import { TrackspaceApp } from "@/features/trackspace/TrackspaceApp";
+import { CURATED } from "@/features/trackspace/data/selectors";
+import type { Dataset } from "@/features/trackspace/data/types";
+import { api } from "@/lib/convex";
+import { getConvexHttpClient } from "@/lib/convex-server";
 import "@/features/trackspace/styles/trackspace.css";
-import { loadDataset } from "@/ingest/load-dataset";
 
-// Read the live snapshot from SQLite on each request (the ingestion pipeline
-// keeps it current). Falls back to the curated baseline if the database is
-// empty or unavailable, so the page always renders the true status.
-export const dynamic = "force-dynamic";
+async function loadInitialDataset(): Promise<Dataset> {
+  try {
+    return (await getConvexHttpClient().query(api.trackspace.dataset)) ?? CURATED;
+  } catch {
+    return CURATED;
+  }
+}
 
-export default function Home() {
-  const dataset = loadDataset();
-  return <TrackspaceApp dataset={dataset} />;
+export default async function Home() {
+  await connection();
+  const dataset = await loadInitialDataset();
+
+  return (
+    <ConvexClientProvider>
+      <TrackspaceApp live dataset={dataset} />
+    </ConvexClientProvider>
+  );
 }

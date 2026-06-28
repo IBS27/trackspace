@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-  // better-sqlite3 is a native module; keep it out of the server bundle.
-  // (Next 16 auto-externalizes it, but this makes the intent explicit.)
-  serverExternalPackages: ["better-sqlite3"],
 };
 
 export default nextConfig;

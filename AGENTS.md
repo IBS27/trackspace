@@ -17,11 +17,10 @@ Trackspace is a **single Next.js app** at the repo root (not a monorepo). See `R
 | -------------- | ------------------------------------ | --------------------------------------------------------------------------- |
 | Next.js dev    | `npm run dev`                        | Serves at `http://localhost:3000`. Use a tmux session for long-running dev. |
 | Next.js prod   | `npm run build` then `npm run start` | After a production build.                                                   |
-| SQLite         | In-process via `better-sqlite3`      | No separate DB daemon. Default file: `local.db`; optional `DB_FILE_NAME`.   |
-| Drizzle Studio | `npm run db:studio`                  | Optional DB browser when schema exists.                                     |
+| Convex         | `npx convex dev`                     | Realtime backend, scheduled ingestion, and persistence.                     |
 
 
-No Docker Compose or external databases are required for local development today.
+No Docker Compose or external database daemon is required for local development today.
 
 ### Lint / test / build
 
@@ -32,10 +31,6 @@ No Docker Compose or external databases are required for local development today
 ### Next.js version note
 
 This project uses **Next.js 16** with breaking changes vs older versions. Before changing app or API code, read guides under `node_modules/next/dist/docs/` and follow deprecation notices.
-
-### Native dependency
-
-`better-sqlite3` is a native addon; `npm install` compiles it on the VM. If install fails, ensure build tools (`python3`, `make`, `g++`) are available (they are on the default Cloud Agent image).
 
 ### Peer dependencies
 
@@ -59,3 +54,16 @@ When implementing or changing UI — pages, components, layout, styling, or inte
 - Make the document self-contained: inline CSS, no unnecessary JavaScript, no external assets unless requested.
 - Use semantic HTML and make it responsive enough to read on desktop and mobile.
 
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->

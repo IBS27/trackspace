@@ -434,7 +434,7 @@
             <li>Keep <code>src/app/page.tsx</code> small.</li>
             <li>Move the interactive app into a client component.</li>
             <li>Use seed data first so the UI can move quickly.</li>
-            <li>Add SQLite after the screen design is stable.</li>
+            <li>Use Convex for live data once the screen design is stable.</li>
           </ul>
         </aside>
       </div>
@@ -603,7 +603,7 @@ src/features/trackspace/
             dependencies, and source links. Put those records into typed seed files first.
           </p>
           <p>
-            After the UI works, move the same shape into Drizzle and SQLite. Do not let database setup slow down the first UI pass.
+            After the UI works, move the same shape into Convex so ingestion updates can stream into the app.
           </p>
         </div>
 
@@ -704,9 +704,9 @@ export default function Home() {
           </article>
 
           <article class="card step">
-            <h3>Move data into SQLite</h3>
+            <h3>Move data into Convex</h3>
             <p>
-              Once the UI is stable, define Drizzle tables and seed the same data into SQLite.
+              Once the UI is stable, define Convex tables, seed the same data, and subscribe from the app with live queries.
             </p>
           </article>
 

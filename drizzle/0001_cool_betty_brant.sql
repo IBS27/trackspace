@@ -1,1 +1,0 @@
-ALTER TABLE `capabilities` ADD `metrics` text;
