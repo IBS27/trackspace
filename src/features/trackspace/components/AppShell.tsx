@@ -81,8 +81,11 @@ function Header({ nextGate }: { nextGate: string }) {
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
-        <span className="trackspace-wordmark">
-          TRACK<span>SPACE</span>
+        <span className="trackspace-brand-primary">
+          <TrackspaceLogoMark />
+          <span className="trackspace-wordmark">
+            TRACK<span>SPACE</span>
+          </span>
         </span>
         <span className="trackspace-subtitle">LUNAR BASE READINESS</span>
       </div>
@@ -93,6 +96,32 @@ function Header({ nextGate }: { nextGate: string }) {
         <StatusCell label="Next Gate" value={nextGate} />
       </div>
     </header>
+  );
+}
+
+function TrackspaceLogoMark() {
+  return (
+    <svg
+      className="trackspace-logo-mark"
+      viewBox="0 0 32 32"
+      role="img"
+      aria-label="Trackspace logo"
+    >
+      <rect className="trackspace-logo-tile" x="0.75" y="0.75" width="30.5" height="30.5" rx="7" />
+      <g className="trackspace-logo-reticle">
+        <circle className="trackspace-logo-dot" cx="16" cy="12" r="1.2" />
+        <path d="M11.8 10.2A4.7 4.7 0 0 1 14.2 7.9" />
+        <path d="M17.8 7.9A4.7 4.7 0 0 1 20.2 10.2" />
+        <path d="M20.2 13.8A4.7 4.7 0 0 1 17.8 16.1" />
+        <path d="M14.2 16.1A4.7 4.7 0 0 1 11.8 13.8" />
+        <path d="M16 5.8V8.1" />
+        <path d="M16 15.9V18.2" />
+        <path d="M9.8 12H12.1" />
+        <path d="M19.9 12H22.2" />
+      </g>
+      <path className="trackspace-logo-horizon-dim" d="M5.6 22.7Q16 18.4 26.4 22.7" />
+      <path className="trackspace-logo-horizon" d="M6.4 24.7Q16 20.9 25.6 24.7" />
+    </svg>
   );
 }
 
