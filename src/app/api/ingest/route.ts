@@ -1,31 +1,32 @@
-// POST /api/ingest — run the ingestion pipeline on demand (e.g. from cron).
+// POST /api/ingest - run the ingestion pipeline on demand (e.g. from cron).
 //
 // In production, INGEST_TOKEN must be set and the request must send a matching
 // bearer token. GET reports the most recent run so a scheduler can check status
 // without triggering work.
 
-import { api } from "@/lib/convex";
-import { getConvexHttpClient } from "@/lib/convex-server";
+import { getConvexSiteUrl } from "@/lib/convex-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function authorized(request: Request): boolean {
   const token = process.env.INGEST_TOKEN;
-  if (!token) {
-    // Fail closed in production: a missing token must not leave a
-    // state-changing endpoint publicly triggerable. Allow it only in
-    // development for convenient local triggering.
-    return process.env.NODE_ENV !== "production";
-  }
-  return request.headers.get("authorization") === `Bearer ${token}`;
+  return Boolean(token) && request.headers.get("authorization") === `Bearer ${token}`;
 }
 
-function bearerToken(request: Request): string | undefined {
-  const authHeader = request.headers.get("authorization");
-  return authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : undefined;
+async function forwardToConvex(
+  path: string,
+  method: "GET" | "POST",
+): Promise<Response> {
+  const token = process.env.INGEST_TOKEN;
+  if (!token) {
+    throw new Error("INGEST_TOKEN is not configured");
+  }
+  const response = await fetch(`${getConvexSiteUrl()}${path}`, {
+    method,
+    headers: { authorization: `Bearer ${token}` },
+  });
+  return Response.json(await response.json(), { status: response.status });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -35,11 +36,10 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const offline = url.searchParams.get("offline") === "1";
-    const summary = await getConvexHttpClient().action(api.ingest.runManual, {
-      offline,
-      token: bearerToken(request),
-    });
-    return Response.json({ ok: summary.warnings.length === 0, summary });
+    return await forwardToConvex(
+      `/ingest${offline ? "?offline=1" : ""}`,
+      "POST",
+    );
   } catch (error) {
     return Response.json(
       { ok: false, error: (error as Error).message },
@@ -53,8 +53,7 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    const last = await getConvexHttpClient().query(api.ingest.lastRun);
-    return Response.json({ lastRun: last ?? null });
+    return await forwardToConvex("/ingest", "GET");
   } catch (error) {
     return Response.json(
       { lastRun: null, error: (error as Error).message },

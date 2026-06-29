@@ -13,6 +13,9 @@
     "test": "vitest",
     "ingest": "tsx scripts/ingest.ts"
   },
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",

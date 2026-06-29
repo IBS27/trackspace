@@ -2,11 +2,9 @@ import { v, type Infer } from "convex/values";
 
 import { internal } from "./_generated/api";
 import {
-  action,
-  env,
   internalAction,
+  internalQuery,
   internalMutation,
-  query,
   type ActionCtx,
   type MutationCtx,
 } from "./_generated/server";
@@ -75,6 +73,18 @@ function cloneDataset(dataset: Dataset): Dataset {
 const str = (value: unknown): string | null =>
   typeof value === "string" ? value : null;
 
+function httpUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? parsed.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
   const id = str(raw.id);
   if (!id) return null;
@@ -88,7 +98,7 @@ function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
     statusAbbrev: str(raw.status?.abbrev),
     lastUpdated: str(raw.last_updated),
     provider: str(raw.launch_service_provider?.name),
-    url: str(raw.url),
+    url: httpUrl(str(raw.url)),
   };
 }
 
@@ -170,7 +180,7 @@ function parseFeedItems(xml: string): FeedItem[] {
   while ((match = itemRe.exec(xml)) !== null) {
     const block = match[1];
     const title = decode(firstTag(block, "title"));
-    const link = decode(firstTag(block, "link"));
+    const link = httpUrl(decode(firstTag(block, "link")));
     if (!title || !link) continue;
     const pub = decode(firstTag(block, "pubDate"));
     const parsed = pub ? new Date(pub) : null;
@@ -325,16 +335,6 @@ function countSources(dataset: StoredDataset): number {
   ].reduce((total, item) => total + item.sources.length, 0);
 }
 
-function authorizeManual(token?: string): void {
-  const required = env.INGEST_TOKEN;
-  if (!required) {
-    throw new Error("INGEST_TOKEN is not configured");
-  }
-  if (token !== required) {
-    throw new Error("unauthorized");
-  }
-}
-
 async function upsertCapabilities(ctx: MutationCtx, dataset: StoredDataset) {
   const ids = new Set(dataset.capabilities.map((item) => item.id));
   for (const item of dataset.capabilities) {
@@ -474,13 +474,11 @@ async function runIngest(
   return summary;
 }
 
-export const runManual = action({
+export const runManual = internalAction({
   args: {
     offline: v.optional(v.boolean()),
-    token: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<IngestRunSummary> => {
-    authorizeManual(args.token);
     return await runIngest(ctx, { offline: args.offline ?? false });
   },
 });
@@ -492,7 +490,7 @@ export const runScheduled = internalAction({
   },
 });
 
-export const lastRun = query({
+export const lastRun = internalQuery({
   args: {},
   handler: async (ctx) => {
     const last = await ctx.db

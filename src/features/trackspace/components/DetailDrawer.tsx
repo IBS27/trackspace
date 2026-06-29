@@ -207,12 +207,19 @@ function sourceBadge(source: Source): string {
     .toUpperCase();
 }
 
-function sourceHost(url: string): string {
+function sourceHref(url: string): string | null {
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? parsed.toString()
+      : null;
   } catch {
-    return url;
+    return null;
   }
+}
+
+function sourceHost(href: string): string {
+  return new URL(href).hostname.replace(/^www\./, "");
 }
 
 function SourceList({ sources }: { sources: Source[] }) {
@@ -221,20 +228,39 @@ function SourceList({ sources }: { sources: Source[] }) {
   }
   return (
     <div className="trackspace-sources">
-      {sources.map((source, index) => (
-        <a
-          className="trackspace-source"
-          key={`${source.url}-${index}`}
-          href={source.url}
-          target="_blank"
-          rel="noreferrer"
-          title={`${source.publisher} · Tier ${source.tier}${source.date ? ` · ${source.date}` : ""}`}
-        >
-          <span className="trackspace-source-ico">{sourceBadge(source)}</span>
-          {source.title}
-          <span className="trackspace-source-url">↗ {sourceHost(source.url)}</span>
-        </a>
-      ))}
+      {sources.map((source, index) => {
+        const href = sourceHref(source.url);
+        const title = `${source.publisher} · Tier ${source.tier}${source.date ? ` · ${source.date}` : ""}`;
+        const content = (
+          <>
+            <span className="trackspace-source-ico">{sourceBadge(source)}</span>
+            {source.title}
+            <span className="trackspace-source-url">
+              {href ? `↗ ${sourceHost(href)}` : "invalid source URL"}
+            </span>
+          </>
+        );
+        return href ? (
+          <a
+            className="trackspace-source"
+            key={`${source.url}-${index}`}
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            title={title}
+          >
+            {content}
+          </a>
+        ) : (
+          <span
+            className="trackspace-source"
+            key={`${source.url}-${index}`}
+            title={title}
+          >
+            {content}
+          </span>
+        );
+      })}
     </div>
   );
 }

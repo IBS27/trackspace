@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TrackspaceApp } from "./TrackspaceApp";
+import { CURATED } from "./data/selectors";
+import type { Dataset } from "./data/types";
 
 // The Command Center's three.js scene needs WebGL, which jsdom lacks.
 vi.mock("./scene/EarthMoonScene", () => ({
@@ -85,5 +87,33 @@ describe("TrackspaceApp", () => {
       screen.getByRole("dialog", { name: "Kennedy Space Center · LC-39B" }),
     ).toBeTruthy();
     expect(screen.getByText("Spatial anchor")).toBeTruthy();
+  });
+
+  it("does not render unsafe source URLs as links", () => {
+    const dataset: Dataset = {
+      ...CURATED,
+      locations: CURATED.locations.map((location) =>
+        location.id === "ksc-lc39b"
+          ? {
+              ...location,
+              sources: [
+                {
+                  publisher: "Unsafe",
+                  title: "Unsafe source",
+                  tier: 4,
+                  url: "javascript:alert(1)",
+                },
+              ],
+            }
+          : location,
+      ),
+    };
+
+    render(<TrackspaceApp dataset={dataset} />);
+    fireEvent.click(screen.getByRole("button", { name: "Mock scene marker" }));
+
+    const source = screen.getByText("Unsafe source").closest(".trackspace-source");
+    expect(source?.tagName).toBe("SPAN");
+    expect(source?.getAttribute("href")).toBeNull();
   });
 });

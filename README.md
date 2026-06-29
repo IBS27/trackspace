@@ -38,11 +38,12 @@ these Vercel environment variables for preview and production:
 ```bash
 NEXT_PUBLIC_CONVEX_URL=
 CONVEX_URL=
+CONVEX_SITE_URL=
 INGEST_TOKEN=
 ```
 
-Set the same `INGEST_TOKEN` in Convex so `/api/ingest` can authorize manual
-refreshes:
+Set the same `INGEST_TOKEN` in Convex so its `/ingest` HTTP action can
+authorize manual refreshes:
 
 ```bash
 npx convex env set INGEST_TOKEN <token> --prod
@@ -72,7 +73,7 @@ Per the accuracy policy, feed data refreshes provenance and creates review leads
 
 ### Keeping it current
 
-Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler. Manual refreshes require the same `INGEST_TOKEN` in both the app environment and Convex (`npx convex env set INGEST_TOKEN <token>`):
+Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler. Manual refreshes require the same `INGEST_TOKEN` in both the app environment and Convex (`npx convex env set INGEST_TOKEN <token>`). The Next route forwards the request to the Convex `/ingest` HTTP action with the token in the Authorization header:
 
 ```bash
 curl -X POST -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest

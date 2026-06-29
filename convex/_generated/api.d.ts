@@ -9,6 +9,7 @@
  */
 
 import type * as crons from "../crons.js";
+import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
 import type * as trackspace from "../trackspace.js";
 import type * as validators from "../validators.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  http: typeof http;
   ingest: typeof ingest;
   trackspace: typeof trackspace;
   validators: typeof validators;

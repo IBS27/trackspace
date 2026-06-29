@@ -8,8 +8,7 @@
 
 import { loadEnvConfig } from "@next/env";
 
-import { api } from "../convex/_generated/api";
-import { getConvexHttpClient } from "../src/lib/convex-server";
+import { getConvexSiteUrl } from "../src/lib/convex-server";
 
 async function main(): Promise<void> {
   loadEnvConfig(process.cwd());
@@ -23,10 +22,15 @@ async function main(): Promise<void> {
 
   console.log(`[trackspace] ingest starting${offline ? " (offline)" : ""}…`);
 
-  const summary = await getConvexHttpClient().action(api.ingest.runManual, {
-    offline,
-    token,
+  const response = await fetch(`${getConvexSiteUrl()}/ingest${offline ? "?offline=1" : ""}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
   });
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.error ?? `ingest request failed with ${response.status}`);
+  }
+  const summary = result.summary;
 
   console.log("[trackspace] ingest complete:");
   console.log(`  capabilities : ${summary.capabilities}`);
