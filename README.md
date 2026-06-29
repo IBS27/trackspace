@@ -30,6 +30,24 @@ npm run build
 INGEST_TOKEN=<token> npm run ingest  # load + refresh the data store (see below)
 ```
 
+## Deployment
+
+The app is zero-config deployable as a single Next.js project on Vercel. Set
+these Vercel environment variables for preview and production:
+
+```bash
+NEXT_PUBLIC_CONVEX_URL=
+CONVEX_URL=
+INGEST_TOKEN=
+```
+
+Set the same `INGEST_TOKEN` in Convex so `/api/ingest` can authorize manual
+refreshes:
+
+```bash
+npx convex env set INGEST_TOKEN <token> --prod
+```
+
 ## Data
 
 The dashboard renders a **source-backed dataset**: every capability, milestone, and event carries the `sources` it is drawn from (NASA, NASA OIG, ESA, contractors, and reputable reporting) and a `lastVerified` date. Status, readiness, and confidence are evidence-based assessments, not placeholders.
