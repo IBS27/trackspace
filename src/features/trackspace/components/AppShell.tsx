@@ -81,13 +81,13 @@ function Header({ nextGate }: { nextGate: string }) {
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
+        <TrackspaceLogoMark />
         <span className="trackspace-brand-primary">
-          <TrackspaceLogoMark />
           <span className="trackspace-wordmark">
             TRACK<span>SPACE</span>
           </span>
+          <span className="trackspace-subtitle">LUNAR BASE READINESS</span>
         </span>
-        <span className="trackspace-subtitle">LUNAR BASE READINESS</span>
       </div>
 
       <div className="trackspace-header-stats" aria-label="Program summary">

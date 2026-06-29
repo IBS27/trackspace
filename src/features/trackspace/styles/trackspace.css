@@ -134,15 +134,15 @@
 
 .trackspace-brand {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 9px;
   min-width: 0;
 }
 
 .trackspace-brand-primary {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -419,7 +419,11 @@
   }
 
   .trackspace-brand {
-    align-items: flex-start;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .trackspace-brand-primary {
     flex-direction: column;
     gap: 6px;
   }
