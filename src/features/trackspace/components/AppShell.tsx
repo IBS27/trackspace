@@ -108,19 +108,15 @@ function TrackspaceLogoMark() {
       aria-label="Trackspace logo"
     >
       <rect className="trackspace-logo-tile" x="0.75" y="0.75" width="30.5" height="30.5" rx="7" />
-      <g className="trackspace-logo-reticle">
-        <circle className="trackspace-logo-dot" cx="16" cy="12" r="1.2" />
-        <path d="M11.8 10.2A4.7 4.7 0 0 1 14.2 7.9" />
-        <path d="M17.8 7.9A4.7 4.7 0 0 1 20.2 10.2" />
-        <path d="M20.2 13.8A4.7 4.7 0 0 1 17.8 16.1" />
-        <path d="M14.2 16.1A4.7 4.7 0 0 1 11.8 13.8" />
-        <path d="M16 5.8V8.1" />
-        <path d="M16 15.9V18.2" />
-        <path d="M9.8 12H12.1" />
-        <path d="M19.9 12H22.2" />
+      <g className="trackspace-logo-lines">
+        <path d="M16 3.5C14.4 5.9 13.3 9 13.3 12.2V16.2H18.7V12.2C18.7 9 17.6 5.9 16 3.5Z" />
+        <path d="M13.3 11.5L9.6 16.2H13.3" />
+        <path d="M18.7 11.5L22.4 16.2H18.7" />
+        <path d="M16 18.4V21" />
+        <path d="M13.6 18.2V19.6" />
+        <path d="M18.4 18.2V19.6" />
+        <path d="M4.8 26.8Q16 21.8 27.2 26.8" />
       </g>
-      <path className="trackspace-logo-horizon-dim" d="M5.6 22.7Q16 18.4 26.4 22.7" />
-      <path className="trackspace-logo-horizon" d="M6.4 24.7Q16 20.9 25.6 24.7" />
     </svg>
   );
 }

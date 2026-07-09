@@ -155,35 +155,17 @@
 }
 
 .trackspace-logo-tile {
-  fill: #070910;
-  stroke: var(--ts-line-2);
-  stroke-width: 1.1;
+  fill: #000;
+  stroke: #fff;
+  stroke-width: 1;
 }
 
-.trackspace-logo-reticle {
+.trackspace-logo-lines {
   fill: none;
-  stroke: var(--ts-accent);
+  stroke: #fff;
   stroke-linecap: round;
-  stroke-width: 1.35;
-}
-
-.trackspace-logo-dot {
-  fill: var(--ts-accent);
-  stroke: none;
-}
-
-.trackspace-logo-horizon {
-  fill: none;
-  stroke: var(--ts-ink);
-  stroke-linecap: round;
+  stroke-linejoin: round;
   stroke-width: 1.25;
-}
-
-.trackspace-logo-horizon-dim {
-  fill: none;
-  stroke: #33415a;
-  stroke-linecap: round;
-  stroke-width: 1.2;
 }
 
 .trackspace-wordmark {
