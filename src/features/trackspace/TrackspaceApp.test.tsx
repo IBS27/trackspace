@@ -89,31 +89,34 @@ describe("TrackspaceApp", () => {
     expect(screen.getByText("Spatial anchor")).toBeTruthy();
   });
 
-  it("does not render unsafe source URLs as links", () => {
-    const dataset: Dataset = {
-      ...CURATED,
-      locations: CURATED.locations.map((location) =>
-        location.id === "ksc-lc39b"
-          ? {
-              ...location,
-              sources: [
-                {
-                  publisher: "Unsafe",
-                  title: "Unsafe source",
-                  tier: 4,
-                  url: "javascript:alert(1)",
-                },
-              ],
-            }
-          : location,
-      ),
-    };
+  it.each(["javascript:alert(1)", "http://example.com/insecure"])(
+    "does not render unsafe source URLs as links (%s)",
+    (url) => {
+      const dataset: Dataset = {
+        ...CURATED,
+        locations: CURATED.locations.map((location) =>
+          location.id === "ksc-lc39b"
+            ? {
+                ...location,
+                sources: [
+                  {
+                    publisher: "Unsafe",
+                    title: "Unsafe source",
+                    tier: 4,
+                    url,
+                  },
+                ],
+              }
+            : location,
+        ),
+      };
 
-    render(<TrackspaceApp dataset={dataset} />);
-    fireEvent.click(screen.getByRole("button", { name: "Mock scene marker" }));
+      render(<TrackspaceApp dataset={dataset} />);
+      fireEvent.click(screen.getByRole("button", { name: "Mock scene marker" }));
 
-    const source = screen.getByText("Unsafe source").closest(".trackspace-source");
-    expect(source?.tagName).toBe("SPAN");
-    expect(source?.getAttribute("href")).toBeNull();
-  });
+      const source = screen.getByText("Unsafe source").closest(".trackspace-source");
+      expect(source?.tagName).toBe("SPAN");
+      expect(source?.getAttribute("href")).toBeNull();
+    },
+  );
 });
