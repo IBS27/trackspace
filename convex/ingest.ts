@@ -21,6 +21,8 @@ import type {
 } from "../src/features/trackspace/data/types";
 
 const NETWORK_TIMEOUT_MS = 15_000;
+/** Cap RSS bodies before regex parsing to limit ReDoS / memory abuse. */
+const MAX_FEED_BYTES = 512_000;
 const DEFAULT_LL2_BASE = "https://ll.thespacedevs.com/2.2.0";
 const NASA_FEEDS = [
   "https://blogs.nasa.gov/artemis/feed/",
@@ -73,16 +75,56 @@ function cloneDataset(dataset: Dataset): Dataset {
 const str = (value: unknown): string | null =>
   typeof value === "string" ? value : null;
 
-function httpUrl(value: string | null): string | null {
+function httpsUrl(value: string | null): string | null {
   if (!value) return null;
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "https:" || parsed.protocol === "http:"
-      ? parsed.toString()
-      : null;
+    return parsed.protocol === "https:" ? parsed.toString() : null;
   } catch {
     return null;
   }
+}
+
+async function readTextCapped(
+  res: Response,
+  maxBytes: number,
+): Promise<string> {
+  const lengthHeader = res.headers.get("content-length");
+  if (lengthHeader) {
+    const declared = Number(lengthHeader);
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      throw new Error(`response exceeds ${maxBytes} bytes`);
+    }
+  }
+
+  if (!res.body) {
+    const text = await res.text();
+    if (new TextEncoder().encode(text).byteLength > maxBytes) {
+      throw new Error(`response exceeds ${maxBytes} bytes`);
+    }
+    return text;
+  }
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new Error(`response exceeds ${maxBytes} bytes`);
+    }
+    chunks.push(value);
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder("utf-8", { fatal: false }).decode(merged);
 }
 
 function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
@@ -98,7 +140,7 @@ function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
     statusAbbrev: str(raw.status?.abbrev),
     lastUpdated: str(raw.last_updated),
     provider: str(raw.launch_service_provider?.name),
-    url: httpUrl(str(raw.url)),
+    url: httpsUrl(str(raw.url)),
   };
 }
 
@@ -180,7 +222,7 @@ function parseFeedItems(xml: string): FeedItem[] {
   while ((match = itemRe.exec(xml)) !== null) {
     const block = match[1];
     const title = decode(firstTag(block, "title"));
-    const link = httpUrl(decode(firstTag(block, "link")));
+    const link = httpsUrl(decode(firstTag(block, "link")));
     if (!title || !link) continue;
     const pub = decode(firstTag(block, "pubDate"));
     const parsed = pub ? new Date(pub) : null;
@@ -219,7 +261,7 @@ async function fetchNasaItems(
         headers: { "User-Agent": "trackspace-ingest (lunar readiness tracker)" },
       });
       if (!res.ok) throw new Error(`${feed} responded ${res.status}`);
-      all.push(...parseFeedItems(await res.text()));
+      all.push(...parseFeedItems(await readTextCapped(res, MAX_FEED_BYTES)));
     } catch (error) {
       errors.push((error as Error).message);
     }

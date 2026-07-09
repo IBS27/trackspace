@@ -4,14 +4,14 @@
 // bearer token. GET reports the most recent run so a scheduler can check status
 // without triggering work.
 
+import { authorizeIngestRequest } from "@/lib/ingest-auth";
 import { getConvexSiteUrl } from "@/lib/convex-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function authorized(request: Request): boolean {
-  const token = process.env.INGEST_TOKEN;
-  return Boolean(token) && request.headers.get("authorization") === `Bearer ${token}`;
+  return authorizeIngestRequest(request, process.env.INGEST_TOKEN);
 }
 
 async function forwardToConvex(
@@ -26,7 +26,14 @@ async function forwardToConvex(
     method,
     headers: { authorization: `Bearer ${token}` },
   });
-  return Response.json(await response.json(), { status: response.status });
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    body = { error: "upstream_invalid_response" };
+  }
+  return Response.json(body, { status: response.status });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -40,11 +47,8 @@ export async function POST(request: Request): Promise<Response> {
       `/ingest${offline ? "?offline=1" : ""}`,
       "POST",
     );
-  } catch (error) {
-    return Response.json(
-      { ok: false, error: (error as Error).message },
-      { status: 500 },
-    );
+  } catch {
+    return Response.json({ ok: false, error: "ingest_failed" }, { status: 500 });
   }
 }
 
@@ -54,9 +58,9 @@ export async function GET(request: Request): Promise<Response> {
   }
   try {
     return await forwardToConvex("/ingest", "GET");
-  } catch (error) {
+  } catch {
     return Response.json(
-      { lastRun: null, error: (error as Error).message },
+      { lastRun: null, error: "ingest_status_failed" },
       { status: 500 },
     );
   }

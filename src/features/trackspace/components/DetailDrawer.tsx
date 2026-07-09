@@ -210,9 +210,7 @@ function sourceBadge(source: Source): string {
 function sourceHref(url: string): string | null {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:"
-      ? parsed.toString()
-      : null;
+    return parsed.protocol === "https:" ? parsed.toString() : null;
   } catch {
     return null;
   }
@@ -246,7 +244,7 @@ function SourceList({ sources }: { sources: Source[] }) {
             key={`${source.url}-${index}`}
             href={href}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             title={title}
           >
             {content}
