@@ -466,6 +466,354 @@
   display: block;
 }
 
+.trackspace-scene-solar-glow,
+.trackspace-scene-vignette,
+.trackspace-scene-scanline {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.trackspace-scene-solar-glow {
+  top: -190px;
+  left: -220px;
+  width: 540px;
+  height: 540px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 241, 211, 0.18) 0 1%, transparent 12%),
+    radial-gradient(circle, rgba(128, 196, 255, 0.1), transparent 59%);
+  filter: blur(1px);
+  opacity: 0.9;
+}
+
+.trackspace-scene-vignette {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(2, 4, 8, 0.42), transparent 22%, transparent 78%, rgba(2, 4, 8, 0.32)),
+    linear-gradient(0deg, rgba(2, 4, 8, 0.46), transparent 25%, transparent 83%, rgba(2, 4, 8, 0.2));
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.38);
+}
+
+.trackspace-scene-scanline {
+  top: -12%;
+  right: 0;
+  left: 0;
+  height: 22%;
+  opacity: 0.26;
+  background: linear-gradient(180deg, transparent, rgba(91, 208, 255, 0.035), transparent);
+  animation: trackspace-scene-scan 10s linear infinite;
+}
+
+@keyframes trackspace-scene-scan {
+  to {
+    transform: translateY(560%);
+  }
+}
+
+.trackspace-scene-identity,
+.trackspace-scene-viewbar,
+.trackspace-scene-telemetry,
+.trackspace-scene-dock {
+  position: absolute;
+  z-index: 6;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.trackspace-scene-identity {
+  top: 22px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.trackspace-scene-identity span {
+  margin-bottom: 6px;
+  color: var(--ts-faint);
+  font-size: 8px;
+  letter-spacing: 0.22em;
+}
+
+.trackspace-scene-identity b {
+  color: #dce9f7;
+  font-size: 13px;
+  font-weight: 540;
+  letter-spacing: 0.12em;
+}
+
+.trackspace-scene-identity i {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  color: #90a3b8;
+  font-size: 8px;
+  font-style: normal;
+  letter-spacing: 0.12em;
+}
+
+.trackspace-scene-identity i::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffd89b;
+  box-shadow: 0 0 10px rgba(255, 216, 155, 0.8);
+}
+
+.trackspace-scene-viewbar {
+  top: 18px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(66px, auto)) 34px;
+  align-items: stretch;
+  height: 38px;
+  padding: 3px;
+  border: 1px solid rgba(73, 96, 119, 0.44);
+  border-radius: 7px;
+  background: rgba(5, 9, 15, 0.72);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+  transform: translateX(-50%);
+}
+
+.trackspace-scene-viewbar button,
+.trackspace-scene-dock button {
+  border: 0;
+  background: transparent;
+  color: #738399;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.trackspace-scene-viewbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 30px;
+  min-height: 0;
+  padding: 0 11px;
+  border-radius: 4px;
+  font-size: 8.5px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+.trackspace-scene-viewbar button > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentcolor;
+  opacity: 0.5;
+}
+
+.trackspace-scene-viewbar button:hover,
+.trackspace-scene-dock button:hover {
+  color: var(--ts-ink);
+  background: rgba(91, 208, 255, 0.07);
+}
+
+.trackspace-scene-viewbar button:focus-visible,
+.trackspace-scene-dock button:focus-visible {
+  outline: 1px solid var(--ts-accent);
+  outline-offset: 1px;
+}
+
+.trackspace-scene-viewbar button.is-active {
+  background: rgba(91, 208, 255, 0.1);
+  color: #bcecff;
+}
+
+.trackspace-scene-viewbar button.is-active > span {
+  opacity: 1;
+  box-shadow: 0 0 8px currentcolor;
+}
+
+.trackspace-scene-viewbar .trackspace-scene-reset {
+  align-self: stretch;
+  width: 34px;
+  height: 30px;
+  min-width: 34px;
+  margin-left: 2px;
+  padding: 0;
+  border-left: 1px solid rgba(73, 96, 119, 0.38);
+  border-radius: 0 4px 4px 0;
+}
+
+.trackspace-scene-viewbar .trackspace-scene-reset svg {
+  width: 13px;
+  height: 13px;
+  overflow: visible;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+}
+
+.trackspace-scene-telemetry {
+  top: 74px;
+  right: 22px;
+  display: grid;
+  width: 142px;
+  border-top: 1px solid rgba(91, 208, 255, 0.42);
+  background: linear-gradient(180deg, rgba(7, 12, 19, 0.72), rgba(7, 12, 19, 0.28));
+  backdrop-filter: blur(4px);
+}
+
+.trackspace-scene-telemetry > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding: 8px 9px 7px;
+  border-bottom: 1px solid rgba(48, 66, 84, 0.4);
+}
+
+.trackspace-scene-telemetry span {
+  grid-column: 1;
+  color: #63758c;
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.trackspace-scene-telemetry b {
+  grid-column: 2;
+  color: #d7e9f7;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 480;
+  letter-spacing: -0.025em;
+}
+
+.trackspace-scene-telemetry i {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  color: #53677f;
+  font-size: 7px;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.trackspace-scene-dock {
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: stretch;
+  padding: 6px 7px;
+  border: 1px solid rgba(73, 96, 119, 0.44);
+  border-radius: 7px;
+  background: rgba(5, 9, 15, 0.82);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(12px);
+}
+
+.trackspace-scene-dock-group {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 3px;
+}
+
+.trackspace-scene-dock .trackspace-scene-layers {
+  grid-template-columns: repeat(3, auto);
+}
+
+.trackspace-scene-dock-group > span {
+  grid-column: 1 / -1;
+  padding: 0 5px 3px;
+  color: #4e6075;
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.trackspace-scene-dock button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.trackspace-scene-dock button.is-active {
+  border-color: rgba(91, 208, 255, 0.18);
+  background: rgba(91, 208, 255, 0.08);
+  color: #bcecff;
+}
+
+.trackspace-scene-layer-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ts-ready);
+  box-shadow: 0 0 6px rgba(51, 211, 156, 0.68);
+}
+
+.trackspace-scene-layer-line {
+  width: 10px;
+  border-top: 1px dashed var(--ts-accent);
+}
+
+.trackspace-scene-layer-node {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #ffbd79;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 189, 121, 0.42);
+}
+
+.trackspace-scene-layer-node::before,
+.trackspace-scene-layer-node::after {
+  position: absolute;
+  content: "";
+  background: #ffbd79;
+}
+
+.trackspace-scene-layer-node::before {
+  top: 3px;
+  left: -3px;
+  width: 13px;
+  height: 1px;
+}
+
+.trackspace-scene-layer-node::after {
+  top: -3px;
+  left: 3px;
+  width: 1px;
+  height: 13px;
+}
+
+.trackspace-scene-dock-divider {
+  width: 1px;
+  margin: 2px 8px;
+  background: rgba(73, 96, 119, 0.36);
+}
+
+.trackspace-scene-dock .trackspace-scene-time {
+  grid-template-columns: repeat(4, auto);
+}
+
+.trackspace-scene-dock .trackspace-scene-play {
+  min-width: 26px;
+  padding: 0;
+  color: #a8bbcf;
+  font-size: 9px;
+}
+
 .trackspace-scene-tooltip {
   position: absolute;
   z-index: 4;
@@ -573,12 +921,7 @@
 }
 
 .trackspace-hud-hint {
-  align-self: center;
-  color: var(--ts-faint);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-align: center;
+  display: none;
 }
 
 .trackspace-cc-side {
@@ -2274,9 +2617,52 @@
   }
 }
 
+@media (min-width: 901px) and (max-width: 1180px) {
+  .trackspace-scene-identity,
+  .trackspace-scene-telemetry {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .trackspace-scene-identity,
+  .trackspace-scene-telemetry {
+    display: none;
+  }
+
+  .trackspace-scene-viewbar {
+    top: 14px;
+  }
+
+  .trackspace-scene-viewbar button {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .trackspace-scene-dock {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    justify-content: center;
+  }
+
+  .trackspace-hud-readout {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trackspace-live-dot {
     animation: none;
+  }
+
+  .trackspace-scene-scanline {
+    display: none;
+  }
+
+  .trackspace-scene-viewbar button,
+  .trackspace-scene-dock button {
+    transition: none;
   }
 
   .trackspace-scrim,
