@@ -139,6 +139,8 @@ function createEarthMoonScene(
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
   const target = new THREE.Vector3(0, 0, 0);
   const disposables: { dispose(): void }[] = [];
+  const lineMaterials: LineMaterial[] = [];
+  const lineResolution = new THREE.Vector2();
 
   const loader = new THREE.TextureLoader();
   const loadColor = (url: string) => {
@@ -247,6 +249,7 @@ function createEarthMoonScene(
       depthWrite: false,
       toneMapped: false,
     });
+    lineMaterials.push(coreMaterial, haloMaterial);
     const halo = new Line2(geometry, haloMaterial);
     const core = new Line2(geometry, coreMaterial);
     halo.frustumCulled = false;
@@ -541,6 +544,7 @@ function createEarthMoonScene(
     disposables.push(material);
   }
   orbitPlane.add(orbitalGrid);
+  disposables.push(orbitalGrid.geometry);
 
   // Orbit path matching the actual ellipse.
   const orbitPoints: THREE.Vector3[] = [];
@@ -1283,6 +1287,10 @@ function createEarthMoonScene(
     const w = Math.max(1, r.width);
     const h = Math.max(1, r.height);
     renderer.setSize(w, h, false);
+    renderer.getDrawingBufferSize(lineResolution);
+    for (const material of lineMaterials) {
+      material.resolution.copy(lineResolution);
+    }
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -1507,6 +1515,11 @@ export function EarthMoonScene({
   });
   const [telemetry, setTelemetry] =
     useState<SceneTelemetry>(INITIAL_TELEMETRY);
+  const sceneStateRef = useRef({ paused, speed, layers, focus });
+
+  useEffect(() => {
+    sceneStateRef.current = { paused, speed, layers, focus };
+  }, [paused, speed, layers, focus]);
 
   useEffect(() => {
     openRef.current = onLocationOpen;
@@ -1522,6 +1535,13 @@ export function EarthMoonScene({
       onTelemetryChange: setTelemetry,
     });
     controllerRef.current = scene;
+    const sceneState = sceneStateRef.current;
+    scene.setPaused(sceneState.paused);
+    scene.setSpeed(sceneState.speed);
+    scene.setLayer("sites", sceneState.layers.sites);
+    scene.setLayer("trajectory", sceneState.layers.trajectory);
+    scene.setLayer("maneuvers", sceneState.layers.maneuvers);
+    scene.setFocus(sceneState.focus);
     return () => {
       controllerRef.current = null;
       scene.destroy();
