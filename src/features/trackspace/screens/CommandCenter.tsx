@@ -38,13 +38,6 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
         <span className="trackspace-corner trackspace-corner-bl" />
         <span className="trackspace-corner trackspace-corner-br" />
         <div className="trackspace-hud">
-          <div className="trackspace-hud-top">
-            <div className="trackspace-hud-lead">EARTH · MOON SYSTEM</div>
-            <div>VIEW · CISLUNAR / LIVE ORBIT</div>
-            <div>DRAG TO ORBIT · SCROLL TO ZOOM</div>
-            <div>CLICK MARKERS FOR SOURCE-BACKED SITES</div>
-            <div>DBL-CLICK EARTH / MOON TO REFOCUS</div>
-          </div>
           <div className="trackspace-hud-readout">
             <div className="trackspace-hud-readout-title">
               Sustained-Presence Index
@@ -67,9 +60,7 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
             </div>
           </div>
           <div className="trackspace-hud-hint">
-            ◦ {summary.capabilityCount} TRACKED CAPABILITIES ·{" "}
-            {sceneLocations.length} SPATIAL SITES ·{" "}
-            {summary.milestoneCount} MILESTONES · MODEL v0.1 ◦
+            DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A SITE FOR EVIDENCE
           </div>
         </div>
       </div>
