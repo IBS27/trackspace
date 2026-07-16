@@ -15,18 +15,19 @@ Trackspace is a **single Next.js app** at the repo root (not a monorepo). See `R
 
 | Service        | How to run                           | Notes                                                                       |
 | -------------- | ------------------------------------ | --------------------------------------------------------------------------- |
-| Next.js dev    | `npm run dev`                        | Serves at `http://localhost:3000`. Use a tmux session for long-running dev. |
-| Next.js prod   | `npm run build` then `npm run start` | After a production build.                                                   |
-| Convex         | `npx convex dev`                     | Realtime backend, scheduled ingestion, and persistence.                     |
+| Next.js dev    | `bun run dev`                        | Serves at `http://localhost:3000`. Use a tmux session for long-running dev. |
+| Next.js prod   | `bun run build` then `bun run start` | After a production build.                                                   |
+| Convex         | `bunx --bun convex dev`              | Realtime backend, scheduled ingestion, and persistence.                     |
 
 
 No Docker Compose or external database daemon is required for local development today.
 
 ### Lint / test / build
 
-- **Lint:** `npm run lint` (ESLint 9, `eslint.config.mjs`).
-- **Tests:** `npm run test` (Vitest watch) or `npm run test -- --run` (single run). The repo may have **zero test files**; Vitest then exits with code 1 — that is expected until tests are added.
-- **Build:** `npm run build` (Next.js 16 with Turbopack).
+- **Install:** `bun install --frozen-lockfile` for reproducible installs. Use `bun install` when intentionally updating dependencies.
+- **Lint:** `bun run lint` (ESLint 9, `eslint.config.mjs`).
+- **Tests:** `bun run test` (Vitest watch) or `bun run test -- --run` (single run). The repo may have **zero test files**; Vitest then exits with code 1 — that is expected until tests are added. Do not use bare `bun test`; that selects Bun's test runner instead of the configured Vitest script.
+- **Build:** `bun run build` (Next.js 16 with Turbopack running on Bun).
 
 ### Next.js version note
 
@@ -34,7 +35,7 @@ This project uses **Next.js 16** with breaking changes vs older versions. Before
 
 ### Peer dependencies
 
-If `@react-three/fiber` conflicts with React during install, use `npm install --legacy-peer-deps` (documented in `docs/tech-stack.html`).
+Keep React on a version supported by `@react-three/fiber`. If a future React upgrade exceeds Fiber's declared peer range, pin React to the latest compatible version until Fiber adds support (documented in `docs/tech-stack.html`).
 
 ## UI implementation
 
@@ -64,6 +65,6 @@ how to correctly use Convex APIs and patterns. The file contains rules that
 override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running
-`npx convex ai-files install`.
+`bunx --bun convex ai-files install`.
 
 <!-- convex-ai-end -->

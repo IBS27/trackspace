@@ -2,21 +2,10 @@ import sharp from "sharp";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const svg = readFileSync("src/app/icon.svg", "utf8");
-// Apple touch icons are full-bleed squares (iOS applies its own mask): no frame, no corner radius.
-const appleSvg = svg
-  .replace(/<rect[^>]*\/>/, '<rect x="0" y="0" width="32" height="32" fill="#000" />')
-  .replace('viewBox="0 0 32 32"', 'viewBox="0 0 32 32" width="32" height="32"');
-
-// At 16px the 1.25 stroke is sub-pixel: thicken lines and drop fine details.
-const smallSvg = svg
-  .replace('stroke-width="1.25"', 'stroke-width="2"')
-  .replace(/\s*<circle[^>]*\/>/, "")
-  .replace(/\s*<path d="M13\.6[^>]*\/>/, "")
-  .replace(/\s*<path d="M18\.4[^>]*\/>/, "");
 
 async function renderPng(source, size) {
   // Render at 8x and downsample for smoother anti-aliasing at small sizes.
-  const density = (72 * size * 8) / 32;
+  const density = (72 * size * 8) / 72;
   return sharp(Buffer.from(source), { density })
     .resize(size, size, { kernel: "lanczos3" })
     .png()
@@ -44,9 +33,9 @@ function buildIco(pngs) {
 }
 
 const [png16, png32, apple180, preview] = await Promise.all([
-  renderPng(smallSvg, 16),
+  renderPng(svg, 16),
   renderPng(svg, 32),
-  renderPng(appleSvg, 180),
+  renderPng(svg, 180),
   renderPng(svg, 256),
 ]);
 

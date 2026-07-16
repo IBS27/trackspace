@@ -2,16 +2,17 @@
   "name": "trackspace",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "bun@1.3.14",
   "engines": {
-    "node": "24.x"
+    "bun": "1.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "vitest",
-    "ingest": "tsx scripts/ingest.ts"
+    "dev": "bun run --bun next dev",
+    "build": "bun run --bun next build",
+    "start": "bun run --bun next start",
+    "lint": "bun run --bun eslint",
+    "test": "bun run --bun vitest",
+    "ingest": "bun scripts/ingest.ts"
   },
   "overrides": {
     "postcss": "^8.5.10"
@@ -42,7 +43,6 @@
     "eslint-config-next": "16.2.6",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "tsx": "^4.22.3",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.7"

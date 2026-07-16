@@ -1,7 +1,7 @@
 // CLI entry point for the Convex ingestion pipeline.
 //
-//   npm run ingest             # load baseline + refresh from live feeds
-//   npm run ingest -- --offline  # load and verify the curated baseline only
+//   bun run ingest               # load baseline + refresh from live feeds
+//   bun run ingest -- --offline  # load and verify the curated baseline only
 //
 // Manual runs require INGEST_TOKEN in the local app env and Convex deployment.
 // Convex also runs the online form hourly via convex/crons.ts.

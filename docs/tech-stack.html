@@ -228,6 +228,11 @@
           </thead>
           <tbody>
             <tr>
+              <td>Package manager and runtime</td>
+              <td><code>Bun</code></td>
+              <td>One tool for dependency installation, project scripts, local Next.js processes, and Vercel Functions.</td>
+            </tr>
+            <tr>
               <td>App framework</td>
               <td><code>Next.js</code> + <code>TypeScript</code></td>
               <td>Routes, server handlers, static/docs pages, and API endpoints in one app.</td>
@@ -292,9 +297,9 @@
           </ul>
           <p class="muted" style="margin-top: 12px;">
             <strong>Peer-dep note:</strong> <code>@react-three/fiber</code> v9 declares a React ceiling of <code>&lt;19.3</code>.
-            It installs cleanly against the React 19.2.x that <code>create-next-app</code> ships today, but once the scaffold
-            starts pulling React 19.3+, <code>npm install</code> will throw an <code>ERESOLVE</code> peer conflict until fiber raises
-            the ceiling. Fix when it happens: <code>npm install --legacy-peer-deps</code>.
+            It installs cleanly against the React 19.2.x used today. If a future React release exceeds that ceiling,
+            keep React pinned to the latest compatible version until Fiber expands its peer range, then run
+            <code>bun install</code> again.
           </p>
         </div>
 

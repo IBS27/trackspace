@@ -6,6 +6,7 @@ It connects milestones, required capabilities, dependencies, spatial context, an
 
 ## Stack
 
+- Bun for package management and the JavaScript runtime
 - Next.js, React, and TypeScript
 - Tailwind CSS
 - Convex for realtime data, scheduled ingestion, and persistence
@@ -15,8 +16,8 @@ It connects milestones, required capabilities, dependencies, spatial context, an
 ## Development
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Then open `http://localhost:3000`.
@@ -24,11 +25,15 @@ Then open `http://localhost:3000`.
 Useful scripts:
 
 ```bash
-npm run lint
-npm run test -- --run
-npm run build
-INGEST_TOKEN=<token> npm run ingest  # load + refresh the data store (see below)
+bun run lint
+bun run test -- --run
+bun run build
+INGEST_TOKEN=<token> bun run ingest  # load + refresh the data store (see below)
 ```
+
+The project is pinned to Bun 1.x through `package.json`, uses `bun.lock` for
+reproducible installs, and runs its local and deployed Next.js processes on the
+Bun runtime.
 
 ## Deployment
 
@@ -46,7 +51,7 @@ Set the same `INGEST_TOKEN` in Convex so its `/ingest` HTTP action can
 authorize manual refreshes:
 
 ```bash
-npx convex env set INGEST_TOKEN <token> --prod
+bunx --bun convex env set INGEST_TOKEN <token> --prod
 ```
 
 ## Data
@@ -60,25 +65,25 @@ There are two layers:
 
 ### Ingestion pipeline
 
-`convex/ingest.ts` is the engine that finds the data, keeps it current, and surfaces new leads. One run (`npm run ingest`):
+`convex/ingest.ts` is the engine that finds the data, keeps it current, and surfaces new leads. One run (`bun run ingest`):
 
 1. loads the curated baseline into Convex with idempotent upserts,
 2. **reconciles** launch milestones (Artemis I–III) against the live [Launch Library 2](https://thespacedevs.com/llapi) feed — refreshing `lastVerified`, attaching a corroborating source, and flagging any milestone whose curated status disagrees with the live flight outcome,
 3. **discovers** new lunar items from NASA's RSS feeds and queues them as review leads,
 4. records the run.
 
-Steps 2–3 are best-effort: a network failure is logged as a warning, never fatal, so the curated truth always loads — even offline (`npm run ingest -- --offline`).
+Steps 2–3 are best-effort: a network failure is logged as a warning, never fatal, so the curated truth always loads — even offline (`bun run ingest -- --offline`).
 
 Per the accuracy policy, feed data refreshes provenance and creates review leads in the `discoveries` table; it never silently overwrites a curated status. Source tiers (1 = official, 4 = discovery-only) gate what may drive a public claim.
 
 ### Keeping it current
 
-Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler. Manual refreshes require the same `INGEST_TOKEN` in both the app environment and Convex (`npx convex env set INGEST_TOKEN <token>`). The Next route forwards the request to the Convex `/ingest` HTTP action with the token in the Authorization header:
+Convex runs `convex/crons.ts` hourly to refresh the store. You can also trigger a refresh manually through the Next route handler. Manual refreshes require the same `INGEST_TOKEN` in both the app environment and Convex (`bunx --bun convex env set INGEST_TOKEN <token>`). The Next route forwards the request to the Convex `/ingest` HTTP action with the token in the Authorization header:
 
 ```bash
 curl -X POST -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest
 curl -H "Authorization: Bearer $INGEST_TOKEN" http://localhost:3000/api/ingest
-INGEST_TOKEN=$INGEST_TOKEN npm run ingest -- --offline
+INGEST_TOKEN=$INGEST_TOKEN bun run ingest -- --offline
 ```
 
 See `docs/overview.html` and `docs/implementation.html` for the product and technical direction.
