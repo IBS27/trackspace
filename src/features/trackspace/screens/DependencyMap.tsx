@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
-import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { CAPABILITY_GROUPS, STATUS, STATUS_LIST } from "../data/seed";
 import { capabilityById, getDependencyEdges } from "../data/selectors";
@@ -229,24 +227,8 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                   onOpen({ type: "capability", id: capability.id })
                 }
               >
-                <span className="trackspace-gnode-top">
-                  <span className="trackspace-gnode-name">
-                    {capability.name}
-                  </span>
-                  <span
-                    className="trackspace-gnode-dot"
-                    style={{
-                      background: statusColor(capability.status),
-                      boxShadow: `0 0 8px ${statusColor(capability.status)}`,
-                    }}
-                    aria-hidden="true"
-                  />
-                </span>
-                <span className="trackspace-gnode-status">
-                  <StatusChip status={capability.status} compact />
-                  <span className="trackspace-gnode-readiness trackspace-tabular">
-                    {capability.readiness}%
-                  </span>
+                <span className="trackspace-gnode-name">
+                  {capability.name}
                 </span>
                 <span className="trackspace-gnode-bar" aria-hidden="true">
                   <span
@@ -256,8 +238,15 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                     }}
                   />
                 </span>
-                <span className="trackspace-gnode-meta">
-                  <ConfidenceChip confidence={capability.conf} />
+                <span className="trackspace-gnode-foot">
+                  <span className="trackspace-gnode-readiness trackspace-tabular">
+                    {capability.readiness}%
+                  </span>
+                  <span
+                    className={`trackspace-gnode-state trackspace-${capability.status}`}
+                  >
+                    {STATUS[capability.status].label}
+                  </span>
                 </span>
               </button>
             );

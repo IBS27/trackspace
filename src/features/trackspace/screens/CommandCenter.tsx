@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type CSSProperties } from "react";
+import { useCallback, useMemo } from "react";
 
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
@@ -66,69 +66,74 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
       </div>
 
       <div className="trackspace-cc-side">
-        <section className="trackspace-panel">
-          <h2>Lunar-Base Readiness</h2>
-          <div
-            className="trackspace-gauge"
-            style={
-              { "--trackspace-readiness": `${summary.overall}%` } as CSSProperties
-            }
-          >
-            <div className="trackspace-gauge-num trackspace-tabular">
+        <section className="trackspace-side-section">
+          <h2 className="trackspace-side-heading">
+            Lunar-Base Readiness
+            <span className="trackspace-side-heading-note">
+              {summary.capabilityCount} capabilities
+            </span>
+          </h2>
+          <div className="trackspace-side-readout">
+            <div className="trackspace-side-readout-num trackspace-tabular">
               {summary.overall}
               <small>%</small>
             </div>
-            <div className="trackspace-gauge-meta">
+            <div className="trackspace-side-readout-meta">
               <div>{summary.label}</div>
               {lastAchieved && (
-                <div className="trackspace-gauge-delta">
+                <div className="trackspace-side-readout-delta">
                   ▲ {lastAchieved.code} achieved · {lastAchieved.date}
                 </div>
               )}
-              <div className="trackspace-gauge-note">
-                weighted across {summary.capabilityCount} caps
-              </div>
             </div>
           </div>
-          <div className="trackspace-status-counts">
-            {STATUS_LIST.map((status) => (
-              <div className="trackspace-status-count" key={status}>
+          <div className="trackspace-side-statusbar" aria-hidden="true">
+            {STATUS_LIST.map((status) =>
+              summary.statusCounts[status] > 0 ? (
                 <span
-                  className={`trackspace-status-count-num trackspace-tabular trackspace-${status}`}
-                >
+                  key={status}
+                  className={`trackspace-side-statusbar-seg trackspace-bg-${status}`}
+                  style={{ flexGrow: summary.statusCounts[status] }}
+                />
+              ) : null,
+            )}
+          </div>
+          <div className="trackspace-side-statuskey">
+            {STATUS_LIST.map((status) => (
+              <span className="trackspace-side-statuskey-item" key={status}>
+                <i
+                  className={`trackspace-side-statuskey-dot trackspace-bg-${status}`}
+                  aria-hidden="true"
+                />
+                <b className="trackspace-tabular">
                   {summary.statusCounts[status]}
-                </span>
-                <span className="trackspace-status-count-label">
-                  <i
-                    className={`trackspace-status-count-dot trackspace-bg-${status}`}
-                    aria-hidden="true"
-                  />
-                  {STATUS[status].label}
-                </span>
-              </div>
+                </b>
+                {STATUS[status].label}
+              </span>
             ))}
           </div>
         </section>
 
-        <section className="trackspace-panel">
-          <h2>Top Blockers</h2>
-          <div className="trackspace-blockers">
+        <section className="trackspace-side-section">
+          <h2 className="trackspace-side-heading">Top Blockers</h2>
+          <div className="trackspace-side-list">
             {summary.blockers.map((capability) => (
               <button
                 type="button"
-                className="trackspace-blocker-item"
+                className="trackspace-side-blocker"
                 key={capability.id}
                 onClick={() => onOpen({ type: "capability", id: capability.id })}
               >
-                <span className="trackspace-blocker-top">
-                  <span className="trackspace-blocker-name">
+                <span className="trackspace-side-blocker-top">
+                  <span className="trackspace-side-blocker-name">
                     {capability.name}
                   </span>
-                  <span className="trackspace-blocker-readiness trackspace-tabular">
-                    {capability.readiness}%
+                  <span className="trackspace-side-blocker-pct trackspace-tabular">
+                    {capability.readiness}
+                    <small>%</small>
                   </span>
                 </span>
-                <span className="trackspace-blocker-desc">
+                <span className="trackspace-side-blocker-desc">
                   {capability.blurb}
                 </span>
               </button>
@@ -136,20 +141,24 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
           </div>
         </section>
 
-        <section className="trackspace-panel">
-          <h2>Recent Changes</h2>
-          <div className="trackspace-rows">
+        <section className="trackspace-side-section">
+          <h2 className="trackspace-side-heading">Recent Changes</h2>
+          <div className="trackspace-side-list">
             {summary.recentChanges.map((event) => (
               <button
                 type="button"
-                className="trackspace-crow"
+                className="trackspace-side-row"
                 key={event.id}
                 onClick={() => onOpen({ type: "event", id: event.id })}
               >
-                <span className="trackspace-crow-date">{event.date}</span>
-                <span className="trackspace-crow-main">
-                  <span className="trackspace-crow-title">{event.title}</span>
-                  <span className="trackspace-crow-meta">
+                <span className="trackspace-side-row-date trackspace-tabular">
+                  {event.date}
+                </span>
+                <span className="trackspace-side-row-main">
+                  <span className="trackspace-side-row-title">
+                    {event.title}
+                  </span>
+                  <span className="trackspace-side-row-meta">
                     <StatusChip status={event.status} />
                     <ConfidenceChip confidence={event.conf} />
                   </span>
@@ -159,26 +168,28 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
           </div>
         </section>
 
-        <section className="trackspace-panel">
-          <h2>Next Milestones</h2>
-          <div className="trackspace-rows">
+        <section className="trackspace-side-section">
+          <h2 className="trackspace-side-heading">Next Milestones</h2>
+          <div className="trackspace-side-list">
             {upcomingMilestones.map((milestone) => (
               <button
                 type="button"
-                className="trackspace-crow"
+                className="trackspace-side-row"
                 key={milestone.id}
                 onClick={() => onOpen({ type: "milestone", id: milestone.id })}
               >
-                <span className="trackspace-crow-date">{milestone.date}</span>
-                <span className="trackspace-crow-main">
-                  <span className="trackspace-crow-title">
+                <span className="trackspace-side-row-date trackspace-tabular">
+                  {milestone.date}
+                </span>
+                <span className="trackspace-side-row-main">
+                  <span className="trackspace-side-row-title">
                     {milestone.code} · {milestone.name}
                   </span>
-                  <span className="trackspace-crow-meta">
+                  <span className="trackspace-side-row-meta">
                     <StatusChip status={milestone.status} />
                     {milestone.critical && (
                       <span className="trackspace-cchip trackspace-cchip-critical">
-                        CRITICAL PATH
+                        Critical path
                       </span>
                     )}
                   </span>

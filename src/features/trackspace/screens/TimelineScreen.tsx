@@ -131,20 +131,16 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
                   className="trackspace-tlcard"
                   onClick={() => onOpen({ type: "event", id: event.id })}
                 >
-                  <span className="trackspace-tlcard-top">
-                    <span className="trackspace-tlcard-title">
-                      {event.title}
-                    </span>
+                  <span className="trackspace-tlcard-title">{event.title}</span>
+                  <span className="trackspace-tlcard-meta">
+                    <StatusChip status={event.status} />
+                    <ConfidenceChip confidence={event.conf} />
                     <span
                       className="trackspace-tlcard-impact"
                       style={{ color: IMPACT_COLOR[event.impact] }}
                     >
                       {event.impact} impact
                     </span>
-                  </span>
-                  <span className="trackspace-tlcard-meta">
-                    <StatusChip status={event.status} />
-                    <ConfidenceChip confidence={event.conf} />
                   </span>
                   <span className="trackspace-tlcard-what">{event.what}</span>
                 </button>
