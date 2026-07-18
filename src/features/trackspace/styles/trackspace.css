@@ -257,16 +257,6 @@
   border-bottom-color: var(--ts-accent);
 }
 
-.trackspace-tabbar-hint {
-  align-self: center;
-  margin-left: auto;
-  color: var(--ts-faint);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  white-space: nowrap;
-}
-
 .trackspace-tab-icon {
   position: relative;
   /* Optical: the all-caps labels leave their descender space empty, so
@@ -389,10 +379,6 @@
 
   .trackspace-screen {
     overflow: auto;
-  }
-
-  .trackspace-tabbar-hint {
-    display: none;
   }
 }
 
