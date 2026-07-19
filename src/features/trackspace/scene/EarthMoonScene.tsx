@@ -51,7 +51,7 @@ const INITIAL_TELEMETRY: SceneTelemetry = {
   phasePercent: 23,
   missionPhase: "TLI coast",
   missionPercent: 12,
-  missionDetail: "Moon intercept",
+  missionDetail: "Far-side LOI",
 };
 const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
@@ -237,6 +237,7 @@ function createEarthMoonScene(
       vertexColors: usesGradient,
       transparent: false,
       opacity: 1,
+      depthTest: true,
       depthWrite: false,
       toneMapped: false,
     });
@@ -246,6 +247,7 @@ function createEarthMoonScene(
       vertexColors: usesGradient,
       transparent: false,
       opacity: 1,
+      depthTest: true,
       depthWrite: false,
       toneMapped: false,
     });
@@ -569,20 +571,34 @@ function createEarthMoonScene(
   orbitPlane.add(systemOrbitPath.root);
 
   // NOMINAL TRANSLUNAR TRANSFER --------------------------------------------
-  // A patched-conic visual model: coast in a low Earth parking orbit, burn
-  // tangentially at perigee (TLI), then follow one half of a highly eccentric
-  // Earth-centered ellipse toward the Moon's *future* position. The Moon
-  // advances by roughly 40° during a representative three-day coast.
+  // Conceptual Apollo-style profile (patched conic):
+  //   1. Surface launch → gravity-turn ascent into TLI
+  //   2. TLI at perigee → Earth-focus Kepler ellipse (always outside Earth)
+  //   3. Small leading-edge aim bias; Moon advances ~40° during coast
+  //   4. LOI at apoapsis on the Moon's far side → lunar orbit
+  //   5. TEI from the far side → Earth-focus return ellipse → splashdown
   const trajectoryGroup = new THREE.Group();
   orbitPlane.add(trajectoryGroup);
   const trajectoryPathsGroup = new THREE.Group();
   const maneuverNodesGroup = new THREE.Group();
   trajectoryGroup.add(trajectoryPathsGroup, maneuverNodesGroup);
 
-  const parkingRadius = EARTH_RADIUS * 1.22;
+  // Insertion altitude after the surface launch ascent.
+  const parkingRadius = EARTH_RADIUS * 1.58;
+  const captureRadius = MOON_RADIUS * 1.55;
+  // Just above the Earth mesh so launch/splashdown sit on the surface.
+  const SURFACE_RADIUS = EARTH_RADIUS * 1.004;
+  // Transfers stay in the Moon's orbital plane (no artificial out-of-plane tilt).
+  const LEADING_EDGE_AIM = THREE.MathUtils.degToRad(2);
+  // Squash the transverse axis of the transfer ellipses (still clears Earth).
+  const TRANSFER_FLATTEN = 0.72;
+  // Gravity-turn arc from the surface up to TLI.
+  const LAUNCH_ASCENT_ANGLE = THREE.MathUtils.degToRad(72);
+  // Hide near-side chords that project across Earth's face.
+  const SILHOUETTE_EARTH_RADIUS = EARTH_RADIUS * 1.12;
   const parkingPoints: THREE.Vector3[] = [];
-  for (let i = 0; i <= 128; i++) {
-    const a = (i / 128) * Math.PI * 2;
+  for (let i = 0; i <= 160; i++) {
+    const a = (i / 160) * Math.PI * 2;
     parkingPoints.push(
       new THREE.Vector3(
         Math.cos(a) * parkingRadius,
@@ -591,34 +607,140 @@ function createEarthMoonScene(
       ),
     );
   }
-  const parkingPath = createNavigationPath({
-    points: parkingPoints,
-    color: 0x4c9fbd,
-    coreWidth: 0.85,
-    haloWidth: 3.8,
-    coreBrightness: 0.3,
-    haloBrightness: 0.045,
+  // Polyline curve — CatmullRom overshoots and pulls arcs inside Earth.
+  class PolylineCurve3 extends THREE.Curve<THREE.Vector3> {
+    constructor(private readonly pts: THREE.Vector3[]) {
+      super();
+    }
+    getPoint(t: number, optionalTarget = new THREE.Vector3()) {
+      const pts = this.pts;
+      if (pts.length === 0) return optionalTarget.set(0, 0, 0);
+      if (pts.length === 1) return optionalTarget.copy(pts[0]);
+      const scaled = THREE.MathUtils.clamp(t, 0, 1) * (pts.length - 1);
+      const i = Math.min(Math.floor(scaled), pts.length - 2);
+      return optionalTarget.copy(pts[i]).lerp(pts[i + 1], scaled - i);
+    }
+  }
+  // LEO guide as a depth-tested tube so the ring occludes behind Earth
+  // instead of painting through the planet (Line2 fat strokes can't).
+  const parkingTubeMat = new THREE.MeshBasicMaterial({
+    color: 0x3d7a94,
+    depthTest: true,
+    depthWrite: true,
+    transparent: true,
+    opacity: 0.55,
   });
-  trajectoryPathsGroup.add(parkingPath.root);
+  const parkingTube = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new PolylineCurve3(parkingPoints),
+      160,
+      0.014,
+      5,
+      true,
+    ),
+    parkingTubeMat,
+  );
+  parkingTube.frustumCulled = false;
+  trajectoryPathsGroup.add(parkingTube);
+  disposables.push(parkingTube.geometry, parkingTubeMat);
 
+  function rebuildParkingTube(points: readonly THREE.Vector3[]) {
+    const next = points.map((p) => p.clone());
+    const geo = new THREE.TubeGeometry(
+      new PolylineCurve3(next),
+      Math.max(64, next.length),
+      0.014,
+      5,
+      true,
+    );
+    parkingTube.geometry.dispose();
+    parkingTube.geometry = geo;
+  }
+
+  // Transfer tubes depth-test against Earth (unlike Line2 screen-space strokes).
+  type TubePath = {
+    mesh: THREE.Mesh;
+    material: THREE.MeshBasicMaterial;
+    radius: number;
+  };
+  function createTubePath(
+    color: THREE.ColorRepresentation,
+    radius: number,
+  ): TubePath {
+    const geometry = new THREE.TubeGeometry(
+      new PolylineCurve3([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0.01, 0, 0),
+      ]),
+      8,
+      radius,
+      5,
+      false,
+    );
+    const material = new THREE.MeshBasicMaterial({
+      color,
+      depthTest: true,
+      depthWrite: true,
+      transparent: true,
+      opacity: 0.92,
+      toneMapped: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.frustumCulled = false;
+    disposables.push(material);
+    return { mesh, material, radius };
+  }
+  function setTubePathPoints(path: TubePath, points: readonly THREE.Vector3[]) {
+    const safe =
+      points.length > 1
+        ? points.map((p) => p.clone())
+        : [new THREE.Vector3(), new THREE.Vector3(0.001, 0, 0)];
+    const segments = Math.min(320, Math.max(32, safe.length));
+    const nextGeo = new THREE.TubeGeometry(
+      new PolylineCurve3(safe),
+      segments,
+      path.radius,
+      6,
+      false,
+    );
+    path.mesh.geometry.dispose();
+    path.mesh.geometry = nextGeo;
+  }
+
+  const outboundTube = createTubePath(0x79d9ff, 0.03);
+  const outboundTubeB = createTubePath(0x79d9ff, 0.03);
+  const returnTube = createTubePath(0xffb07a, 0.03);
+  const returnTubeB = createTubePath(0xffb07a, 0.03);
+  outboundTubeB.mesh.visible = false;
+  returnTube.mesh.visible = false;
+  returnTubeB.mesh.visible = false;
+  trajectoryPathsGroup.add(
+    outboundTube.mesh,
+    outboundTubeB.mesh,
+    returnTube.mesh,
+    returnTubeB.mesh,
+  );
+  // Line2 kept for moon lead / capture / system orbit; transfer uses tubes only
+  // so fat strokes never paint through Earth's disk.
   const outboundPath = createNavigationPath({
     color: 0x79d9ff,
     endColor: 0xc9f6ff,
-    coreWidth: 1.35,
-    haloWidth: 6.5,
-    coreBrightness: 0.86,
-    haloBrightness: 0.13,
+    coreWidth: 0.9,
+    haloWidth: 4.5,
+    coreBrightness: 0.55,
+    haloBrightness: 0.08,
   });
   const trajectoryLine = outboundPath.root;
+  trajectoryLine.visible = false;
   trajectoryPathsGroup.add(trajectoryLine);
 
   const earthReturnPath = createNavigationPath({
     color: 0xffd08c,
     endColor: 0xff876f,
-    coreWidth: 1.35,
-    haloWidth: 6.5,
-    coreBrightness: 0.86,
-    haloBrightness: 0.14,
+    coreWidth: 0.9,
+    haloWidth: 4.5,
+    coreBrightness: 0.55,
+    haloBrightness: 0.08,
   });
   const returnLine = earthReturnPath.root;
   returnLine.visible = false;
@@ -628,9 +750,13 @@ function createEarthMoonScene(
   const vehicleMaterial = new THREE.MeshBasicMaterial({ color: 0xd7f5ff });
   const transferVehicle = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
   trajectoryPathsGroup.add(transferVehicle);
+  const vehicleTangent = new THREE.Vector3();
+  const vehicleLookTarget = new THREE.Vector3();
+  const captureBasis = new THREE.Matrix4();
+  const captureY = new THREE.Vector3();
+  const captureZ = new THREE.Vector3();
 
-  // The shrinking arc shows how far the Moon still has to travel before the
-  // spacecraft reaches the precomputed intercept point.
+  // Shrinking lead arc: Moon travel remaining until the preplanned arrival.
   const moonLeadPath = createNavigationPath({
     color: 0x5bd0ff,
     coreWidth: 0.62,
@@ -661,16 +787,16 @@ function createEarthMoonScene(
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const arrivalTarget = new THREE.Mesh(arrivalGeometry, arrivalMaterial);
-  arrivalTarget.rotation.x = -Math.PI / 2;
-  maneuverNodesGroup.add(arrivalTarget);
+  // Planned far-side perilune / LOI target in inertial space during coast.
+  const periluneTarget = new THREE.Mesh(arrivalGeometry, arrivalMaterial);
+  periluneTarget.rotation.x = -Math.PI / 2;
+  maneuverNodesGroup.add(periluneTarget);
 
-  // Lunar orbit insertion is shown as a capture orbit around the moving Moon.
+  // Capture orbit rides with the moving Moon after LOI.
   const captureGroup = new THREE.Group();
   trajectoryPathsGroup.add(captureGroup);
   const lunarNodesGroup = new THREE.Group();
   maneuverNodesGroup.add(lunarNodesGroup);
-  const captureRadius = MOON_RADIUS * 1.42;
   const capturePoints: THREE.Vector3[] = [];
   for (let i = 0; i <= 96; i++) {
     const a = (i / 96) * Math.PI * 2;
@@ -723,8 +849,7 @@ function createEarthMoonScene(
   earthEntryTarget.visible = false;
   maneuverNodesGroup.add(earthEntryTarget);
 
-  // Only mission-relevant nodes are shown: burns, the lunar intercept, and
-  // Earth entry for this direct patched-conic profile.
+  // Mission nodes: TLI, far-side LOI, TEI, Earth entry interface.
   const nodeCoreGeometry = new THREE.CircleGeometry(0.017, 18);
   function addNodeCore(
     marker: THREE.Mesh,
@@ -735,21 +860,21 @@ function createEarthMoonScene(
     marker.add(core);
   }
   addNodeCore(tliMarker, burnMaterial);
-  addNodeCore(arrivalTarget, arrivalMaterial);
+  addNodeCore(periluneTarget, arrivalMaterial);
   addNodeCore(loiMarker, burnMaterial);
   addNodeCore(teiMarker, teiMaterial);
   addNodeCore(earthEntryTarget, entryMaterial);
 
   const tliLabel = createManeuverLabel("TLI", "Perigee departure burn", "#ffd58a");
-  const interceptLabel = createManeuverLabel(
-    "INTERCEPT",
-    "Moon at arrival · +40° lead",
+  const periluneLabel = createManeuverLabel(
+    "LOI",
+    "Far-side perilune target",
     "#8fe6ff",
   );
-  const loiLabel = createManeuverLabel("LOI", "Retrograde capture burn", "#ffd58a");
-  const teiLabel = createManeuverLabel("TEI", "Prograde Earth-return burn", "#ffbd79");
-  const entryLabel = createManeuverLabel("EI", "Atmospheric entry interface", "#ff876f");
-  maneuverNodesGroup.add(tliLabel, interceptLabel, entryLabel);
+  const loiLabel = createManeuverLabel("LOI", "Far-side capture burn", "#ffd58a");
+  const teiLabel = createManeuverLabel("TEI", "Far-side Earth-return burn", "#ffbd79");
+  const entryLabel = createManeuverLabel("SPLASHDOWN", "Ocean recovery", "#ff876f");
+  maneuverNodesGroup.add(tliLabel, periluneLabel, entryLabel);
   lunarNodesGroup.add(loiLabel, teiLabel);
 
   disposables.push(
@@ -774,10 +899,13 @@ function createEarthMoonScene(
   const LUNAR_MOON_ADVANCE = THREE.MathUtils.degToRad(2.2);
   const LUNAR_MOON_SIMULATION_RATE =
     LUNAR_MOON_ADVANCE / LUNAR_ORBIT_DURATION;
-  const EARTH_ENTRY_RADIUS = EARTH_RADIUS * 1.055;
-  const transferTarget = new THREE.Vector3();
-  const transferAxis = new THREE.Vector3();
-  const transferNormal = new THREE.Vector3();
+
+  const moonArrivalPos = new THREE.Vector3();
+  const emAxis = new THREE.Vector3();
+  const moonTangent = new THREE.Vector3();
+  const perigeeDir = new THREE.Vector3();
+  const perifocalQ = new THREE.Vector3();
+  const perilunePos = new THREE.Vector3();
   const transferPoint = new THREE.Vector3();
   const lunarAxis = new THREE.Vector3();
   const lunarNormal = new THREE.Vector3();
@@ -785,55 +913,294 @@ function createEarthMoonScene(
   const returnAxis = new THREE.Vector3();
   const returnNormal = new THREE.Vector3();
   const returnPoint = new THREE.Vector3();
+  const pathScratch = new THREE.Vector3();
   let transferArrivalAngle = moonAngle + MOON_LEAD_ANGLE;
   let transferSemiMajor = 1;
-  let transferSemiMinor = 1;
-  let transferCenter = 0;
-  let transferEccentricity = 0;
+  let transferEccentricity = 0.6;
   let returnSemiMajor = 1;
-  let returnSemiMinor = 1;
-  let returnCenter = 0;
-  let returnEccentricity = 0;
+  let returnEccentricity = 0.6;
+  let outboundPoints: THREE.Vector3[] = [];
+  let outboundArcEnds: number[] = [];
+  let outboundTotalLength = 1;
+  let outboundTliIndex = 0;
+  // Launch ascent through early departure — protected from silhouette cull.
+  let outboundLaunchProtectEnd = 0;
+  let returnPoints: THREE.Vector3[] = [];
+  let returnArcEnds: number[] = [];
+  let returnTotalLength = 1;
+  // Near-Earth return approach + splashdown (protected from silhouette cull).
+  let returnSplashIndex = 0;
   let missionPhase: MissionPhase = "outbound";
   let missionProgress = 0.12;
+  let showOutboundTube = true;
+  let showReturnTube = false;
+  let lastCullKey = "";
 
-  function pointOnTransfer(eccentricParameter: number, out: THREE.Vector3) {
-    const ellipseAngle = Math.PI - eccentricParameter;
-    const major = transferCenter + transferSemiMajor * Math.cos(ellipseAngle);
-    const minor = transferSemiMinor * Math.sin(ellipseAngle);
-    return out
-      .copy(transferAxis)
-      .multiplyScalar(major)
-      .addScaledVector(transferNormal, minor);
+  const occludeCam = new THREE.Vector3();
+  const occludeWorld = new THREE.Vector3();
+  const occludeToPoint = new THREE.Vector3();
+  const occludeToEarth = new THREE.Vector3();
+
+  function isOutsideEarthSilhouette(
+    localPoint: THREE.Vector3,
+    cameraWorld: THREE.Vector3,
+  ) {
+    orbitPlane.localToWorld(occludeWorld.copy(localPoint));
+    occludeToPoint.copy(occludeWorld).sub(cameraWorld);
+    occludeToEarth.copy(cameraWorld).multiplyScalar(-1);
+    const camDist = cameraWorld.length();
+    if (camDist <= SILHOUETTE_EARTH_RADIUS * 1.05) return true;
+    const earthAngle = Math.asin(
+      Math.min(0.995, SILHOUETTE_EARTH_RADIUS / camDist),
+    );
+    return occludeToPoint.angleTo(occludeToEarth) > earthAngle;
   }
 
-  function solveKepler(meanAnomaly: number, eccentricity: number) {
-    let eccentricAnomaly = meanAnomaly;
-    for (let i = 0; i < 6; i++) {
-      eccentricAnomaly -=
-        (eccentricAnomaly -
-          eccentricity * Math.sin(eccentricAnomaly) -
-          meanAnomaly) /
-        (1 - eccentricity * Math.cos(eccentricAnomaly));
+  function collectVisibleSegments(
+    points: readonly THREE.Vector3[],
+    cameraWorld: THREE.Vector3,
+    // Indices that must stay (launch ascent / splashdown). Depth test hides
+    // the backside; silhouette cull was chopping those surface contacts off.
+    protectStart = -1,
+    protectEnd = -1,
+  ) {
+    const segments: THREE.Vector3[][] = [];
+    let run: THREE.Vector3[] = [];
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      const protectedPoint = i >= protectStart && i <= protectEnd;
+      if (protectedPoint || isOutsideEarthSilhouette(point, cameraWorld)) {
+        run.push(point);
+      } else if (run.length > 1) {
+        segments.push(run);
+        run = [];
+      } else {
+        run = [];
+      }
     }
-    return eccentricAnomaly;
+    if (run.length > 1) segments.push(run);
+    return segments;
   }
 
-  function pointOnReturn(eccentricParameter: number, out: THREE.Vector3) {
-    const major = returnCenter + returnSemiMajor * Math.cos(eccentricParameter);
-    const minor = -returnSemiMinor * Math.sin(eccentricParameter);
+  function assignTubeSegments(
+    primary: TubePath,
+    secondary: TubePath,
+    points: readonly THREE.Vector3[],
+    tip: THREE.Vector3 | undefined,
+    visible: boolean,
+    protectStart = -1,
+    protectEnd = -1,
+  ) {
+    if (!visible || points.length < 2) {
+      primary.mesh.visible = false;
+      secondary.mesh.visible = false;
+      return;
+    }
+    occludeCam.copy(camera.position);
+    const segments = collectVisibleSegments(
+      points,
+      occludeCam,
+      protectStart,
+      protectEnd,
+    );
+    let main = segments[0] ?? null;
+    let extra: THREE.Vector3[] | null = null;
+    if (tip) {
+      for (const segment of segments) {
+        if (segment[segment.length - 1]?.distanceToSquared(tip) < 0.08) {
+          main = segment;
+          break;
+        }
+      }
+    }
+    // Prefer keeping a protected Earth-contact segment as the secondary tube
+    // when the primary is the far tip (LOI / TEI→Moon side).
+    if (protectStart >= 0 && protectEnd >= protectStart) {
+      const pad = points[protectStart];
+      for (const segment of segments) {
+        if (
+          segment !== main &&
+          pad &&
+          segment[0]?.distanceToSquared(pad) < 0.08
+        ) {
+          extra = segment;
+          break;
+        }
+      }
+    }
+    if (!extra) {
+      for (const segment of segments) {
+        if (segment !== main && segment.length > 3) {
+          extra = segment;
+          break;
+        }
+      }
+    }
+    if (main && main.length > 1) {
+      setTubePathPoints(primary, main);
+      primary.mesh.visible = true;
+    } else {
+      primary.mesh.visible = false;
+    }
+    if (extra && extra.length > 1) {
+      setTubePathPoints(secondary, extra);
+      secondary.mesh.visible = true;
+      secondary.material.opacity = primary.material.opacity;
+    } else {
+      secondary.mesh.visible = false;
+    }
+  }
+
+  // Hide path chords that project across Earth's face. Depth testing alone
+  // still shows the near-side arc between camera and Earth as a pierce.
+  // Launch + splashdown indices stay protected so surface contact never cuts off.
+  function updateTrajectorySilhouetteCull(force = false) {
+    const cullKey = [
+      missionPhase,
+      showOutboundTube ? 1 : 0,
+      showReturnTube ? 1 : 0,
+      outboundPoints.length,
+      returnPoints.length,
+      outboundLaunchProtectEnd,
+      returnSplashIndex,
+      outboundTube.material.opacity.toFixed(2),
+      camera.position.x.toFixed(2),
+      camera.position.y.toFixed(2),
+      camera.position.z.toFixed(2),
+    ].join("|");
+    if (!force && cullKey === lastCullKey) return;
+    lastCullKey = cullKey;
+
+    if (missionPhase === "return") {
+      assignTubeSegments(
+        returnTube,
+        returnTubeB,
+        returnPoints,
+        returnPoints[returnPoints.length - 1],
+        showReturnTube,
+        returnSplashIndex,
+        returnPoints.length - 1,
+      );
+      assignTubeSegments(
+        outboundTube,
+        outboundTubeB,
+        outboundPoints,
+        undefined,
+        false,
+      );
+      // Splashdown marker stays on the surface contact — never silhouette-hide it.
+      earthEntryTarget.visible = showReturnTube;
+      entryLabel.visible = showReturnTube;
+      return;
+    }
+
+    assignTubeSegments(
+      outboundTube,
+      outboundTubeB,
+      outboundPoints,
+      outboundPoints[outboundPoints.length - 1],
+      showOutboundTube,
+      0,
+      outboundLaunchProtectEnd,
+    );
+    outboundTubeB.material.opacity = outboundTube.material.opacity;
+    assignTubeSegments(
+      returnTube,
+      returnTubeB,
+      returnPoints,
+      undefined,
+      false,
+    );
+
+    const tliPoint = outboundPoints[outboundTliIndex];
+    if (tliPoint && missionPhase === "outbound") {
+      // Keep TLI readable whenever the protected launch segment is shown.
+      tliMarker.visible = true;
+      tliLabel.visible = true;
+    }
+  }
+
+  function moonTangentAt(angle: number, out: THREE.Vector3) {
+    return out
+      .set(
+        -Math.sin(angle) * ORBIT_SEMI_MAJOR,
+        0,
+        -Math.cos(angle) * ORBIT_SEMI_MINOR,
+      )
+      .normalize();
+  }
+
+  function pointOnEarthTransfer(trueAnomaly: number, out: THREE.Vector3) {
+    // Kepler in the Moon plane, with a mild transverse squash for a flatter read.
+    const radius =
+      (transferSemiMajor *
+        (1 - transferEccentricity * transferEccentricity)) /
+      (1 + transferEccentricity * Math.cos(trueAnomaly));
+    return out
+      .copy(perigeeDir)
+      .multiplyScalar(radius * Math.cos(trueAnomaly))
+      .addScaledVector(
+        perifocalQ,
+        radius * Math.sin(trueAnomaly) * TRANSFER_FLATTEN,
+      );
+  }
+
+  function pointOnReturnTransfer(trueAnomaly: number, out: THREE.Vector3) {
+    const radius =
+      (returnSemiMajor * (1 - returnEccentricity * returnEccentricity)) /
+      (1 + returnEccentricity * Math.cos(trueAnomaly));
     return out
       .copy(returnAxis)
-      .multiplyScalar(major)
-      .addScaledVector(returnNormal, minor);
+      .multiplyScalar(radius * Math.cos(trueAnomaly))
+      .addScaledVector(
+        returnNormal,
+        radius * Math.sin(trueAnomaly) * TRANSFER_FLATTEN,
+      );
+  }
+
+  function buildArcLengthTable(points: readonly THREE.Vector3[]) {
+    const ends: number[] = [0];
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      total += points[i].distanceTo(points[i - 1]);
+      ends.push(total);
+    }
+    return { ends, total: Math.max(total, 1e-6) };
+  }
+
+  function pointAlongArc(
+    points: readonly THREE.Vector3[],
+    ends: readonly number[],
+    total: number,
+    progress: number,
+    out: THREE.Vector3,
+  ) {
+    if (points.length === 0) return out.set(0, 0, 0);
+    if (points.length === 1) return out.copy(points[0]);
+    const target = THREE.MathUtils.clamp(progress, 0, 1) * total;
+    let index = 1;
+    while (index < ends.length - 1 && ends[index] < target) index += 1;
+    const segmentStart = ends[index - 1];
+    const segmentEnd = ends[index];
+    const span = Math.max(segmentEnd - segmentStart, 1e-6);
+    const localT = (target - segmentStart) / span;
+    return out.copy(points[index - 1]).lerp(points[index], localT);
   }
 
   function updateLunarFrame() {
     lunarAxis.copy(moon.position).normalize();
-    lunarNormal.set(-lunarAxis.z, 0, lunarAxis.x);
+    // Prograde lunar tangent — LOI/TEI sit on the free-return far-side corridor.
+    moonTangentAt(moonAngle, lunarNormal);
     captureGroup.position.copy(moon.position);
     lunarNodesGroup.position.copy(moon.position);
-    loiMarker.position.copy(lunarAxis).multiplyScalar(-captureRadius);
+    // Capture ring basis matches the flown orbit: +X far-side, +Z = velocity at LOI.
+    captureZ.copy(lunarNormal).negate();
+    captureY.crossVectors(captureZ, lunarAxis).normalize();
+    if (captureY.lengthSq() < 1e-8) captureY.set(0, 1, 0);
+    captureBasis.makeBasis(lunarAxis, captureY, captureZ);
+    captureGroup.quaternion.setFromRotationMatrix(captureBasis);
+    // Far-side perilune: anti-Earth face of the Moon (Apollo LOI / TEI geometry).
+    loiMarker.position.copy(lunarAxis).multiplyScalar(captureRadius);
     teiMarker.position.copy(loiMarker.position);
     loiLabel.position.copy(loiMarker.position);
     loiLabel.position.y += 0.14;
@@ -842,10 +1209,24 @@ function createEarthMoonScene(
   }
 
   function pointOnLunarOrbit(angle: number, out: THREE.Vector3) {
+    // angle 0 = far-side LOI; retrograde vs Moon's Earth orbit (V = −moonTangent)
+    // so arrival from the outbound coast continues without a reverse.
     return out
       .copy(lunarAxis)
-      .multiplyScalar(-captureRadius * Math.cos(angle))
+      .multiplyScalar(captureRadius * Math.cos(angle))
       .addScaledVector(lunarNormal, -captureRadius * Math.sin(angle));
+  }
+
+  function orientVehicle(position: THREE.Vector3, ahead: THREE.Vector3) {
+    vehicleTangent.subVectors(ahead, position);
+    if (vehicleTangent.lengthSq() < 1e-10) {
+      transferVehicle.position.copy(position);
+      return;
+    }
+    transferVehicle.position.copy(position);
+    vehicleLookTarget.copy(position).add(vehicleTangent);
+    transferVehicle.up.set(0, 1, 0);
+    transferVehicle.lookAt(vehicleLookTarget);
   }
 
   function updateSystemReferences() {
@@ -854,37 +1235,108 @@ function createEarthMoonScene(
 
   function planOutboundTransfer() {
     transferArrivalAngle = moonAngle + MOON_LEAD_ANGLE;
-    moonPositionAt(transferArrivalAngle, transferTarget);
-    transferAxis.copy(transferTarget).normalize();
-    transferNormal.set(-transferAxis.z, 0, transferAxis.x);
+    moonPositionAt(transferArrivalAngle, moonArrivalPos);
+    emAxis.copy(moonArrivalPos).normalize();
+    moonTangentAt(transferArrivalAngle, moonTangent);
 
-    // Ending one capture-orbit radius short of the lunar center makes the
-    // transfer ellipse and lunar orbit meet at exactly the same point.
-    const apoapsis = transferTarget.length() - captureRadius;
+    // Far-side LOI = apoapsis of the Earth-centered transfer ellipse.
+    perilunePos.copy(moonArrivalPos).addScaledVector(emAxis, captureRadius);
+
+    pathScratch
+      .copy(emAxis)
+      .multiplyScalar(Math.cos(LEADING_EDGE_AIM))
+      .addScaledVector(moonTangent, -Math.sin(LEADING_EDGE_AIM))
+      .normalize();
+    perigeeDir.copy(pathScratch).multiplyScalar(-1);
+    // In-plane perifocal Q: coplanar with the Moon orbit (orbitPlane y = 0).
+    // Align Q with the Moon's prograde tangent so arrival velocity at far-side
+    // LOI is −Q ≈ −moonTangent — same sense as the capture orbit.
+    perifocalQ.set(-perigeeDir.z, 0, perigeeDir.x);
+    if (perifocalQ.dot(moonTangent) < 0) perifocalQ.negate();
+
+    const apoapsis = perilunePos.length();
     transferSemiMajor = (parkingRadius + apoapsis) / 2;
-    transferCenter = (apoapsis - parkingRadius) / 2;
-    transferEccentricity = transferCenter / transferSemiMajor;
-    transferSemiMinor =
-      transferSemiMajor *
-      Math.sqrt(1 - transferEccentricity * transferEccentricity);
+    transferEccentricity =
+      (apoapsis - parkingRadius) / (apoapsis + parkingRadius);
 
-    const transferPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= 144; i++) {
-      transferPoints.push(
-        pointOnTransfer((i / 144) * Math.PI, new THREE.Vector3()),
+    // Parking guide ring in the same plane as the transfer.
+    const ringPoints: THREE.Vector3[] = [];
+    for (let i = 0; i <= 160; i++) {
+      const a = (i / 160) * Math.PI * 2;
+      ringPoints.push(
+        new THREE.Vector3()
+          .copy(perigeeDir)
+          .multiplyScalar(parkingRadius * Math.cos(a))
+          .addScaledVector(perifocalQ, parkingRadius * Math.sin(a)),
       );
     }
-    setNavigationPathPoints(outboundPath, transferPoints);
-    tliMarker.position.copy(transferPoints[0]);
+    rebuildParkingTube(ringPoints);
+
+    // 1) Surface launch → gravity-turn ascent into TLI.
+    // 2) Kepler transfer ν=0→π from TLI to far-side LOI.
+    outboundPoints = [];
+    const launchSamples = 56;
+    for (let i = 0; i <= launchSamples; i++) {
+      const t = i / launchSamples;
+      // Climb quickly off the pad, then pitch over into the insertion arc.
+      const radius = THREE.MathUtils.lerp(
+        SURFACE_RADIUS,
+        parkingRadius,
+        Math.pow(t, 0.62),
+      );
+      const coastAngle = -LAUNCH_ASCENT_ANGLE * (1 - t);
+      outboundPoints.push(
+        new THREE.Vector3()
+          .copy(perigeeDir)
+          .multiplyScalar(radius * Math.cos(coastAngle))
+          .addScaledVector(perifocalQ, radius * Math.sin(coastAngle)),
+      );
+    }
+    outboundTliIndex = outboundPoints.length - 1;
+
+    const transferSamples = 180;
+    for (let i = 1; i <= transferSamples; i++) {
+      outboundPoints.push(
+        pointOnEarthTransfer((i / transferSamples) * Math.PI, new THREE.Vector3()),
+      );
+    }
+    outboundPoints[outboundTliIndex]
+      .copy(perigeeDir)
+      .multiplyScalar(parkingRadius);
+    outboundPoints[outboundPoints.length - 1].copy(perilunePos);
+
+    outboundLaunchProtectEnd = outboundTliIndex;
+    for (let i = outboundTliIndex; i < outboundPoints.length; i++) {
+      if (outboundPoints[i].length() > parkingRadius * 1.45) {
+        outboundLaunchProtectEnd = i;
+        break;
+      }
+      outboundLaunchProtectEnd = i;
+    }
+
+    const outboundArcs = buildArcLengthTable(outboundPoints);
+    outboundArcEnds = outboundArcs.ends;
+    outboundTotalLength = outboundArcs.total;
+    setNavigationPathPoints(outboundPath, outboundPoints);
+
+    tliMarker.position.copy(outboundPoints[outboundTliIndex]);
     tliLabel.position.copy(tliMarker.position);
     tliLabel.position.y += 0.14;
-    arrivalTarget.position.copy(transferTarget);
-    interceptLabel.position.copy(transferTarget);
-    interceptLabel.position.y += 0.16;
-    setNavigationPathIntensity(outboundPath, 1);
-    trajectoryLine.visible = true;
+    periluneTarget.position.copy(perilunePos);
+    periluneLabel.position.copy(perilunePos);
+    periluneLabel.position.y += 0.16;
+
+    outboundTube.material.opacity = 0.95;
+    outboundTubeB.material.opacity = 0.95;
+    showOutboundTube = true;
+    showReturnTube = false;
+    // Full parking ring reads as a diameter through Earth when edge-on; the
+    // outbound coast segment already shows the LEO wrap into TLI.
+    parkingTube.visible = false;
+    trajectoryLine.visible = false;
     leadArc.visible = true;
-    arrivalTarget.visible = true;
+    periluneTarget.visible = true;
+    captureGroup.visible = false;
     returnLine.visible = false;
     earthEntryTarget.visible = false;
     entryLabel.visible = false;
@@ -894,26 +1346,48 @@ function createEarthMoonScene(
     loiMarker.visible = false;
     loiLabel.visible = false;
     tliLabel.visible = true;
-    interceptLabel.visible = true;
+    periluneLabel.visible = true;
+    updateTrajectorySilhouetteCull(true);
   }
 
   function updateOutboundTransfer(progress: number) {
-    const meanAnomaly = Math.PI * THREE.MathUtils.clamp(progress, 0, 1);
-    pointOnTransfer(
-      solveKepler(meanAnomaly, transferEccentricity),
+    const clamped = THREE.MathUtils.clamp(progress, 0, 1);
+    // Quadratic ease — most of the coast is spent far from Earth.
+    const pathProgress = clamped * clamped;
+    pointAlongArc(
+      outboundPoints,
+      outboundArcEnds,
+      outboundTotalLength,
+      pathProgress,
       transferPoint,
     );
-    transferVehicle.position.copy(transferPoint);
+    const lookProgress = Math.min(pathProgress + 0.012, 1);
+    pointAlongArc(
+      outboundPoints,
+      outboundArcEnds,
+      outboundTotalLength,
+      lookProgress,
+      pathScratch,
+    );
+    if (lookProgress <= pathProgress) {
+      pointAlongArc(
+        outboundPoints,
+        outboundArcEnds,
+        outboundTotalLength,
+        Math.max(pathProgress - 0.012, 0),
+        pathScratch,
+      );
+      orientVehicle(pathScratch, transferPoint);
+    } else {
+      orientVehicle(transferPoint, pathScratch);
+    }
     updateSystemReferences();
 
     const remainingAngle = Math.max(0, transferArrivalAngle - moonAngle);
     const leadPoints: THREE.Vector3[] = [];
     for (let i = 0; i <= 32; i++) {
-      moonPositionAt(
-        moonAngle + (remainingAngle * i) / 32,
-        transferPoint,
-      );
-      leadPoints.push(transferPoint.clone());
+      moonPositionAt(moonAngle + (remainingAngle * i) / 32, pathScratch);
+      leadPoints.push(pathScratch.clone());
     }
     setNavigationPathPoints(moonLeadPath, leadPoints);
   }
@@ -921,25 +1395,31 @@ function createEarthMoonScene(
   function enterLunarOrbit() {
     missionPhase = "lunar-orbit";
     missionProgress = 0;
-    setNavigationPathIntensity(outboundPath, 0.22);
+    outboundTube.material.opacity = 0.28;
+    outboundTubeB.material.opacity = 0.28;
+    parkingTube.visible = false;
     leadArc.visible = false;
-    arrivalTarget.visible = false;
-    interceptLabel.visible = false;
+    periluneTarget.visible = false;
+    periluneLabel.visible = false;
     tliLabel.visible = false;
     tliMarker.visible = false;
+    captureGroup.visible = true;
     loiMarker.visible = true;
     loiLabel.visible = true;
     teiMarker.visible = false;
     teiLabel.visible = false;
     updateLunarOrbit(0);
+    updateTrajectorySilhouetteCull(true);
   }
 
   function updateLunarOrbit(progress: number) {
     updateSystemReferences();
-    const orbitAngle =
-      progress * Math.PI * 2 * LUNAR_ORBIT_COUNT;
+    const orbitAngle = progress * Math.PI * 2 * LUNAR_ORBIT_COUNT;
     pointOnLunarOrbit(orbitAngle, lunarLocalPoint);
-    transferVehicle.position.copy(moon.position).add(lunarLocalPoint);
+    transferPoint.copy(moon.position).add(lunarLocalPoint);
+    pointOnLunarOrbit(orbitAngle + 0.08, pathScratch);
+    pathScratch.add(moon.position);
+    orientVehicle(transferPoint, pathScratch);
     loiMarker.visible = progress < 0.28;
     loiLabel.visible = loiMarker.visible;
     teiMarker.visible = progress > 0.62;
@@ -948,38 +1428,100 @@ function createEarthMoonScene(
 
   function planReturnTransfer() {
     updateLunarFrame();
-    returnAxis.copy(lunarAxis);
-    returnNormal.copy(lunarNormal);
+    // Far-side TEI (apoapsis) → Earth-focus ellipse → surface splashdown.
+    const teiWorld = new THREE.Vector3()
+      .copy(moon.position)
+      .addScaledVector(lunarAxis, captureRadius);
 
-    const apoapsis = moon.position.length() - captureRadius;
-    returnSemiMajor = (EARTH_ENTRY_RADIUS + apoapsis) / 2;
-    returnCenter = (apoapsis - EARTH_ENTRY_RADIUS) / 2;
-    returnEccentricity = returnCenter / returnSemiMajor;
-    returnSemiMinor =
-      returnSemiMajor *
-      Math.sqrt(1 - returnEccentricity * returnEccentricity);
+    returnAxis.copy(lunarAxis).multiplyScalar(-1); // splashdown / perigee direction
+    // Return ellipse in the Moon plane. Align returnNormal with moonTangent so
+    // leaving TEI on ν: π→2π continues the capture-orbit velocity (−moonTangent).
+    returnNormal.set(-returnAxis.z, 0, returnAxis.x);
+    if (returnNormal.dot(lunarNormal) < 0) returnNormal.negate();
 
-    const returnPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= 144; i++) {
+    const apoapsis = teiWorld.length();
+    // Target a shallow entry altitude, then drop the last segment to the surface.
+    const entryRadius = EARTH_RADIUS * 1.18;
+    returnSemiMajor = (entryRadius + apoapsis) / 2;
+    returnEccentricity =
+      (apoapsis - entryRadius) / (apoapsis + entryRadius);
+
+    returnPoints = [];
+    for (let i = 0; i <= 160; i++) {
+      // ν = π at TEI → ν = 2π at entry interface
       returnPoints.push(
-        pointOnReturn((i / 144) * Math.PI, new THREE.Vector3()),
+        pointOnReturnTransfer(Math.PI * (1 + i / 160), new THREE.Vector3()),
       );
     }
+    returnPoints[0].copy(teiWorld);
+    const entryPoint = returnPoints[returnPoints.length - 1];
+    entryPoint.copy(returnAxis).multiplyScalar(entryRadius);
+
+    // Final splashdown: steepen into the ocean from entry interface.
+    returnSplashIndex = returnPoints.length - 1;
+    const splashSamples = 28;
+    for (let i = 1; i <= splashSamples; i++) {
+      const t = i / splashSamples;
+      const radius = THREE.MathUtils.lerp(
+        entryRadius,
+        SURFACE_RADIUS,
+        t * t, // accelerate the drop for a splashdown read
+      );
+      // Ease slightly off the pure radial line so it settles onto the surface.
+      const lateral = (1 - t) * (1 - t) * entryRadius * 0.04;
+      returnPoints.push(
+        new THREE.Vector3()
+          .copy(returnAxis)
+          .multiplyScalar(radius)
+          .addScaledVector(returnNormal, -lateral * TRANSFER_FLATTEN),
+      );
+    }
+    returnPoints[returnPoints.length - 1]
+      .copy(returnAxis)
+      .multiplyScalar(SURFACE_RADIUS);
+
+    // Protect the whole near-Earth approach + splashdown from silhouette cuts.
+    returnSplashIndex = returnPoints.length - 1;
+    for (let i = returnPoints.length - 1; i >= 0; i--) {
+      if (returnPoints[i].length() > parkingRadius * 1.4) {
+        returnSplashIndex = Math.min(i + 1, returnPoints.length - 1);
+        break;
+      }
+      returnSplashIndex = i;
+    }
+
+    const returnArcs = buildArcLengthTable(returnPoints);
+    returnArcEnds = returnArcs.ends;
+    returnTotalLength = returnArcs.total;
     setNavigationPathPoints(earthReturnPath, returnPoints);
+
+    teiMarker.position.copy(lunarAxis).multiplyScalar(captureRadius);
+    teiLabel.position.copy(teiMarker.position);
+    teiLabel.position.y += 0.14;
+
     earthEntryTarget.position.copy(returnPoints[returnPoints.length - 1]);
     entryLabel.position.copy(earthEntryTarget.position);
     entryLabel.position.y += 0.14;
-    returnLine.visible = true;
+    returnLine.visible = false;
+    returnTube.material.opacity = 0.95;
+    returnTubeB.material.opacity = 0.95;
+    showReturnTube = true;
+    showOutboundTube = false;
+    outboundTube.material.opacity = 0.14;
+    outboundTubeB.material.opacity = 0.14;
+    parkingTube.visible = false;
     earthEntryTarget.visible = true;
     entryLabel.visible = true;
+    captureGroup.visible = false;
     teiMarker.visible = true;
     teiLabel.visible = true;
     loiMarker.visible = false;
     loiLabel.visible = false;
     tliLabel.visible = false;
     tliMarker.visible = false;
-    interceptLabel.visible = false;
-    setNavigationPathIntensity(outboundPath, 0.15);
+    periluneLabel.visible = false;
+    periluneTarget.visible = false;
+    updateTrajectorySilhouetteCull(true);
   }
 
   function enterReturnTransfer() {
@@ -990,10 +1532,34 @@ function createEarthMoonScene(
   }
 
   function updateReturnTransfer(progress: number) {
-    const meanAnomaly = Math.PI + Math.PI * THREE.MathUtils.clamp(progress, 0, 1);
-    const eccentricAnomaly = solveKepler(meanAnomaly, returnEccentricity);
-    pointOnReturn(eccentricAnomaly - Math.PI, returnPoint);
-    transferVehicle.position.copy(returnPoint);
+    const clamped = THREE.MathUtils.clamp(progress, 0, 1);
+    pointAlongArc(
+      returnPoints,
+      returnArcEnds,
+      returnTotalLength,
+      clamped,
+      returnPoint,
+    );
+    const lookProgress = Math.min(clamped + 0.012, 1);
+    pointAlongArc(
+      returnPoints,
+      returnArcEnds,
+      returnTotalLength,
+      lookProgress,
+      pathScratch,
+    );
+    if (lookProgress <= clamped) {
+      pointAlongArc(
+        returnPoints,
+        returnArcEnds,
+        returnTotalLength,
+        Math.max(clamped - 0.012, 0),
+        pathScratch,
+      );
+      orientVehicle(pathScratch, returnPoint);
+    } else {
+      orientVehicle(returnPoint, pathScratch);
+    }
     updateSystemReferences();
   }
 
@@ -1003,9 +1569,6 @@ function createEarthMoonScene(
     planOutboundTransfer();
     updateOutboundTransfer(0);
   }
-
-  planOutboundTransfer();
-  updateOutboundTransfer(missionProgress);
 
   // STARS ------------------------------------------------------------------
   // Crisp round point stars on the black sky. Sizes are fixed in screen
@@ -1382,13 +1945,14 @@ function createEarthMoonScene(
       if (Math.abs(elevGoal - elev) < 0.01) elevGoal = null;
     }
     applyCam();
+    updateTrajectorySilhouetteCull();
 
     if (now - lastTelemetryUpdate > 350) {
       const distanceKm = Math.round(
         (moon.position.length() / ORBIT_SEMI_MAJOR) * 384_400,
       );
       let phaseLabel = "TLI coast";
-      let phaseDetail = "Moon intercept";
+      let phaseDetail = "Far-side LOI";
       let displayedProgress = missionProgress;
       if (missionPhase === "lunar-orbit") {
         const completedOrbitFraction = missionProgress * LUNAR_ORBIT_COUNT;
@@ -1397,11 +1961,11 @@ function createEarthMoonScene(
           Math.floor(completedOrbitFraction) + 1,
         );
         phaseLabel = `Lunar orbit ${orbitNumber}/${LUNAR_ORBIT_COUNT}`;
-        phaseDetail = orbitNumber === 1 ? "LOI captured" : "TEI setup";
+        phaseDetail = orbitNumber === 1 ? "Far-side LOI" : "TEI setup";
         displayedProgress = completedOrbitFraction % 1;
       } else if (missionPhase === "return") {
         phaseLabel = "TEI return";
-        phaseDetail = "Earth entry corridor";
+        phaseDetail = "Splashdown";
       }
       callbacks.onTelemetryChange({
         distanceKm,
@@ -1418,6 +1982,9 @@ function createEarthMoonScene(
   }
   resize();
   applyCam();
+  planOutboundTransfer();
+  updateOutboundTransfer(missionProgress);
+  updateTrajectorySilhouetteCull(true);
   raf = requestAnimationFrame(frame);
 
   const ro = new ResizeObserver(resize);
