@@ -76,7 +76,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
           </span>
           {milestone.critical && (
             <span className="trackspace-cchip trackspace-cchip-up trackspace-cchip-critical">
-              ■ Critical path
+              Critical path
             </span>
           )}
           <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
