@@ -596,17 +596,6 @@ function createEarthMoonScene(
   const LAUNCH_ASCENT_ANGLE = THREE.MathUtils.degToRad(72);
   // Hide near-side chords that project across Earth's face.
   const SILHOUETTE_EARTH_RADIUS = EARTH_RADIUS * 1.12;
-  const parkingPoints: THREE.Vector3[] = [];
-  for (let i = 0; i <= 160; i++) {
-    const a = (i / 160) * Math.PI * 2;
-    parkingPoints.push(
-      new THREE.Vector3(
-        Math.cos(a) * parkingRadius,
-        0,
-        Math.sin(a) * parkingRadius,
-      ),
-    );
-  }
   // Polyline curve — CatmullRom overshoots and pulls arcs inside Earth.
   class PolylineCurve3 extends THREE.Curve<THREE.Vector3> {
     constructor(private readonly pts: THREE.Vector3[]) {
@@ -621,42 +610,6 @@ function createEarthMoonScene(
       return optionalTarget.copy(pts[i]).lerp(pts[i + 1], scaled - i);
     }
   }
-  // LEO guide as a depth-tested tube so the ring occludes behind Earth
-  // instead of painting through the planet (Line2 fat strokes can't).
-  const parkingTubeMat = new THREE.MeshBasicMaterial({
-    color: 0x3d7a94,
-    depthTest: true,
-    depthWrite: true,
-    transparent: true,
-    opacity: 0.55,
-  });
-  const parkingTube = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new PolylineCurve3(parkingPoints),
-      160,
-      0.014,
-      5,
-      true,
-    ),
-    parkingTubeMat,
-  );
-  parkingTube.frustumCulled = false;
-  trajectoryPathsGroup.add(parkingTube);
-  disposables.push(parkingTube.geometry, parkingTubeMat);
-
-  function rebuildParkingTube(points: readonly THREE.Vector3[]) {
-    const next = points.map((p) => p.clone());
-    const geo = new THREE.TubeGeometry(
-      new PolylineCurve3(next),
-      Math.max(64, next.length),
-      0.014,
-      5,
-      true,
-    );
-    parkingTube.geometry.dispose();
-    parkingTube.geometry = geo;
-  }
-
   // Transfer tubes depth-test against Earth (unlike Line2 screen-space strokes).
   type TubePath = {
     mesh: THREE.Mesh;
@@ -687,7 +640,8 @@ function createEarthMoonScene(
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false;
-    disposables.push(material);
+    // Geometry is swapped on every rebuild — dispose whichever is current.
+    disposables.push(material, { dispose: () => mesh.geometry.dispose() });
     return { mesh, material, radius };
   }
   function setTubePathPoints(path: TubePath, points: readonly THREE.Vector3[]) {
@@ -720,32 +674,6 @@ function createEarthMoonScene(
     returnTube.mesh,
     returnTubeB.mesh,
   );
-  // Line2 kept for moon lead / capture / system orbit; transfer uses tubes only
-  // so fat strokes never paint through Earth's disk.
-  const outboundPath = createNavigationPath({
-    color: 0x79d9ff,
-    endColor: 0xc9f6ff,
-    coreWidth: 0.9,
-    haloWidth: 4.5,
-    coreBrightness: 0.55,
-    haloBrightness: 0.08,
-  });
-  const trajectoryLine = outboundPath.root;
-  trajectoryLine.visible = false;
-  trajectoryPathsGroup.add(trajectoryLine);
-
-  const earthReturnPath = createNavigationPath({
-    color: 0xffd08c,
-    endColor: 0xff876f,
-    coreWidth: 0.9,
-    haloWidth: 4.5,
-    coreBrightness: 0.55,
-    haloBrightness: 0.08,
-  });
-  const returnLine = earthReturnPath.root;
-  returnLine.visible = false;
-  trajectoryPathsGroup.add(returnLine);
-
   const vehicleGeometry = new THREE.OctahedronGeometry(0.055, 0);
   const vehicleMaterial = new THREE.MeshBasicMaterial({ color: 0xd7f5ff });
   const transferVehicle = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
@@ -1081,12 +1009,15 @@ function createEarthMoonScene(
         returnSplashIndex,
         returnPoints.length - 1,
       );
+      // Faint trace of the flown outbound coast, same cull as during outbound.
       assignTubeSegments(
         outboundTube,
         outboundTubeB,
         outboundPoints,
-        undefined,
-        false,
+        outboundPoints[outboundPoints.length - 1],
+        showOutboundTube,
+        0,
+        outboundLaunchProtectEnd,
       );
       // Splashdown marker stays on the surface contact — never silhouette-hide it.
       earthEntryTarget.visible = showReturnTube;
@@ -1259,19 +1190,6 @@ function createEarthMoonScene(
     transferEccentricity =
       (apoapsis - parkingRadius) / (apoapsis + parkingRadius);
 
-    // Parking guide ring in the same plane as the transfer.
-    const ringPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= 160; i++) {
-      const a = (i / 160) * Math.PI * 2;
-      ringPoints.push(
-        new THREE.Vector3()
-          .copy(perigeeDir)
-          .multiplyScalar(parkingRadius * Math.cos(a))
-          .addScaledVector(perifocalQ, parkingRadius * Math.sin(a)),
-      );
-    }
-    rebuildParkingTube(ringPoints);
-
     // 1) Surface launch → gravity-turn ascent into TLI.
     // 2) Kepler transfer ν=0→π from TLI to far-side LOI.
     outboundPoints = [];
@@ -1317,7 +1235,6 @@ function createEarthMoonScene(
     const outboundArcs = buildArcLengthTable(outboundPoints);
     outboundArcEnds = outboundArcs.ends;
     outboundTotalLength = outboundArcs.total;
-    setNavigationPathPoints(outboundPath, outboundPoints);
 
     tliMarker.position.copy(outboundPoints[outboundTliIndex]);
     tliLabel.position.copy(tliMarker.position);
@@ -1330,14 +1247,9 @@ function createEarthMoonScene(
     outboundTubeB.material.opacity = 0.95;
     showOutboundTube = true;
     showReturnTube = false;
-    // Full parking ring reads as a diameter through Earth when edge-on; the
-    // outbound coast segment already shows the LEO wrap into TLI.
-    parkingTube.visible = false;
-    trajectoryLine.visible = false;
     leadArc.visible = true;
     periluneTarget.visible = true;
     captureGroup.visible = false;
-    returnLine.visible = false;
     earthEntryTarget.visible = false;
     entryLabel.visible = false;
     tliMarker.visible = true;
@@ -1397,7 +1309,6 @@ function createEarthMoonScene(
     missionProgress = 0;
     outboundTube.material.opacity = 0.28;
     outboundTubeB.material.opacity = 0.28;
-    parkingTube.visible = false;
     leadArc.visible = false;
     periluneTarget.visible = false;
     periluneLabel.visible = false;
@@ -1458,7 +1369,6 @@ function createEarthMoonScene(
     entryPoint.copy(returnAxis).multiplyScalar(entryRadius);
 
     // Final splashdown: steepen into the ocean from entry interface.
-    returnSplashIndex = returnPoints.length - 1;
     const splashSamples = 28;
     for (let i = 1; i <= splashSamples; i++) {
       const t = i / splashSamples;
@@ -1493,7 +1403,6 @@ function createEarthMoonScene(
     const returnArcs = buildArcLengthTable(returnPoints);
     returnArcEnds = returnArcs.ends;
     returnTotalLength = returnArcs.total;
-    setNavigationPathPoints(earthReturnPath, returnPoints);
 
     teiMarker.position.copy(lunarAxis).multiplyScalar(captureRadius);
     teiLabel.position.copy(teiMarker.position);
@@ -1502,14 +1411,13 @@ function createEarthMoonScene(
     earthEntryTarget.position.copy(returnPoints[returnPoints.length - 1]);
     entryLabel.position.copy(earthEntryTarget.position);
     entryLabel.position.y += 0.14;
-    returnLine.visible = false;
     returnTube.material.opacity = 0.95;
     returnTubeB.material.opacity = 0.95;
     showReturnTube = true;
-    showOutboundTube = false;
+    // Keep a faint trace of the flown outbound coast during the return leg.
+    showOutboundTube = true;
     outboundTube.material.opacity = 0.14;
     outboundTubeB.material.opacity = 0.14;
-    parkingTube.visible = false;
     earthEntryTarget.visible = true;
     entryLabel.visible = true;
     captureGroup.visible = false;
