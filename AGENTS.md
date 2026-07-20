@@ -39,11 +39,11 @@ Keep React on a version supported by `@react-three/fiber`. If a future React upg
 
 ## UI implementation
 
-When implementing or changing UI — pages, components, layout, styling, or interactions — **read `docs/mock-design.html` first**. It is the canonical visual and interaction reference for the Trackspace dashboard.
+The dashboard is built; **the running app is the design reference**. (The original mock, `docs/mock-design.html`, has been retired and deleted.)
 
-- Match the mock's layout, colors, typography, spacing, and behavior. Do not invent a different design unless the user explicitly asks for a change.
-- After implementing, compare the running app side-by-side with `docs/mock-design.html` (layout, spacing, filters, drawer behavior, etc.).
-- See `docs/implementation.html` for the build plan and acceptance checklist.
+- When implementing or changing UI — pages, components, layout, styling, or interactions — match the existing app's layout, colors, typography, spacing, and behavior. Do not invent a different design unless the user explicitly asks for a change.
+- After implementing, compare the change side-by-side with neighboring screens in the running app.
+- `docs/implementation.html` holds the original build plan and acceptance checklist (historical).
 
 ## Instructions for writing HTML documents when asked by the user
 
