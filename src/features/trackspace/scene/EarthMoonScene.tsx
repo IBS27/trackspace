@@ -32,12 +32,12 @@ const MARKER_RING_INNER_RADIUS = 0.046;
 const MARKER_RING_OUTER_RADIUS = 0.064;
 const MARKER_HIT_RADIUS_PX = 36;
 
-type SceneFocus = "system" | "earth" | "moon";
+type SceneFocus = "system" | "earth" | "moon" | "orion";
 type SceneLayer = "sites" | "trajectory" | "maneuvers";
 type SimulationSpeed = 1 | 8 | 32;
 type MissionPhase = "outbound" | "lunar-orbit" | "return";
 
-const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon"] as const;
+const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon", "orion"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -72,6 +72,7 @@ type TrackspaceCanvas = HTMLCanvasElement & {
     readonly missionPhase: MissionPhase;
     earthScreen: () => { x: number; y: number };
     moonScreen: () => { x: number; y: number };
+    spacecraftScreen: () => { x: number; y: number };
     locationScreens: () => Array<{
       id: string;
       x: number;
@@ -733,7 +734,9 @@ function createEarthMoonScene(
   );
   const orionSpacecraft = createOrionSpacecraft();
   const transferVehicle = orionSpacecraft.group;
-  trajectoryPathsGroup.add(transferVehicle);
+  // The spacecraft lives beside the path groups (not inside them) so hiding
+  // the trajectory layer never hides the ship the Orion view is following.
+  trajectoryGroup.add(transferVehicle);
   const vehicleTangent = new THREE.Vector3();
   const vehicleLookTarget = new THREE.Vector3();
   const captureBasis = new THREE.Matrix4();
@@ -1614,6 +1617,7 @@ function createEarthMoonScene(
     system: { min: 9.2, max: 25, dist: 12 },
     earth: { min: 3.3, max: 14, dist: 4.7 },
     moon: { min: 1.15, max: 14, dist: 2.45 },
+    orion: { min: 0.4, max: 14, dist: 1.6 },
   };
   let focus: SceneFocus = "system";
   let distGoal: number | null = null;
@@ -1703,6 +1707,13 @@ function createEarthMoonScene(
       const d = moon.getWorldPosition(new THREE.Vector3()).normalize();
       azimGoal = Math.atan2(d.x, d.z) + 0.5;
       elevGoal = Math.asin(THREE.MathUtils.clamp(d.y, -1, 1)) + 0.12;
+    } else if (next === "orion") {
+      // Chase framing: settle behind the spacecraft, looking along its
+      // direction of travel (the model's +Z tracks the flight path).
+      const heading = transferVehicle.getWorldDirection(new THREE.Vector3());
+      azimGoal = Math.atan2(-heading.x, -heading.z);
+      elevGoal =
+        Math.asin(THREE.MathUtils.clamp(-heading.y, -1, 1)) * 0.4 + 0.14;
     } else if (next === "earth") {
       azimGoal = 0.52;
       elevGoal = 0.16;
@@ -1877,12 +1888,17 @@ function createEarthMoonScene(
     // so the target tracks it every frame once captured).
     if (focus === "moon") {
       moon.getWorldPosition(focusPoint);
+    } else if (focus === "orion") {
+      transferVehicle.getWorldPosition(focusPoint);
     } else if (focus === "system") {
       moon.getWorldPosition(focusPoint).multiplyScalar(0.34);
     } else {
       focusPoint.set(0, 0, 0);
     }
-    target.lerp(focusPoint, reducedMotion ? 1 : 1 - Math.exp(-dt * 4));
+    // The spacecraft needs tighter tracking than the bodies: at close range
+    // and high simulation speed a lagging target would let it drift off-frame.
+    const targetRate = focus === "orion" ? 12 : 4;
+    target.lerp(focusPoint, reducedMotion ? 1 : 1 - Math.exp(-dt * targetRate));
     if (distGoal !== null) {
       dist += (distGoal - dist) * (reducedMotion ? 1 : 1 - Math.exp(-dt * 3));
       if (Math.abs(distGoal - dist) < 0.01) distGoal = null;
@@ -1927,6 +1943,8 @@ function createEarthMoonScene(
     },
     earthScreen: () => toScreen(new THREE.Vector3(0, 0, 0)),
     moonScreen: () => toScreen(moon.getWorldPosition(new THREE.Vector3())),
+    spacecraftScreen: () =>
+      toScreen(transferVehicle.getWorldPosition(new THREE.Vector3())),
     locationScreens: () =>
       markerEntries.map((entry) => {
         entry.root.getWorldPosition(markerWorld);
