@@ -584,14 +584,15 @@ function createEarthMoonScene(
   trajectoryGroup.add(trajectoryPathsGroup, maneuverNodesGroup);
 
   // Insertion altitude after the surface launch ascent.
-  const parkingRadius = EARTH_RADIUS * 1.58;
-  const captureRadius = MOON_RADIUS * 1.55;
+  // Keep perigee modest so the Earth-side tip reads as a flat graze, not a spike.
+  const parkingRadius = EARTH_RADIUS * 1.34;
+  const captureRadius = MOON_RADIUS * 1.35;
   // Just above the Earth mesh so launch/splashdown sit on the surface.
   const SURFACE_RADIUS = EARTH_RADIUS * 1.004;
   // Transfers stay in the Moon's orbital plane (no artificial out-of-plane tilt).
   const LEADING_EDGE_AIM = THREE.MathUtils.degToRad(2);
-  // Squash the transverse axis of the transfer ellipses (still clears Earth).
-  const TRANSFER_FLATTEN = 0.72;
+  // Mild transverse squash — heavy flatten pinches apoapsis/perigee into points.
+  const TRANSFER_FLATTEN = 0.9;
   // Gravity-turn arc from the surface up to TLI.
   const LAUNCH_ASCENT_ANGLE = THREE.MathUtils.degToRad(72);
   // Hide near-side chords that project across Earth's face.
@@ -661,10 +662,12 @@ function createEarthMoonScene(
     path.mesh.geometry = nextGeo;
   }
 
-  const outboundTube = createTubePath(0x79d9ff, 0.03);
-  const outboundTubeB = createTubePath(0x79d9ff, 0.03);
-  const returnTube = createTubePath(0xffb07a, 0.03);
-  const returnTubeB = createTubePath(0xffb07a, 0.03);
+  // Shared world-space thickness for outbound, lunar capture, and return.
+  const TRAJECTORY_TUBE_RADIUS = 0.012;
+  const outboundTube = createTubePath(0x79d9ff, TRAJECTORY_TUBE_RADIUS);
+  const outboundTubeB = createTubePath(0x79d9ff, TRAJECTORY_TUBE_RADIUS);
+  const returnTube = createTubePath(0xffb07a, TRAJECTORY_TUBE_RADIUS);
+  const returnTubeB = createTubePath(0xffb07a, TRAJECTORY_TUBE_RADIUS);
   outboundTubeB.mesh.visible = false;
   returnTube.mesh.visible = false;
   returnTubeB.mesh.visible = false;
@@ -736,15 +739,9 @@ function createEarthMoonScene(
       ),
     );
   }
-  const lunarCapturePath = createNavigationPath({
-    points: capturePoints,
-    color: 0xb8ecff,
-    coreWidth: 0.92,
-    haloWidth: 4.2,
-    coreBrightness: 0.5,
-    haloBrightness: 0.075,
-  });
-  captureGroup.add(lunarCapturePath.root);
+  const lunarCaptureTube = createTubePath(0xb8ecff, TRAJECTORY_TUBE_RADIUS);
+  setTubePathPoints(lunarCaptureTube, capturePoints);
+  captureGroup.add(lunarCaptureTube.mesh);
 
   const loiMarker = new THREE.Mesh(burnGeometry, burnMaterial);
   loiMarker.rotation.x = -Math.PI / 2;
@@ -1351,50 +1348,51 @@ function createEarthMoonScene(
     if (returnNormal.dot(lunarNormal) < 0) returnNormal.negate();
 
     const apoapsis = teiWorld.length();
-    // Target a shallow entry altitude, then drop the last segment to the surface.
-    const entryRadius = EARTH_RADIUS * 1.18;
-    returnSemiMajor = (entryRadius + apoapsis) / 2;
+    // Kepler coast to parking altitude, then a gravity-turn descent that mirrors
+    // the launch ascent: wrap around Earth, then settle onto the surface.
+    returnSemiMajor = (parkingRadius + apoapsis) / 2;
     returnEccentricity =
-      (apoapsis - entryRadius) / (apoapsis + entryRadius);
+      (apoapsis - parkingRadius) / (apoapsis + parkingRadius);
 
-    returnPoints = [];
-    for (let i = 0; i <= 160; i++) {
-      // ν = π at TEI → ν = 2π at entry interface
+    returnPoints = [teiWorld.clone()];
+    const returnSamples = 180;
+    for (let i = 1; i <= returnSamples; i++) {
       returnPoints.push(
-        pointOnReturnTransfer(Math.PI * (1 + i / 160), new THREE.Vector3()),
+        pointOnReturnTransfer(
+          Math.PI * (1 + i / returnSamples),
+          new THREE.Vector3(),
+        ),
       );
     }
-    returnPoints[0].copy(teiWorld);
-    const entryPoint = returnPoints[returnPoints.length - 1];
-    entryPoint.copy(returnAxis).multiplyScalar(entryRadius);
+    const entryIndex = returnPoints.length - 1;
+    returnPoints[entryIndex].copy(returnAxis).multiplyScalar(parkingRadius);
 
-    // Final splashdown: steepen into the ocean from entry interface.
-    const splashSamples = 28;
-    for (let i = 1; i <= splashSamples; i++) {
-      const t = i / splashSamples;
+    // Continue prograde past perigee (+returnNormal). Negative angle would
+    // reverse into the inbound coast and make a hairpin at entry.
+    const descentSamples = 56;
+    for (let i = 1; i <= descentSamples; i++) {
+      const t = i / descentSamples;
+      // Mirror launch shaping: wrap first, then drop into the surface.
       const radius = THREE.MathUtils.lerp(
-        entryRadius,
         SURFACE_RADIUS,
-        t * t, // accelerate the drop for a splashdown read
+        parkingRadius,
+        Math.pow(1 - t, 0.62),
       );
-      // Ease slightly off the pure radial line so it settles onto the surface.
-      const lateral = (1 - t) * (1 - t) * entryRadius * 0.04;
+      const coastAngle = LAUNCH_ASCENT_ANGLE * t;
       returnPoints.push(
         new THREE.Vector3()
           .copy(returnAxis)
-          .multiplyScalar(radius)
-          .addScaledVector(returnNormal, -lateral * TRANSFER_FLATTEN),
+          .multiplyScalar(radius * Math.cos(coastAngle))
+          .addScaledVector(returnNormal, radius * Math.sin(coastAngle)),
       );
     }
-    returnPoints[returnPoints.length - 1]
-      .copy(returnAxis)
-      .multiplyScalar(SURFACE_RADIUS);
+    returnPoints[returnPoints.length - 1].setLength(SURFACE_RADIUS);
 
-    // Protect the whole near-Earth approach + splashdown from silhouette cuts.
-    returnSplashIndex = returnPoints.length - 1;
-    for (let i = returnPoints.length - 1; i >= 0; i--) {
+    // Protect parking approach + full descent from silhouette cuts.
+    returnSplashIndex = entryIndex;
+    for (let i = entryIndex; i >= 0; i--) {
       if (returnPoints[i].length() > parkingRadius * 1.4) {
-        returnSplashIndex = Math.min(i + 1, returnPoints.length - 1);
+        returnSplashIndex = Math.min(i + 1, entryIndex);
         break;
       }
       returnSplashIndex = i;
