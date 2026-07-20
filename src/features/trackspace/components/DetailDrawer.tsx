@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import { useDataset } from "../data/dataset-context";
+import { isDiscoveryEvent } from "../data/discoveries";
 import { STATUS } from "../data/seed";
 import {
   capabilityById,
@@ -361,7 +362,11 @@ function EventBody({
           </ul>
         ) : (
           <p className="trackspace-muted">
-            Nothing officially confirmed yet — projected event.
+            {event.future
+              ? "Nothing officially confirmed yet — projected event."
+              : isDiscoveryEvent(event)
+                ? "Nothing confirmed yet — unreviewed discovery lead."
+                : "Nothing officially confirmed yet."}
           </p>
         )}
       </DrawerSection>

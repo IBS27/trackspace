@@ -121,6 +121,7 @@ export const milestoneValidator = v.object({
 
 export const eventValidator = v.object({
   id: v.string(),
+  origin: v.optional(v.union(v.literal("curated"), v.literal("agent"))),
   date: v.string(),
   title: v.string(),
   status: statusValidator,
@@ -134,6 +135,35 @@ export const eventValidator = v.object({
   downstream: v.string(),
   lastVerified: v.string(),
   sources: v.array(sourceValidator),
+});
+
+export const agentEventValidator = v.object({
+  date: v.string(),
+  title: v.string(),
+  status: statusValidator,
+  conf: confidenceValidator,
+  impact: impactValidator,
+  future: v.boolean(),
+  caps: v.array(v.string()),
+  what: v.string(),
+  confirmed: v.array(v.string()),
+  unknown: v.array(v.string()),
+  downstream: v.string(),
+  lastVerified: v.string(),
+  sources: v.array(sourceValidator),
+});
+
+export const agentDecisionValidator = v.object({
+  decision: v.union(
+    v.literal("dismiss"),
+    v.literal("keep_as_signal"),
+    v.literal("publish_event"),
+    v.literal("update_event"),
+  ),
+  targetEventId: v.optional(v.string()),
+  rationale: v.string(),
+  citations: v.array(v.string()),
+  event: v.optional(agentEventValidator),
 });
 
 export const locationValidator = v.object({

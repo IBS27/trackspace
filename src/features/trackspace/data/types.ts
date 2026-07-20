@@ -167,6 +167,8 @@ export type Milestone = {
 
 export type TrackspaceEvent = {
   id: string;
+  /** Curated is the default for legacy rows where this field is absent. */
+  origin?: "curated" | "agent";
   /** Display date; order with dateSortKey, not raw string comparison. */
   date: string;
   title: string;

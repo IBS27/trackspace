@@ -19,6 +19,7 @@ import type {
   MilestoneId,
   Source,
 } from "../src/features/trackspace/data/types";
+import { readTextCapped } from "./lib/readTextCapped";
 
 const NETWORK_TIMEOUT_MS = 15_000;
 /** Cap RSS bodies before regex parsing to limit ReDoS / memory abuse. */
@@ -28,8 +29,10 @@ const NASA_FEEDS = [
   "https://blogs.nasa.gov/artemis/feed/",
   "https://www.nasa.gov/feed/",
 ];
+// Bare "rover" is deliberately absent: it matched Mars rover coverage
+// (Perseverance, Curiosity); lunar rover stories say "lunar" or "Artemis".
 const LUNAR_TERMS =
-  /\b(artemis|moon|lunar|gateway|orion|sls|hls|starship|blue moon|spacesuit|axemu|regolith|cislunar|rover|fission)\b/i;
+  /\b(artemis|moon|lunar|gateway|orion|sls|hls|starship|blue moon|spacesuit|axemu|regolith|cislunar|fission)\b/i;
 
 type Ll2Launch = {
   id: string;
@@ -85,48 +88,6 @@ function httpsUrl(value: string | null): string | null {
   }
 }
 
-async function readTextCapped(
-  res: Response,
-  maxBytes: number,
-): Promise<string> {
-  const lengthHeader = res.headers.get("content-length");
-  if (lengthHeader) {
-    const declared = Number(lengthHeader);
-    if (Number.isFinite(declared) && declared > maxBytes) {
-      throw new Error(`response exceeds ${maxBytes} bytes`);
-    }
-  }
-
-  if (!res.body) {
-    const text = await res.text();
-    if (new TextEncoder().encode(text).byteLength > maxBytes) {
-      throw new Error(`response exceeds ${maxBytes} bytes`);
-    }
-    return text;
-  }
-
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maxBytes) {
-      await reader.cancel();
-      throw new Error(`response exceeds ${maxBytes} bytes`);
-    }
-    chunks.push(value);
-  }
-  const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder("utf-8", { fatal: false }).decode(merged);
-}
-
 function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
   const id = str(raw.id);
   if (!id) return null;
@@ -142,6 +103,22 @@ function normalizeLaunch(raw: RawLaunch): Ll2Launch | null {
     provider: str(raw.launch_service_provider?.name),
     url: httpsUrl(str(raw.url)),
   };
+}
+
+export function isNoiseDiscoveryUrl(value: string): boolean {
+  let pathname: string;
+  try {
+    pathname = new URL(value).pathname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return (
+    pathname.includes("/image-article/") ||
+    pathname.includes("photojournal") ||
+    pathname.includes("/learning-resources/") ||
+    /(?:^|\/)whats-up(?:[-/]|$)/.test(pathname) ||
+    /(?:^|\/)la-nasa-[^/]*/.test(pathname)
+  );
 }
 
 function hasFlown(launch: Ll2Launch): boolean {
@@ -414,11 +391,14 @@ async function upsertEvents(ctx: MutationCtx, dataset: StoredDataset) {
       .query("events")
       .withIndex("by_public_id", (q) => q.eq("id", item.id))
       .unique();
+    if (existing?.origin === "agent") continue;
     if (existing) await ctx.db.replace("events", existing._id, item);
     else await ctx.db.insert("events", item);
   }
   for await (const row of ctx.db.query("events")) {
-    if (!ids.has(row.id)) await ctx.db.delete("events", row._id);
+    if (row.origin !== "agent" && !ids.has(row.id)) {
+      await ctx.db.delete("events", row._id);
+    }
   }
 }
 
@@ -453,6 +433,7 @@ export const applyRun = internalMutation({
 
     let discoveries = 0;
     for (const lead of args.discoveryLeads) {
+      if (isNoiseDiscoveryUrl(lead.url)) continue;
       const existing = await ctx.db
         .query("discoveries")
         .withIndex("by_url", (q) => q.eq("url", lead.url))
@@ -480,6 +461,8 @@ export const applyRun = internalMutation({
       ok: summary.warnings.length === 0,
       summary,
     });
+
+    await ctx.scheduler.runAfter(0, internal.agent.triage, {});
 
     return summary;
   },
@@ -529,6 +512,27 @@ export const runScheduled = internalAction({
   args: {},
   handler: async (ctx): Promise<IngestRunSummary> => {
     return await runIngest(ctx, { offline: false });
+  },
+});
+
+/** Manually override a discovery lead's triage status. */
+export const setLeadStatus = internalMutation({
+  args: {
+    url: v.string(),
+    status: v.union(
+      v.literal("new"),
+      v.literal("triaged"),
+      v.literal("reviewed"),
+      v.literal("dismissed"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const lead = await ctx.db
+      .query("discoveries")
+      .withIndex("by_url", (q) => q.eq("url", args.url))
+      .unique();
+    if (!lead) throw new Error(`no discovery lead with url ${args.url}`);
+    await ctx.db.patch("discoveries", lead._id, { status: args.status });
   },
 });
 
