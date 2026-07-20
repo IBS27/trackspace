@@ -12,7 +12,6 @@ type AppShellProps = {
   navItems: TrackspaceNavItem[];
   onNavChange: (view: string) => void;
   utcTime: string;
-  presenceIndex: number;
   nextGate: string;
   children: ReactNode;
 };
@@ -24,13 +23,11 @@ export function AppShell({
   navItems,
   nextGate,
   onNavChange,
-  presenceIndex,
   utcTime,
 }: AppShellProps) {
   return (
     <div className="trackspace-app">
-      <TopStatusStrip presenceIndex={presenceIndex} utcTime={utcTime} />
-      <Header nextGate={nextGate} />
+      <Header nextGate={nextGate} utcTime={utcTime} />
       <TabBar
         activeView={activeView}
         navItems={navItems}
@@ -44,40 +41,7 @@ export function AppShell({
   );
 }
 
-function TopStatusStrip({
-  presenceIndex,
-  utcTime,
-}: {
-  presenceIndex: number;
-  utcTime: string;
-}) {
-  return (
-    <div className="trackspace-topstrip" aria-label="Trackspace status">
-      <span className="trackspace-live">
-        <span className="trackspace-live-dot" aria-hidden="true" />
-        LIVE
-      </span>
-      <span className="trackspace-separator" aria-hidden="true" />
-      <span>
-        MODEL <b>TRACKSPACE v0.1</b>
-      </span>
-      <span className="trackspace-separator" aria-hidden="true" />
-      <span>
-        FEED <b className="trackspace-ready">NOMINAL</b>
-      </span>
-      <span className="trackspace-grow" />
-      <span>
-        SUSTAINED-PRESENCE INDEX <b>{presenceIndex}%</b>
-      </span>
-      <span className="trackspace-separator" aria-hidden="true" />
-      <span>
-        UTC <b className="trackspace-tabular">{utcTime}</b>
-      </span>
-    </div>
-  );
-}
-
-function Header({ nextGate }: { nextGate: string }) {
+function Header({ nextGate, utcTime }: { nextGate: string; utcTime: string }) {
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
@@ -90,10 +54,13 @@ function Header({ nextGate }: { nextGate: string }) {
         </span>
       </div>
 
-      <div className="trackspace-header-stats" aria-label="Program summary">
-        <StatusCell label="Program" value="Artemis / Moon-to-Mars" />
-        <StatusCell label="Horizon" value="Sustained Presence" />
+      <div className="trackspace-header-stats" aria-label="Mission status">
         <StatusCell label="Next Gate" value={nextGate} />
+        <StatusCell label="UTC" value={utcTime} tabular />
+        <span className="trackspace-live">
+          <span className="trackspace-live-dot" aria-hidden="true" />
+          LIVE
+        </span>
       </div>
     </header>
   );
@@ -109,11 +76,19 @@ function TrackspaceLogoMark() {
   );
 }
 
-function StatusCell({ label, value }: { label: string; value: string }) {
+function StatusCell({
+  label,
+  tabular = false,
+  value,
+}: {
+  label: string;
+  tabular?: boolean;
+  value: string;
+}) {
   return (
     <div className="trackspace-status-cell">
       <span>{label}</span>
-      <b>{value}</b>
+      <b className={tabular ? "trackspace-tabular" : undefined}>{value}</b>
     </div>
   );
 }
