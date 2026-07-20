@@ -3,6 +3,7 @@ import { v, type Infer } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import {
+  env,
   internalAction,
   internalMutation,
   internalQuery,
@@ -476,12 +477,6 @@ export const applyDecision = internalMutation({
 export const triage = internalAction({
   args: { cursor: v.optional(v.string()) },
   handler: async (ctx, args): Promise<null> => {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error("Trackspace triage skipped: OPENAI_API_KEY is not configured");
-      return null;
-    }
-
     const batch: TriageBatch = await ctx.runQuery(internal.agent.getTriageBatch, {
       cursor: args.cursor ?? null,
     });
@@ -494,7 +489,7 @@ export const triage = internalAction({
           {},
         );
         const articleText = await fetchArticleText(lead.url);
-        const result = await callOpenAi(apiKey, context, lead, articleText);
+        const result = await callOpenAi(env.OPENAI_API_KEY, context, lead, articleText);
         const decision: StoredDecision = result.decision;
         await ctx.runMutation(internal.agent.applyDecision, {
           leadId: lead._id,

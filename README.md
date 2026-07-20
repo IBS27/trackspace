@@ -47,12 +47,19 @@ CONVEX_SITE_URL=
 INGEST_TOKEN=
 ```
 
-Set the same `INGEST_TOKEN` in Convex so its `/ingest` HTTP action can
-authorize manual refreshes:
+Set the same `INGEST_TOKEN` in the production Convex deployment so its
+`/ingest` HTTP action can authorize manual refreshes. Set `OPENAI_API_KEY`
+there as well; the autonomous discovery triage runs inside Convex, so this key
+is not needed in Vercel:
 
 ```bash
-bunx --bun convex env set INGEST_TOKEN <token> --prod
+bunx --bun convex env set INGEST_TOKEN --prod
+bunx --bun convex env set OPENAI_API_KEY --prod
+bunx --bun convex deploy
 ```
+
+Convex environment variables are deployment-specific. Repeat the two `env set`
+commands without `--prod` when configuring a development deployment.
 
 ## Data
 

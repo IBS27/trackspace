@@ -26,6 +26,7 @@ import type { DataModel } from "./dataModel.js";
  */
 type Env = {
   readonly INGEST_TOKEN: string | undefined;
+  readonly OPENAI_API_KEY: string;
 };
 
 /**
