@@ -251,9 +251,10 @@ function normalizeEvent(
     throw new Error("published events require at least one tier 1-3 source");
   }
 
-  const distinctDomains = new Set(citations.map(baseDomain));
+  const sourceDomains = new Set(sources.map((source) => baseDomain(source.url)));
   const confirmedEarned =
-    citations.some(isOfficialUrl) && distinctDomains.size >= 2;
+    sources.some((source) => isOfficialUrl(source.url)) &&
+    sourceDomains.size >= 2;
 
   return {
     ...event,
@@ -275,6 +276,21 @@ function normalizeEvent(
     lastVerified: verifiedOn,
     sources,
   };
+}
+
+/**
+ * Carry forward prior sources an update omitted. The model can only cite URLs
+ * it consulted this run, so older provenance must be preserved server-side.
+ */
+export function mergeUpdateSources(
+  event: AgentEventInput,
+  priorSources: readonly Source[],
+): AgentEventInput {
+  const urls = new Set(event.sources.map((source) => source.url));
+  const carried = priorSources.filter((source) => !urls.has(source.url));
+  return carried.length
+    ? { ...event, sources: [...event.sources, ...carried] }
+    : event;
 }
 
 export function validateAgentDecision(

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mergeUpdateSources,
   parseAgentDecision,
   validateAgentDecision,
   type AgentDecisionInput,
@@ -65,13 +66,20 @@ describe("validateAgentDecision", () => {
     expect(() => validate(decision)).toThrow("unknown capability id");
   });
 
-  it("downgrades confirmed when citations do not span independent domains", () => {
+  it("downgrades confirmed when sources do not span independent domains", () => {
     const decision = validate(publishDecision());
     expect(decision.event?.conf).toBe("reported");
     expect(decision.event?.lastVerified).toBe("2026-07-21");
   });
 
-  it("preserves confirmed with an official and independent citation", () => {
+  it("downgrades confirmed when only unrelated citations add a second domain", () => {
+    const decision = publishDecision({
+      citations: [LEAD_URL, "https://example.com/unrelated/"],
+    });
+    expect(validate(decision).event?.conf).toBe("reported");
+  });
+
+  it("preserves confirmed with an official and independent source", () => {
     const decision = publishDecision({
       citations: [LEAD_URL, REPORT_URL],
       event: {
@@ -131,6 +139,25 @@ describe("validateAgentDecision", () => {
         verifiedOn: "2026-07-21",
       }).targetEventId,
     ).toBe("agent-existing");
+  });
+
+  it("carries forward prior sources an update omitted, deduped by URL", () => {
+    const event = publishDecision().event!;
+    const prior = [
+      { ...event.sources[0] },
+      {
+        publisher: "SpaceNews",
+        title: "Earlier report",
+        url: REPORT_URL,
+        tier: 3 as const,
+        date: "2026-06-01",
+      },
+    ];
+    const merged = mergeUpdateSources(event, prior);
+    expect(merged.sources.map((source) => source.url)).toEqual([
+      LEAD_URL,
+      REPORT_URL,
+    ]);
   });
 
   it("downgrades tier 1 assigned to a non-official domain", () => {

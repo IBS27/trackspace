@@ -10,6 +10,11 @@ export type DiscoveryLead = {
   status?: "new" | "triaged";
 };
 
+/** True for pseudo-events produced by {@link discoveryToEvent}. */
+export function isDiscoveryEvent(event: TrackspaceEvent): boolean {
+  return event.id.startsWith("disc-");
+}
+
 /**
  * Present a new or retained discovery lead as a low-grade timeline signal.
  * Leads carry only a headline and link, so the event stays at the bottom of the

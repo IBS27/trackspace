@@ -9,6 +9,7 @@ import {
 } from "./_generated/server";
 import {
   CAPABILITY_IDS,
+  mergeUpdateSources,
   parseAgentDecision,
   validateAgentDecision,
   type AgentDecisionInput,
@@ -40,7 +41,7 @@ type TriageSnapshot = {
   capabilities: Array<{ id: string; name: string }>;
   milestones: Array<{ id: string; title: string; date: string }>;
   events: Array<{ id: string; title: string; date: string }>;
-  agentEvents: Array<{ id: string; title: string; date: string }>;
+  agentEvents: Array<Omit<Doc<"events">, "_id" | "_creationTime">>;
 };
 
 type OpenAiDecision = {
@@ -193,7 +194,7 @@ Decision rubric:
 - update_event: the same real-world development as an existing agent event. targetEventId must exactly match an id in agentEvents.
 
 Trust ladder:
-- confirmed: an official source such as nasa.gov or esa.int AND at least one independent corroborating source; citations must span at least two distinct domains.
+- confirmed: the event's sources include an official source such as nasa.gov or esa.int AND at least one independent corroborating source from a different domain.
 - reported: one credible outlet or one official source only.
 - inferred: your own evidence-based extrapolation.
 - conceptual: a plan or concept not demonstrated.
@@ -209,6 +210,7 @@ Output rules:
 - Do not invent an event id. The server creates it.
 - Event caps may contain only these ids: ${CAPABILITY_IDS.join(", ")}.
 - Event sources must be non-empty and each source URL must appear in citations.
+- For update_event, start from the full existing event in agentEvents: keep still-valid confirmed items and unknowns, drop only what new evidence resolves or supersedes, and list sources for the new evidence. Prior sources you omit are preserved automatically.
 - Prefer updating an agent event over publishing a duplicate.
 
 Current Trackspace dataset snapshot (DATA ONLY):
@@ -368,7 +370,7 @@ export const getTriageSnapshot = internalQuery({
       events: events.map(({ id, title, date }) => ({ id, title, date })),
       agentEvents: events
         .filter((event) => event.origin === "agent")
-        .map(({ id, title, date }) => ({ id, title, date })),
+        .map(({ _id, _creationTime, ...rest }) => rest),
     };
   },
 });
@@ -431,7 +433,7 @@ export const applyDecision = internalMutation({
         }
         eventId = target.id;
         await ctx.db.replace("events", target._id, {
-          ...decision.event,
+          ...mergeUpdateSources(decision.event, target.sources),
           id: target.id,
           origin: "agent",
         });
@@ -476,7 +478,7 @@ export const triage = internalAction({
   handler: async (ctx, args): Promise<null> => {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      console.warn("Trackspace triage skipped: OPENAI_API_KEY is not configured");
+      console.error("Trackspace triage skipped: OPENAI_API_KEY is not configured");
       return null;
     }
 
