@@ -338,7 +338,9 @@ function createEarthMoonScene(
   const SUN_DISTANCE = 105;
   const SUN_SPRITE_SCALE = 48;
   const sunTexture = (() => {
-    const size = 1024;
+    // 512 is enough for the sprite's soft falloff; the per-pixel loop runs
+    // once on the main thread at init, so keep it cheap.
+    const size = 512;
     const cv = document.createElement("canvas");
     cv.width = cv.height = size;
     const ctx = cv.getContext("2d")!;
