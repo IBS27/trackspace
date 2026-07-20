@@ -471,7 +471,6 @@
 
 .trackspace-scene-identity,
 .trackspace-scene-viewbar,
-.trackspace-scene-telemetry,
 .trackspace-scene-dock {
   position: absolute;
   z-index: 6;
@@ -612,52 +611,6 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.25;
-}
-
-.trackspace-scene-telemetry {
-  top: 74px;
-  right: 22px;
-  display: grid;
-  width: 142px;
-  border-top: 1px solid rgba(91, 208, 255, 0.42);
-  background: linear-gradient(180deg, rgba(7, 12, 19, 0.72), rgba(7, 12, 19, 0.28));
-  backdrop-filter: blur(4px);
-}
-
-.trackspace-scene-telemetry > div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  padding: 8px 9px 7px;
-  border-bottom: 1px solid rgba(48, 66, 84, 0.4);
-}
-
-.trackspace-scene-telemetry span {
-  grid-column: 1;
-  color: #63758c;
-  font-size: 7.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.trackspace-scene-telemetry b {
-  grid-column: 2;
-  color: #d7e9f7;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 480;
-  letter-spacing: -0.025em;
-}
-
-.trackspace-scene-telemetry i {
-  grid-column: 1 / -1;
-  margin-top: 2px;
-  color: #53677f;
-  font-size: 7px;
-  font-style: normal;
-  letter-spacing: 0.1em;
-  text-align: right;
-  text-transform: uppercase;
 }
 
 .trackspace-scene-dock {
@@ -2461,15 +2414,13 @@
 }
 
 @media (min-width: 901px) and (max-width: 1180px) {
-  .trackspace-scene-identity,
-  .trackspace-scene-telemetry {
+  .trackspace-scene-identity {
     display: none;
   }
 }
 
 @media (max-width: 620px) {
-  .trackspace-scene-identity,
-  .trackspace-scene-telemetry {
+  .trackspace-scene-identity {
     display: none;
   }
 
