@@ -32,12 +32,12 @@ const MARKER_RING_INNER_RADIUS = 0.046;
 const MARKER_RING_OUTER_RADIUS = 0.064;
 const MARKER_HIT_RADIUS_PX = 36;
 
-type SceneFocus = "system" | "earth" | "moon";
+type SceneFocus = "system" | "earth" | "moon" | "orion";
 type SceneLayer = "sites" | "trajectory" | "maneuvers";
 type SimulationSpeed = 1 | 8 | 32;
 type MissionPhase = "outbound" | "lunar-orbit" | "return";
 
-const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon"] as const;
+const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon", "orion"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -72,6 +72,7 @@ type TrackspaceCanvas = HTMLCanvasElement & {
     readonly missionPhase: MissionPhase;
     earthScreen: () => { x: number; y: number };
     moonScreen: () => { x: number; y: number };
+    orionScreen: () => { x: number; y: number };
     locationScreens: () => Array<{
       id: string;
       x: number;
@@ -1614,6 +1615,7 @@ function createEarthMoonScene(
     system: { min: 9.2, max: 25, dist: 12 },
     earth: { min: 3.3, max: 14, dist: 4.7 },
     moon: { min: 1.15, max: 14, dist: 2.45 },
+    orion: { min: 0.28, max: 6, dist: 0.55 },
   };
   let focus: SceneFocus = "system";
   let distGoal: number | null = null;
@@ -1626,6 +1628,7 @@ function createEarthMoonScene(
   const bodyWorld = new THREE.Vector3();
   const surfaceNormal = new THREE.Vector3();
   const cameraVector = new THREE.Vector3();
+  const orionForward = new THREE.Vector3();
 
   function markerFacesCamera(entry: MarkerEntry): boolean {
     entry.root.getWorldPosition(markerWorld);
@@ -1703,6 +1706,11 @@ function createEarthMoonScene(
       const d = moon.getWorldPosition(new THREE.Vector3()).normalize();
       azimGoal = Math.atan2(d.x, d.z) + 0.5;
       elevGoal = Math.asin(THREE.MathUtils.clamp(d.y, -1, 1)) + 0.12;
+    } else if (next === "orion") {
+      // Start behind and slightly above the craft, using its +Z flight heading.
+      transferVehicle.getWorldDirection(orionForward);
+      azimGoal = Math.atan2(-orionForward.x, -orionForward.z);
+      elevGoal = 0.22;
     } else if (next === "earth") {
       azimGoal = 0.52;
       elevGoal = 0.16;
@@ -1784,10 +1792,28 @@ function createEarthMoonScene(
       -((e.clientY - r.top) / r.height) * 2 + 1,
     );
     raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects([earth, moon], false)[0];
+    const hit = raycaster.intersectObjects([earth, moon, transferVehicle], true)[0];
     if (!hit) return;
-    const next: SceneFocus = hit.object === moon ? "moon" : "earth";
-    if (next !== focus) focusScene(next);
+    let next: SceneFocus | null = null;
+    for (
+      let obj: THREE.Object3D | null = hit.object;
+      obj;
+      obj = obj.parent
+    ) {
+      if (obj === transferVehicle) {
+        next = "orion";
+        break;
+      }
+      if (obj === moon) {
+        next = "moon";
+        break;
+      }
+      if (obj === earth) {
+        next = "earth";
+        break;
+      }
+    }
+    if (next && next !== focus) focusScene(next);
   }
   canvas.addEventListener("dblclick", onDblClick);
   canvas.addEventListener("mousemove", onMouseMove);
@@ -1873,10 +1899,12 @@ function createEarthMoonScene(
         entry.ring.scale.setScalar(base * (1 + Math.sin(now * 0.003 + i) * 0.18));
       });
     }
-    // Ease the camera target onto the focused body (the Moon keeps moving,
-    // so the target tracks it every frame once captured).
+    // Ease the camera target onto the focused body (the Moon and Orion keep
+    // moving, so the target tracks them every frame once captured).
     if (focus === "moon") {
       moon.getWorldPosition(focusPoint);
+    } else if (focus === "orion") {
+      transferVehicle.getWorldPosition(focusPoint);
     } else if (focus === "system") {
       moon.getWorldPosition(focusPoint).multiplyScalar(0.34);
     } else {
@@ -1927,6 +1955,8 @@ function createEarthMoonScene(
     },
     earthScreen: () => toScreen(new THREE.Vector3(0, 0, 0)),
     moonScreen: () => toScreen(moon.getWorldPosition(new THREE.Vector3())),
+    orionScreen: () =>
+      toScreen(transferVehicle.getWorldPosition(new THREE.Vector3())),
     locationScreens: () =>
       markerEntries.map((entry) => {
         entry.root.getWorldPosition(markerWorld);
