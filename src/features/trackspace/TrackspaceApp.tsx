@@ -117,7 +117,6 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
             setSelection(null);
           }
         }}
-        presenceIndex={summary.overall}
         utcTime={utcTime}
       >
         {activeView === "command" ? (

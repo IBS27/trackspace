@@ -23,6 +23,23 @@ vi.mock("./scene/EarthMoonScene", () => ({
 afterEach(cleanup);
 
 describe("TrackspaceApp", () => {
+  it("renders a single simplified header", () => {
+    render(<TrackspaceApp />);
+
+    const header = screen.getByRole("banner");
+    expect(header.textContent).toContain("TRACKSPACE");
+    expect(header.textContent).toContain("Next Gate");
+    expect(header.textContent).toContain("UTC");
+    expect(header.textContent).toContain("LIVE");
+    expect(header.textContent).not.toContain("Program");
+    expect(header.textContent).not.toContain("Horizon");
+    expect(document.querySelector(".trackspace-topstrip")).toBeNull();
+    expect(
+      header.querySelector(".trackspace-header-stats")?.lastElementChild
+        ?.classList.contains("trackspace-live"),
+    ).toBe(true);
+  });
+
   it("renders a tab for every view with the Command Center active", () => {
     render(<TrackspaceApp />);
     const nav = screen.getByRole("navigation", { name: "Trackspace views" });
