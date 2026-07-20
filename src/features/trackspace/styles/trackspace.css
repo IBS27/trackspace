@@ -142,7 +142,7 @@
 }
 
 .trackspace-subtitle {
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -164,7 +164,7 @@
 }
 
 .trackspace-status-cell span {
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
