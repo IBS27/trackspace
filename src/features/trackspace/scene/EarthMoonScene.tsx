@@ -26,6 +26,8 @@ const ORBIT_INCLINATION = 0.09; // 5.1°
 const ORBIT_SEMI_MINOR =
   ORBIT_SEMI_MAJOR * Math.sqrt(1 - ORBIT_ECCENTRICITY * ORBIT_ECCENTRICITY);
 const ORBIT_FOCUS_OFFSET = ORBIT_SEMI_MAJOR * ORBIT_ECCENTRICITY;
+const SUN_DISTANCE = 150;
+const SUN_RADIUS = 1.55;
 const MARKER_DOT_RADIUS = 0.022;
 const MARKER_RING_INNER_RADIUS = 0.046;
 const MARKER_RING_OUTER_RADIUS = 0.064;
@@ -48,7 +50,7 @@ type SceneTelemetry = {
 const INITIAL_TELEMETRY: SceneTelemetry = {
   distanceKm: 384_400,
   lightDelaySeconds: 1.28,
-  phasePercent: 23,
+  phasePercent: 40,
   missionPhase: "TLI coast",
   missionPercent: 12,
   missionDetail: "Far-side LOI",
@@ -88,6 +90,7 @@ type TrackspaceCanvas = HTMLCanvasElement & {
     readonly missionPhase: MissionPhase;
     earthScreen: () => { x: number; y: number };
     moonScreen: () => { x: number; y: number };
+    sunScreen: () => { x: number; y: number };
     locationScreens: () => Array<{
       id: string;
       x: number;
@@ -136,7 +139,7 @@ function createEarthMoonScene(
   renderer.toneMappingExposure = 1.15;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 340);
   const target = new THREE.Vector3(0, 0, 0);
   const disposables: { dispose(): void }[] = [];
   const lineMaterials: LineMaterial[] = [];
@@ -318,11 +321,152 @@ function createEarthMoonScene(
     return sprite;
   }
 
-  // Sun well off to the side so the terminator and night side stay visible.
-  const sunDir = new THREE.Vector3(-6.5, 1.8, 2).normalize();
-  const sun = new THREE.DirectionalLight(0xfff3e2, 4.6 * Math.PI);
-  sun.position.copy(sunDir).multiplyScalar(50);
-  scene.add(sun);
+  // The rendered Sun and the light share this one Earth-to-Sun vector. The
+  // distance is compressed with the rest of the scene, while the disk and
+  // corona remain background-sized and never participate in raycasting.
+  const sunDir = new THREE.Vector3(-0.75, 0.02, -0.66).normalize();
+  const sunPosition = sunDir.clone().multiplyScalar(SUN_DISTANCE);
+  const sunLight = new THREE.DirectionalLight(0xfff3e2, 4.6 * Math.PI);
+  sunLight.position.copy(sunDir).multiplyScalar(50);
+  scene.add(sunLight);
+
+  const coronaCanvas = document.createElement("canvas");
+  coronaCanvas.width = coronaCanvas.height = 512;
+  const coronaContext = coronaCanvas.getContext("2d")!;
+  coronaContext.translate(256, 256);
+  for (let rayIndex = 0; rayIndex < 72; rayIndex++) {
+    const angle = (rayIndex / 72) * Math.PI * 2;
+    const rayLength = 108 + ((rayIndex * 47) % 53);
+    const rayWidth = 0.7 + ((rayIndex * 29) % 17) / 13;
+    const rayGradient = coronaContext.createLinearGradient(42, 0, rayLength, 0);
+    rayGradient.addColorStop(0, "rgba(255, 241, 198, 0.2)");
+    rayGradient.addColorStop(0.45, "rgba(255, 185, 84, 0.07)");
+    rayGradient.addColorStop(1, "rgba(255, 148, 47, 0)");
+    coronaContext.save();
+    coronaContext.rotate(angle);
+    coronaContext.fillStyle = rayGradient;
+    coronaContext.fillRect(42, -rayWidth / 2, rayLength - 42, rayWidth);
+    coronaContext.restore();
+  }
+  const coronaGradient = coronaContext.createRadialGradient(0, 0, 12, 0, 0, 218);
+  coronaGradient.addColorStop(0, "rgba(255, 250, 226, 1)");
+  coronaGradient.addColorStop(0.13, "rgba(255, 212, 125, 0.72)");
+  coronaGradient.addColorStop(0.3, "rgba(255, 166, 65, 0.22)");
+  coronaGradient.addColorStop(0.58, "rgba(255, 126, 31, 0.055)");
+  coronaGradient.addColorStop(1, "rgba(255, 105, 18, 0)");
+  coronaContext.fillStyle = coronaGradient;
+  coronaContext.fillRect(-256, -256, 512, 512);
+
+  const coronaTexture = new THREE.CanvasTexture(coronaCanvas);
+  coronaTexture.colorSpace = THREE.SRGBColorSpace;
+  const coronaMaterial = new THREE.SpriteMaterial({
+    map: coronaTexture,
+    color: 0xffc06a,
+    transparent: true,
+    opacity: 0.82,
+    blending: THREE.AdditiveBlending,
+    depthTest: true,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const corona = new THREE.Sprite(coronaMaterial);
+  corona.position.copy(sunPosition);
+  corona.scale.setScalar(14);
+  corona.renderOrder = 100;
+  scene.add(corona);
+
+  const sunUniforms = {
+    time: { value: 0 },
+  };
+  const sunMaterial = new THREE.ShaderMaterial({
+    uniforms: sunUniforms,
+    vertexShader: `
+      varying vec3 vObjectPosition;
+      varying vec3 vViewNormal;
+      varying vec3 vViewPosition;
+      void main() {
+        vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+        vObjectPosition = normalize(position);
+        vViewNormal = normalize(normalMatrix * normal);
+        vViewPosition = -viewPosition.xyz;
+        gl_Position = projectionMatrix * viewPosition;
+      }`,
+    fragmentShader: `
+      uniform float time;
+      varying vec3 vObjectPosition;
+      varying vec3 vViewNormal;
+      varying vec3 vViewPosition;
+
+      float hash(vec3 p) {
+        return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+      }
+
+      float noise(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(
+            mix(hash(i), hash(i + vec3(1.0, 0.0, 0.0)), f.x),
+            mix(hash(i + vec3(0.0, 1.0, 0.0)), hash(i + vec3(1.0, 1.0, 0.0)), f.x),
+            f.y
+          ),
+          mix(
+            mix(hash(i + vec3(0.0, 0.0, 1.0)), hash(i + vec3(1.0, 0.0, 1.0)), f.x),
+            mix(hash(i + vec3(0.0, 1.0, 1.0)), hash(i + vec3(1.0, 1.0, 1.0)), f.x),
+            f.y
+          ),
+          f.z
+        );
+      }
+
+      float fbm(vec3 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        for (int octave = 0; octave < 5; octave++) {
+          value += noise(p) * amplitude;
+          p = p * 2.03 + vec3(1.7, -2.1, 0.9);
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+
+      void main() {
+        vec3 flow = vec3(time * 0.016, time * -0.01, time * 0.006);
+        float granules = fbm(vObjectPosition * 18.0 + flow);
+        float convection = fbm(vObjectPosition * 5.0 - flow * 0.35);
+        float spotField = fbm(vObjectPosition * 2.8 + vec3(3.2, -1.4, time * 0.003));
+        float sunspots = smoothstep(0.72, 0.88, spotField);
+        float filaments = pow(abs(granules - 0.5) * 2.0, 3.0);
+
+        vec3 color = mix(
+          vec3(1.0, 0.25, 0.015),
+          vec3(1.0, 0.93, 0.55),
+          0.38 + granules * 0.62
+        );
+        color *= 0.76 + convection * 0.38;
+        color = mix(color, vec3(0.3, 0.035, 0.004), sunspots * 0.82);
+        color += vec3(1.0, 0.42, 0.055) * filaments * 0.3;
+
+        float facing = clamp(dot(normalize(vViewNormal), normalize(vViewPosition)), 0.0, 1.0);
+        color *= 0.44 + 0.56 * pow(facing, 0.38);
+        gl_FragColor = vec4(color, 1.0);
+      }`,
+    transparent: false,
+    depthTest: true,
+    depthWrite: true,
+    toneMapped: false,
+  });
+  const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS, 64, 48);
+  const sunDisk = new THREE.Mesh(sunGeometry, sunMaterial);
+  sunDisk.position.copy(sunPosition);
+  scene.add(sunDisk);
+  disposables.push(
+    coronaTexture,
+    coronaMaterial,
+    sunGeometry,
+    sunMaterial,
+  );
   // Faint cool fill so the night side reads as a silhouette, not a hole.
   scene.add(new THREE.AmbientLight(0x33415c, 0.16 * Math.PI));
 
@@ -1511,7 +1655,9 @@ function createEarthMoonScene(
     const col = new Float32Array(layer.count * 3);
     const tint = new THREE.Color();
     for (let i = 0; i < layer.count; i++) {
-      const r = 60 + random() * 60;
+      // Keep the stellar shell behind the rendered Sun so its opaque disk
+      // correctly occludes background stars.
+      const r = 220 + random() * 60;
       const t = random() * Math.PI * 2;
       const ph = Math.acos(random() * 2 - 1);
       pos[i * 3] = r * Math.sin(ph) * Math.cos(t);
@@ -1572,6 +1718,7 @@ function createEarthMoonScene(
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const focusPoint = new THREE.Vector3();
+  const lunarPhaseVector = new THREE.Vector3();
   const markerWorld = new THREE.Vector3();
   const bodyWorld = new THREE.Vector3();
   const surfaceNormal = new THREE.Vector3();
@@ -1769,12 +1916,15 @@ function createEarthMoonScene(
   ).matches;
   let raf = 0;
   let t0 = performance.now();
+  let sunTime = 0;
   let running = true;
   function frame(now: number) {
     if (!running) return;
     const dt = Math.min(0.05, (now - t0) / 1000);
     t0 = now;
     idle += dt;
+    if (!reducedMotion) sunTime += dt;
+    sunUniforms.time.value = sunTime;
     if (!reducedMotion && !paused) {
       const simulatedDt = dt * simulationSpeed;
       if (!dragging && idle > 1.4) azim -= dt * 0.04;
@@ -1876,7 +2026,17 @@ function createEarthMoonScene(
       callbacks.onTelemetryChange({
         distanceKm,
         lightDelaySeconds: distanceKm / 299_792,
-        phasePercent: Math.round(((1 - Math.cos(moonAngle)) / 2) * 100),
+        // Illuminated lunar fraction as seen from Earth, derived from the
+        // same light vector that shades both bodies.
+        phasePercent: Math.round(
+          ((1 -
+            moon
+              .getWorldPosition(lunarPhaseVector)
+              .normalize()
+              .dot(sunDir)) /
+            2) *
+            100,
+        ),
         missionPhase: phaseLabel,
         missionPercent: Math.round(displayedProgress * 100),
         missionDetail: phaseDetail,
@@ -1907,6 +2067,7 @@ function createEarthMoonScene(
     },
     earthScreen: () => toScreen(new THREE.Vector3(0, 0, 0)),
     moonScreen: () => toScreen(moon.getWorldPosition(new THREE.Vector3())),
+    sunScreen: () => toScreen(sunPosition.clone()),
     locationScreens: () =>
       markerEntries.map((entry) => {
         entry.root.getWorldPosition(markerWorld);
@@ -2068,7 +2229,6 @@ export function EarthMoonScene({
         className="trackspace-scene-canvas"
         aria-label="Interactive Earth and Moon orbit view with source-backed locations"
       />
-      <div className="trackspace-scene-solar-glow" aria-hidden="true" />
       <div className="trackspace-scene-vignette" aria-hidden="true" />
       <div className="trackspace-scene-scanline" aria-hidden="true" />
 
