@@ -36,23 +36,6 @@ type SceneLayer = "sites" | "trajectory" | "maneuvers";
 type SimulationSpeed = 1 | 8 | 32;
 type MissionPhase = "outbound" | "lunar-orbit" | "return";
 
-type SceneTelemetry = {
-  distanceKm: number;
-  lightDelaySeconds: number;
-  phasePercent: number;
-  missionPhase: string;
-  missionPercent: number;
-  missionDetail: string;
-};
-
-const INITIAL_TELEMETRY: SceneTelemetry = {
-  distanceKm: 384_400,
-  lightDelaySeconds: 1.28,
-  phasePercent: 23,
-  missionPhase: "TLI coast",
-  missionPercent: 12,
-  missionDetail: "Far-side LOI",
-};
 const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
 
@@ -101,7 +84,6 @@ type SceneCallbacks = {
   onLocationOpen: (id: string) => void;
   onHoverChange: (hover: SceneHover | null) => void;
   onFocusChange: (focus: SceneFocus) => void;
-  onTelemetryChange: (telemetry: SceneTelemetry) => void;
 };
 
 type SceneController = {
@@ -1556,8 +1538,6 @@ function createEarthMoonScene(
   let idle = 0;
   let paused = false;
   let simulationSpeed: SimulationSpeed = 1;
-  let lastTelemetryUpdate = 0;
-
   // The camera orbits and zooms around the focused body. Double-clicking a
   // body re-centers on it; the target glides over and then follows it.
   const FOCUS_RANGES = {
@@ -1853,36 +1833,6 @@ function createEarthMoonScene(
     applyCam();
     updateTrajectorySilhouetteCull();
 
-    if (now - lastTelemetryUpdate > 350) {
-      const distanceKm = Math.round(
-        (moon.position.length() / ORBIT_SEMI_MAJOR) * 384_400,
-      );
-      let phaseLabel = "TLI coast";
-      let phaseDetail = "Far-side LOI";
-      let displayedProgress = missionProgress;
-      if (missionPhase === "lunar-orbit") {
-        const completedOrbitFraction = missionProgress * LUNAR_ORBIT_COUNT;
-        const orbitNumber = Math.min(
-          LUNAR_ORBIT_COUNT,
-          Math.floor(completedOrbitFraction) + 1,
-        );
-        phaseLabel = `Lunar orbit ${orbitNumber}/${LUNAR_ORBIT_COUNT}`;
-        phaseDetail = orbitNumber === 1 ? "Far-side LOI" : "TEI setup";
-        displayedProgress = completedOrbitFraction % 1;
-      } else if (missionPhase === "return") {
-        phaseLabel = "TEI return";
-        phaseDetail = "Splashdown";
-      }
-      callbacks.onTelemetryChange({
-        distanceKm,
-        lightDelaySeconds: distanceKm / 299_792,
-        phasePercent: Math.round(((1 - Math.cos(moonAngle)) / 2) * 100),
-        missionPhase: phaseLabel,
-        missionPercent: Math.round(displayedProgress * 100),
-        missionDetail: phaseDetail,
-      });
-      lastTelemetryUpdate = now;
-    }
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }
@@ -1986,8 +1936,6 @@ export function EarthMoonScene({
     trajectory: true,
     maneuvers: true,
   });
-  const [telemetry, setTelemetry] =
-    useState<SceneTelemetry>(INITIAL_TELEMETRY);
   const sceneStateRef = useRef({ paused, speed, layers, focus });
 
   useEffect(() => {
@@ -2005,7 +1953,6 @@ export function EarthMoonScene({
       onLocationOpen: (id) => openRef.current(id),
       onHoverChange: setHover,
       onFocusChange: setFocus,
-      onTelemetryChange: setTelemetry,
     });
     controllerRef.current = scene;
     const sceneState = sceneStateRef.current;
@@ -2050,17 +1997,6 @@ export function EarthMoonScene({
     controllerRef.current?.resetView();
   };
 
-  const phaseLabel =
-    telemetry.phasePercent < 10
-      ? "New"
-      : telemetry.phasePercent < 45
-        ? "Crescent"
-        : telemetry.phasePercent < 60
-          ? "Quarter"
-          : telemetry.phasePercent < 90
-            ? "Gibbous"
-            : "Full";
-
   return (
     <>
       <canvas
@@ -2103,29 +2039,6 @@ export function EarthMoonScene({
             <path d="M3.2 2.8v3.5h3.5" />
           </svg>
         </button>
-      </div>
-
-      <div className="trackspace-scene-telemetry" aria-label="Orbital telemetry">
-        <div>
-          <span>Range</span>
-          <b>{telemetry.distanceKm.toLocaleString("en-US")}</b>
-          <i>km</i>
-        </div>
-        <div>
-          <span>Signal</span>
-          <b>{telemetry.lightDelaySeconds.toFixed(2)}</b>
-          <i>sec one-way</i>
-        </div>
-        <div>
-          <span>Phase</span>
-          <b>{telemetry.phasePercent}</b>
-          <i>% · {phaseLabel}</i>
-        </div>
-        <div>
-          <span>{telemetry.missionPhase}</span>
-          <b>{telemetry.missionPercent}</b>
-          <i>% · {telemetry.missionDetail}</i>
-        </div>
       </div>
 
       <div className="trackspace-scene-dock" aria-label="Scene controls">
