@@ -16,6 +16,7 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 
 import type { Location, LocationKind, SpatialBody, Status } from "../data/types";
+import { createOrionSpacecraft } from "./OrionSpacecraft";
 
 const EARTH_RADIUS = 1.5;
 const EARTH_TILT = 0.41; // 23.4°
@@ -659,9 +660,8 @@ function createEarthMoonScene(
     returnTube.mesh,
     returnTubeB.mesh,
   );
-  const vehicleGeometry = new THREE.OctahedronGeometry(0.055, 0);
-  const vehicleMaterial = new THREE.MeshBasicMaterial({ color: 0xd7f5ff });
-  const transferVehicle = new THREE.Mesh(vehicleGeometry, vehicleMaterial);
+  const orionSpacecraft = createOrionSpacecraft();
+  const transferVehicle = orionSpacecraft.group;
   trajectoryPathsGroup.add(transferVehicle);
   const vehicleTangent = new THREE.Vector3();
   const vehicleLookTarget = new THREE.Vector3();
@@ -785,8 +785,7 @@ function createEarthMoonScene(
   lunarNodesGroup.add(loiLabel, teiLabel);
 
   disposables.push(
-    vehicleGeometry,
-    vehicleMaterial,
+    orionSpacecraft,
     burnGeometry,
     burnMaterial,
     teiMaterial,
