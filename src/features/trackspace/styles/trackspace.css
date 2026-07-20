@@ -390,25 +390,11 @@
   display: block;
 }
 
-.trackspace-scene-solar-glow,
 .trackspace-scene-vignette,
 .trackspace-scene-scanline {
   position: absolute;
   z-index: 1;
   pointer-events: none;
-}
-
-.trackspace-scene-solar-glow {
-  top: -190px;
-  left: -220px;
-  width: 540px;
-  height: 540px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(255, 241, 211, 0.18) 0 1%, transparent 12%),
-    radial-gradient(circle, rgba(128, 196, 255, 0.1), transparent 59%);
-  filter: blur(1px);
-  opacity: 0.9;
 }
 
 .trackspace-scene-vignette {

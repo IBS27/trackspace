@@ -309,6 +309,77 @@ function createEarthMoonScene(
   // Faint cool fill so the night side reads as a silhouette, not a hole.
   scene.add(new THREE.AmbientLight(0x33415c, 0.16 * Math.PI));
 
+  // The visible Sun, styled after real ISS photography: a blinding white
+  // core with no discernible photosphere edge, a neutral-white glare
+  // falloff, and thin aperture-diffraction spikes of alternating lengths.
+  // It sits far along the same sunDir that lights the terminators so the
+  // glare always agrees with the lit hemispheres. Pure scenery: nothing
+  // raycasts it, and per-pixel depth testing lets Earth and Moon occlude
+  // the core while the glare peeks around their limbs. Pixels are computed
+  // directly because Chrome dithers low-alpha canvas gradients into
+  // visible banding.
+  const SUN_DISTANCE = 105;
+  const SUN_SPRITE_SCALE = 48;
+  const sunTexture = (() => {
+    // 512 is enough for the sprite's soft falloff; the per-pixel loop runs
+    // once on the main thread at init, so keep it cheap.
+    const size = 512;
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = size;
+    const ctx = cv.getContext("2d")!;
+    const image = ctx.createImageData(size, size);
+    const half = SUN_SPRITE_SCALE / 2;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = ((x + 0.5) / size) * 2 - 1;
+        const dy = ((y + 0.5) / size) * 2 - 1;
+        // Radius in world units so the falloff shape survives scale changes.
+        const r = Math.hypot(dx, dy) * half;
+        const theta = Math.atan2(dy, dx);
+        // Saturated core plus hot glare — the glare alone stays above full
+        // white past the core edge, so the blowout is seamless (no visible
+        // disc rim), like an overexposed sensor.
+        const core = 1 - THREE.MathUtils.smoothstep(r, 1.3, 2);
+        const glare = 2.4 * Math.exp(-r / 2.4);
+        const halo = 0.32 * Math.exp(-r / 5.2);
+        // Two interleaved spike sets (8 long + 16 short), lengths modulated
+        // around the circle so the starburst reads organic, not geometric.
+        const s8 = Math.pow(Math.abs(Math.cos(4 * theta)), 80);
+        const s16 = Math.pow(Math.abs(Math.cos(8 * theta + Math.PI / 2)), 300);
+        const rayMod = 0.7 + 0.3 * Math.cos(3 * theta + 1.7);
+        const rays =
+          (1.15 * s8 * Math.exp(-r / 4.5) + 0.9 * s16 * Math.exp(-r / 3)) *
+          rayMod;
+        // Fade to exactly zero before the sprite edge — no square seam.
+        const window = 1 - THREE.MathUtils.smoothstep(r, half * 0.8, half);
+        const t = (glare + halo + rays) * window;
+        const i = (y * size + x) * 4;
+        // Additive blend: brightness lives in RGB, black corners add nothing.
+        image.data[i] = Math.min(255, 255 * (core + t));
+        image.data[i + 1] = Math.min(255, 255 * (core * 0.99 + t * 0.985));
+        image.data[i + 2] = Math.min(255, 255 * (core * 0.97 + t * 0.955));
+        image.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    disposables.push(tex);
+    return tex;
+  })();
+  const sunDiscMaterial = new THREE.SpriteMaterial({
+    map: sunTexture,
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const sunDisc = new THREE.Sprite(sunDiscMaterial);
+  sunDisc.position.copy(sunDir).multiplyScalar(SUN_DISTANCE);
+  sunDisc.scale.setScalar(SUN_SPRITE_SCALE);
+  scene.add(sunDisc);
+  disposables.push(sunDiscMaterial);
+
   // Space is black — not the app's panel blue.
   scene.background = new THREE.Color(0x000103);
 
@@ -2003,7 +2074,6 @@ export function EarthMoonScene({
         className="trackspace-scene-canvas"
         aria-label="Interactive Earth and Moon orbit view with source-backed locations"
       />
-      <div className="trackspace-scene-solar-glow" aria-hidden="true" />
       <div className="trackspace-scene-vignette" aria-hidden="true" />
       <div className="trackspace-scene-scanline" aria-hidden="true" />
 
