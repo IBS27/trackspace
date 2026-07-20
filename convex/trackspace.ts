@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 
+import { discoveryToEvent } from "../src/features/trackspace/data/discoveries";
 import type {
   Capability,
   Dataset,
@@ -9,6 +10,8 @@ import type {
 } from "../src/features/trackspace/data/types";
 
 const MAX_RECORDS = 200;
+/** Newest unreviewed or retained low-grade leads surfaced as signals. */
+const MAX_DISCOVERIES = 20;
 
 const CAPABILITY_ORDER = [
   "sls",
@@ -83,6 +86,33 @@ export const dataset = query({
     const events = (await ctx.db.query("events").take(MAX_RECORDS)).map(
       withoutSystemFields,
     ) as TrackspaceEvent[];
+
+    const [newLeads, triagedLeads] = await Promise.all([
+      ctx.db
+        .query("discoveries")
+        .withIndex("by_status", (q) => q.eq("status", "new"))
+        .order("desc")
+        .take(MAX_DISCOVERIES),
+      ctx.db
+        .query("discoveries")
+        .withIndex("by_status", (q) => q.eq("status", "triaged"))
+        .order("desc")
+        .take(MAX_DISCOVERIES),
+    ]);
+    const leads = [...newLeads, ...triagedLeads]
+      .sort((a, b) => b.foundAt.localeCompare(a.foundAt))
+      .slice(0, MAX_DISCOVERIES);
+    events.push(
+      ...leads.map((lead) =>
+        discoveryToEvent(
+          {
+            ...lead,
+            status: lead.status === "triaged" ? "triaged" : "new",
+          },
+          lead._id,
+        ),
+      ),
+    );
 
     const locations = (
       await ctx.db.query("locations").take(MAX_RECORDS)

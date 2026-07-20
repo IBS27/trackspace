@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as agent from "../agent.js";
+import type * as agentLogic from "../agentLogic.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
 import type * as lib_ingestAuth from "../lib/ingestAuth.js";
+import type * as lib_readTextCapped from "../lib/readTextCapped.js";
 import type * as trackspace from "../trackspace.js";
 import type * as validators from "../validators.js";
 
@@ -22,10 +25,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agent: typeof agent;
+  agentLogic: typeof agentLogic;
   crons: typeof crons;
   http: typeof http;
   ingest: typeof ingest;
   "lib/ingestAuth": typeof lib_ingestAuth;
+  "lib/readTextCapped": typeof lib_readTextCapped;
   trackspace: typeof trackspace;
   validators: typeof validators;
 }>;

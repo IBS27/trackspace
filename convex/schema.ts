@@ -21,12 +21,33 @@ export default defineSchema({
     foundAt: v.string(),
     publishedAt: v.optional(v.string()),
     note: v.optional(v.string()),
-    status: v.union(v.literal("new"), v.literal("reviewed"), v.literal("dismissed")),
-  }).index("by_url", ["url"]),
+    status: v.union(
+      v.literal("new"),
+      v.literal("triaged"),
+      v.literal("reviewed"),
+      v.literal("dismissed"),
+    ),
+  })
+    .index("by_url", ["url"])
+    .index("by_status", ["status", "foundAt"]),
   ingestionRuns: defineTable({
     startedAt: v.string(),
     finishedAt: v.string(),
     ok: v.boolean(),
     summary: ingestRunSummaryValidator,
   }).index("by_startedAt", ["startedAt"]),
+  agentDecisions: defineTable({
+    leadUrl: v.string(),
+    decision: v.union(
+      v.literal("dismiss"),
+      v.literal("keep_as_signal"),
+      v.literal("publish_event"),
+      v.literal("update_event"),
+    ),
+    rationale: v.string(),
+    citations: v.array(v.string()),
+    model: v.string(),
+    eventId: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("by_createdAt", ["createdAt"]),
 });

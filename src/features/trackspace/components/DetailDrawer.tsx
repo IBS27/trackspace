@@ -361,7 +361,9 @@ function EventBody({
           </ul>
         ) : (
           <p className="trackspace-muted">
-            Nothing officially confirmed yet — projected event.
+            {event.future
+              ? "Nothing officially confirmed yet — projected event."
+              : "Nothing confirmed yet — unreviewed discovery lead."}
           </p>
         )}
       </DrawerSection>
