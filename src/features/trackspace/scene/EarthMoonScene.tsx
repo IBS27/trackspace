@@ -1615,7 +1615,7 @@ function createEarthMoonScene(
     system: { min: 9.2, max: 25, dist: 12 },
     earth: { min: 3.3, max: 14, dist: 4.7 },
     moon: { min: 1.15, max: 14, dist: 2.45 },
-    orion: { min: 0.28, max: 6, dist: 0.55 },
+    orion: { min: 0.8, max: 10, dist: 2.4 },
   };
   let focus: SceneFocus = "system";
   let distGoal: number | null = null;
@@ -1628,7 +1628,19 @@ function createEarthMoonScene(
   const bodyWorld = new THREE.Vector3();
   const surfaceNormal = new THREE.Vector3();
   const cameraVector = new THREE.Vector3();
-  const orionForward = new THREE.Vector3();
+  const orionFocusPos = new THREE.Vector3();
+
+  /** Place the camera outside Orion looking inward so Earth stays in frame. */
+  function orionEarthBackgroundAngles(): { azim: number; elev: number } {
+    transferVehicle.getWorldPosition(orionFocusPos);
+    const len = orionFocusPos.length();
+    if (len < 1e-6) return { azim: 0.5, elev: 0.22 };
+    return {
+      azim: Math.atan2(orionFocusPos.x, orionFocusPos.z),
+      elev:
+        Math.asin(THREE.MathUtils.clamp(orionFocusPos.y / len, -1, 1)) + 0.12,
+    };
+  }
 
   function markerFacesCamera(entry: MarkerEntry): boolean {
     entry.root.getWorldPosition(markerWorld);
@@ -1707,10 +1719,10 @@ function createEarthMoonScene(
       azimGoal = Math.atan2(d.x, d.z) + 0.5;
       elevGoal = Math.asin(THREE.MathUtils.clamp(d.y, -1, 1)) + 0.12;
     } else if (next === "orion") {
-      // Start behind and slightly above the craft, using its +Z flight heading.
-      transferVehicle.getWorldDirection(orionForward);
-      azimGoal = Math.atan2(-orionForward.x, -orionForward.z);
-      elevGoal = 0.22;
+      // Outside the craft looking toward Earth so the system stays in view.
+      const angles = orionEarthBackgroundAngles();
+      azimGoal = angles.azim;
+      elevGoal = angles.elev;
     } else if (next === "earth") {
       azimGoal = 0.52;
       elevGoal = 0.16;
@@ -1853,7 +1865,7 @@ function createEarthMoonScene(
     idle += dt;
     if (!reducedMotion && !paused) {
       const simulatedDt = dt * simulationSpeed;
-      if (!dragging && idle > 1.4) azim -= dt * 0.04;
+      if (!dragging && idle > 1.4 && focus !== "orion") azim -= dt * 0.04;
       earth.rotation.y += simulatedDt * 0.05;
       clouds.rotation.y += simulatedDt * 0.062;
       if (missionPhase === "outbound") {
@@ -1905,6 +1917,12 @@ function createEarthMoonScene(
       moon.getWorldPosition(focusPoint);
     } else if (focus === "orion") {
       transferVehicle.getWorldPosition(focusPoint);
+      // Keep Earth in the background while the user isn't orbiting freely.
+      if (!dragging) {
+        const angles = orionEarthBackgroundAngles();
+        azimGoal = angles.azim;
+        elevGoal = angles.elev;
+      }
     } else if (focus === "system") {
       moon.getWorldPosition(focusPoint).multiplyScalar(0.34);
     } else {
