@@ -32,12 +32,12 @@ const MARKER_RING_INNER_RADIUS = 0.046;
 const MARKER_RING_OUTER_RADIUS = 0.064;
 const MARKER_HIT_RADIUS_PX = 36;
 
-type SceneFocus = "system" | "earth" | "moon";
+type SceneFocus = "system" | "earth" | "moon" | "orion";
 type SceneLayer = "sites" | "trajectory" | "maneuvers";
 type SimulationSpeed = 1 | 8 | 32;
 type MissionPhase = "outbound" | "lunar-orbit" | "return";
 
-const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon"] as const;
+const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon", "orion"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -72,6 +72,7 @@ type TrackspaceCanvas = HTMLCanvasElement & {
     readonly missionPhase: MissionPhase;
     earthScreen: () => { x: number; y: number };
     moonScreen: () => { x: number; y: number };
+    orionScreen: () => { x: number; y: number };
     locationScreens: () => Array<{
       id: string;
       x: number;
@@ -640,7 +641,8 @@ function createEarthMoonScene(
   // Insertion altitude after the surface launch ascent.
   // Keep perigee modest so the Earth-side tip reads as a flat graze, not a spike.
   const parkingRadius = EARTH_RADIUS * 1.34;
-  const captureRadius = MOON_RADIUS * 1.35;
+  // Slightly lofted lunar capture so the ring clears the Moon cleanly.
+  const captureRadius = MOON_RADIUS * 1.55;
   // Just above the Earth mesh so launch/splashdown sit on the surface.
   const SURFACE_RADIUS = EARTH_RADIUS * 1.004;
   // Transfers stay in the Moon's orbital plane (no artificial out-of-plane tilt).
@@ -735,7 +737,9 @@ function createEarthMoonScene(
   const transferVehicle = orionSpacecraft.group;
   trajectoryPathsGroup.add(transferVehicle);
   const vehicleTangent = new THREE.Vector3();
-  const vehicleLookTarget = new THREE.Vector3();
+  const vehicleUp = new THREE.Vector3();
+  const vehicleRight = new THREE.Vector3();
+  const vehicleBasis = new THREE.Matrix4();
   const captureBasis = new THREE.Matrix4();
   const captureY = new THREE.Vector3();
   const captureZ = new THREE.Vector3();
@@ -916,28 +920,40 @@ function createEarthMoonScene(
   const occludeCam = new THREE.Vector3();
   const occludeWorld = new THREE.Vector3();
   const occludeToPoint = new THREE.Vector3();
-  const occludeToEarth = new THREE.Vector3();
 
-  function isOutsideEarthSilhouette(
+  /**
+   * True when a path sample sits between the camera and Earth's near face —
+   * the chord that would read as a pierce across the disk. Far-side samples
+   * that merely project onto the silhouette stay in the tube; depth-test hides
+   * them instead of chopping the geometry into flat stubs.
+   */
+  function isEarthNearSidePierce(
     localPoint: THREE.Vector3,
     cameraWorld: THREE.Vector3,
   ) {
     orbitPlane.localToWorld(occludeWorld.copy(localPoint));
     occludeToPoint.copy(occludeWorld).sub(cameraWorld);
-    occludeToEarth.copy(cameraWorld).multiplyScalar(-1);
-    const camDist = cameraWorld.length();
-    if (camDist <= SILHOUETTE_EARTH_RADIUS * 1.05) return true;
-    const earthAngle = Math.asin(
-      Math.min(0.995, SILHOUETTE_EARTH_RADIUS / camDist),
-    );
-    return occludeToPoint.angleTo(occludeToEarth) > earthAngle;
+    const distToPoint = occludeToPoint.length();
+    if (distToPoint < 1e-6) return false;
+
+    const radius = SILHOUETTE_EARTH_RADIUS;
+    const camDistSq = cameraWorld.lengthSq();
+    if (camDistSq <= radius * radius * 1.1) return false;
+
+    occludeToPoint.multiplyScalar(1 / distToPoint);
+    // Ray camera → point vs sphere at origin: |C + t D|^2 = R^2
+    const b = cameraWorld.dot(occludeToPoint);
+    const discr = b * b - (camDistSq - radius * radius);
+    if (discr <= 0) return false;
+    const tNear = -b - Math.sqrt(discr);
+    return tNear > 0 && distToPoint < tNear;
   }
 
   function collectVisibleSegments(
     points: readonly THREE.Vector3[],
     cameraWorld: THREE.Vector3,
     // Indices that must stay (launch ascent / splashdown). Depth test hides
-    // the backside; silhouette cull was chopping those surface contacts off.
+    // the backside; pierce cull only removes near-side Earth chords.
     protectStart = -1,
     protectEnd = -1,
   ) {
@@ -946,7 +962,7 @@ function createEarthMoonScene(
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
       const protectedPoint = i >= protectStart && i <= protectEnd;
-      if (protectedPoint || isOutsideEarthSilhouette(point, cameraWorld)) {
+      if (protectedPoint || !isEarthNearSidePierce(point, cameraWorld)) {
         run.push(point);
       } else if (run.length > 1) {
         segments.push(run);
@@ -1028,9 +1044,9 @@ function createEarthMoonScene(
     }
   }
 
-  // Hide path chords that project across Earth's face. Depth testing alone
-  // still shows the near-side arc between camera and Earth as a pierce.
-  // Launch + splashdown indices stay protected so surface contact never cuts off.
+  // Hide only near-side chords that pierce Earth's disk. Far-side arc stays
+  // in the mesh and is occluded by depth-test, so the tube isn't stubbed off
+  // at the limb. Launch + splashdown indices stay protected.
   function updateTrajectorySilhouetteCull(force = false) {
     const cullKey = [
       missionPhase,
@@ -1203,10 +1219,19 @@ function createEarthMoonScene(
       transferVehicle.position.copy(position);
       return;
     }
+    // Stable prograde attitude: +Z along velocity, +Y on the orbit normal.
+    // Avoid lookAt(world-up) — that rolls the craft as the path turns.
+    vehicleTangent.normalize();
+    vehicleUp.copy(captureY);
+    if (vehicleUp.lengthSq() < 1e-8) vehicleUp.set(0, 1, 0);
+    if (Math.abs(vehicleTangent.dot(vehicleUp)) > 0.95) {
+      vehicleUp.set(0, 0, 1);
+    }
+    vehicleRight.crossVectors(vehicleUp, vehicleTangent).normalize();
+    vehicleUp.crossVectors(vehicleTangent, vehicleRight).normalize();
     transferVehicle.position.copy(position);
-    vehicleLookTarget.copy(position).add(vehicleTangent);
-    transferVehicle.up.set(0, 1, 0);
-    transferVehicle.lookAt(vehicleLookTarget);
+    vehicleBasis.makeBasis(vehicleRight, vehicleUp, vehicleTangent);
+    transferVehicle.quaternion.setFromRotationMatrix(vehicleBasis);
   }
 
   function updateSystemReferences() {
@@ -1312,6 +1337,7 @@ function createEarthMoonScene(
   }
 
   function updateOutboundTransfer(progress: number) {
+    updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
     // Quadratic ease — most of the coast is spent far from Earth.
     const pathProgress = clamped * clamped;
@@ -1342,7 +1368,6 @@ function createEarthMoonScene(
     } else {
       orientVehicle(transferPoint, pathScratch);
     }
-    updateSystemReferences();
 
     const remainingAngle = Math.max(0, transferArrivalAngle - moonAngle);
     const leadPoints: THREE.Vector3[] = [];
@@ -1490,6 +1515,7 @@ function createEarthMoonScene(
   }
 
   function updateReturnTransfer(progress: number) {
+    updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
     pointAlongArc(
       returnPoints,
@@ -1518,7 +1544,6 @@ function createEarthMoonScene(
     } else {
       orientVehicle(returnPoint, pathScratch);
     }
-    updateSystemReferences();
   }
 
   function restartMissionCycle() {
@@ -1614,6 +1639,7 @@ function createEarthMoonScene(
     system: { min: 9.2, max: 25, dist: 12 },
     earth: { min: 3.3, max: 14, dist: 4.7 },
     moon: { min: 1.15, max: 14, dist: 2.45 },
+    orion: { min: 0.8, max: 10, dist: 2.4 },
   };
   let focus: SceneFocus = "system";
   let distGoal: number | null = null;
@@ -1626,6 +1652,19 @@ function createEarthMoonScene(
   const bodyWorld = new THREE.Vector3();
   const surfaceNormal = new THREE.Vector3();
   const cameraVector = new THREE.Vector3();
+  const orionFocusPos = new THREE.Vector3();
+
+  /** Place the camera outside Orion looking inward so Earth stays in frame. */
+  function orionEarthBackgroundAngles(): { azim: number; elev: number } {
+    transferVehicle.getWorldPosition(orionFocusPos);
+    const len = orionFocusPos.length();
+    if (len < 1e-6) return { azim: 0.5, elev: 0.22 };
+    return {
+      azim: Math.atan2(orionFocusPos.x, orionFocusPos.z),
+      elev:
+        Math.asin(THREE.MathUtils.clamp(orionFocusPos.y / len, -1, 1)) + 0.12,
+    };
+  }
 
   function markerFacesCamera(entry: MarkerEntry): boolean {
     entry.root.getWorldPosition(markerWorld);
@@ -1703,6 +1742,11 @@ function createEarthMoonScene(
       const d = moon.getWorldPosition(new THREE.Vector3()).normalize();
       azimGoal = Math.atan2(d.x, d.z) + 0.5;
       elevGoal = Math.asin(THREE.MathUtils.clamp(d.y, -1, 1)) + 0.12;
+    } else if (next === "orion") {
+      // Outside the craft looking toward Earth so the system stays in view.
+      const angles = orionEarthBackgroundAngles();
+      azimGoal = angles.azim;
+      elevGoal = angles.elev;
     } else if (next === "earth") {
       azimGoal = 0.52;
       elevGoal = 0.16;
@@ -1784,10 +1828,28 @@ function createEarthMoonScene(
       -((e.clientY - r.top) / r.height) * 2 + 1,
     );
     raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects([earth, moon], false)[0];
+    const hit = raycaster.intersectObjects([earth, moon, transferVehicle], true)[0];
     if (!hit) return;
-    const next: SceneFocus = hit.object === moon ? "moon" : "earth";
-    if (next !== focus) focusScene(next);
+    let next: SceneFocus | null = null;
+    for (
+      let obj: THREE.Object3D | null = hit.object;
+      obj;
+      obj = obj.parent
+    ) {
+      if (obj === transferVehicle) {
+        next = "orion";
+        break;
+      }
+      if (obj === moon) {
+        next = "moon";
+        break;
+      }
+      if (obj === earth) {
+        next = "earth";
+        break;
+      }
+    }
+    if (next && next !== focus) focusScene(next);
   }
   canvas.addEventListener("dblclick", onDblClick);
   canvas.addEventListener("mousemove", onMouseMove);
@@ -1827,7 +1889,7 @@ function createEarthMoonScene(
     idle += dt;
     if (!reducedMotion && !paused) {
       const simulatedDt = dt * simulationSpeed;
-      if (!dragging && idle > 1.4) azim -= dt * 0.04;
+      if (!dragging && idle > 1.4 && focus !== "orion") azim -= dt * 0.04;
       earth.rotation.y += simulatedDt * 0.05;
       clouds.rotation.y += simulatedDt * 0.062;
       if (missionPhase === "outbound") {
@@ -1873,10 +1935,18 @@ function createEarthMoonScene(
         entry.ring.scale.setScalar(base * (1 + Math.sin(now * 0.003 + i) * 0.18));
       });
     }
-    // Ease the camera target onto the focused body (the Moon keeps moving,
-    // so the target tracks it every frame once captured).
+    // Ease the camera target onto the focused body (the Moon and Orion keep
+    // moving, so the target tracks them every frame once captured).
     if (focus === "moon") {
       moon.getWorldPosition(focusPoint);
+    } else if (focus === "orion") {
+      transferVehicle.getWorldPosition(focusPoint);
+      // Keep Earth in the background while the user isn't orbiting freely.
+      if (!dragging) {
+        const angles = orionEarthBackgroundAngles();
+        azimGoal = angles.azim;
+        elevGoal = angles.elev;
+      }
     } else if (focus === "system") {
       moon.getWorldPosition(focusPoint).multiplyScalar(0.34);
     } else {
@@ -1927,6 +1997,8 @@ function createEarthMoonScene(
     },
     earthScreen: () => toScreen(new THREE.Vector3(0, 0, 0)),
     moonScreen: () => toScreen(moon.getWorldPosition(new THREE.Vector3())),
+    orionScreen: () =>
+      toScreen(transferVehicle.getWorldPosition(new THREE.Vector3())),
     locationScreens: () =>
       markerEntries.map((entry) => {
         entry.root.getWorldPosition(markerWorld);

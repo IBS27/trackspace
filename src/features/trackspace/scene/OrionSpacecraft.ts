@@ -19,6 +19,7 @@ export function createOrionSpacecraft(): OrionSpacecraft {
   group.name = "Artemis Orion spacecraft";
   model.name = "Orion crew and service module";
   model.rotation.z = Math.PI / 4;
+  model.scale.setScalar(0.85);
   group.add(model);
 
   const material = (
