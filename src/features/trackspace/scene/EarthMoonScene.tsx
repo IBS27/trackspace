@@ -641,7 +641,8 @@ function createEarthMoonScene(
   // Insertion altitude after the surface launch ascent.
   // Keep perigee modest so the Earth-side tip reads as a flat graze, not a spike.
   const parkingRadius = EARTH_RADIUS * 1.34;
-  const captureRadius = MOON_RADIUS * 1.35;
+  // Slightly lofted lunar capture so the ring clears the Moon cleanly.
+  const captureRadius = MOON_RADIUS * 1.55;
   // Just above the Earth mesh so launch/splashdown sit on the surface.
   const SURFACE_RADIUS = EARTH_RADIUS * 1.004;
   // Transfers stay in the Moon's orbital plane (no artificial out-of-plane tilt).
@@ -736,7 +737,9 @@ function createEarthMoonScene(
   const transferVehicle = orionSpacecraft.group;
   trajectoryPathsGroup.add(transferVehicle);
   const vehicleTangent = new THREE.Vector3();
-  const vehicleLookTarget = new THREE.Vector3();
+  const vehicleUp = new THREE.Vector3();
+  const vehicleRight = new THREE.Vector3();
+  const vehicleBasis = new THREE.Matrix4();
   const captureBasis = new THREE.Matrix4();
   const captureY = new THREE.Vector3();
   const captureZ = new THREE.Vector3();
@@ -1204,10 +1207,19 @@ function createEarthMoonScene(
       transferVehicle.position.copy(position);
       return;
     }
+    // Stable prograde attitude: +Z along velocity, +Y on the orbit normal.
+    // Avoid lookAt(world-up) — that rolls the craft as the path turns.
+    vehicleTangent.normalize();
+    vehicleUp.copy(captureY);
+    if (vehicleUp.lengthSq() < 1e-8) vehicleUp.set(0, 1, 0);
+    if (Math.abs(vehicleTangent.dot(vehicleUp)) > 0.95) {
+      vehicleUp.set(0, 0, 1);
+    }
+    vehicleRight.crossVectors(vehicleUp, vehicleTangent).normalize();
+    vehicleUp.crossVectors(vehicleTangent, vehicleRight).normalize();
     transferVehicle.position.copy(position);
-    vehicleLookTarget.copy(position).add(vehicleTangent);
-    transferVehicle.up.set(0, 1, 0);
-    transferVehicle.lookAt(vehicleLookTarget);
+    vehicleBasis.makeBasis(vehicleRight, vehicleUp, vehicleTangent);
+    transferVehicle.quaternion.setFromRotationMatrix(vehicleBasis);
   }
 
   function updateSystemReferences() {
@@ -1313,6 +1325,7 @@ function createEarthMoonScene(
   }
 
   function updateOutboundTransfer(progress: number) {
+    updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
     // Quadratic ease — most of the coast is spent far from Earth.
     const pathProgress = clamped * clamped;
@@ -1343,7 +1356,6 @@ function createEarthMoonScene(
     } else {
       orientVehicle(transferPoint, pathScratch);
     }
-    updateSystemReferences();
 
     const remainingAngle = Math.max(0, transferArrivalAngle - moonAngle);
     const leadPoints: THREE.Vector3[] = [];
@@ -1491,6 +1503,7 @@ function createEarthMoonScene(
   }
 
   function updateReturnTransfer(progress: number) {
+    updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
     pointAlongArc(
       returnPoints,
@@ -1519,7 +1532,6 @@ function createEarthMoonScene(
     } else {
       orientVehicle(returnPoint, pathScratch);
     }
-    updateSystemReferences();
   }
 
   function restartMissionCycle() {
