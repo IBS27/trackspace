@@ -971,9 +971,18 @@ function createEarthMoonScene(
     visible: boolean,
     protectStart = -1,
     protectEnd = -1,
+    // Craft-close views: keep the full tube and let depth-test hide the
+    // backside. Silhouette splitting leaves flat stubs around Earth's limb.
+    skipSilhouetteCull = false,
   ) {
     if (!visible || points.length < 2) {
       primary.mesh.visible = false;
+      secondary.mesh.visible = false;
+      return;
+    }
+    if (skipSilhouetteCull) {
+      setTubePathPoints(primary, points);
+      primary.mesh.visible = true;
       secondary.mesh.visible = false;
       return;
     }
@@ -1036,8 +1045,10 @@ function createEarthMoonScene(
   // still shows the near-side arc between camera and Earth as a pierce.
   // Launch + splashdown indices stay protected so surface contact never cuts off.
   function updateTrajectorySilhouetteCull(force = false) {
+    const skipSilhouetteCull = focus === "orion";
     const cullKey = [
       missionPhase,
+      focus,
       showOutboundTube ? 1 : 0,
       showReturnTube ? 1 : 0,
       outboundPoints.length,
@@ -1045,6 +1056,7 @@ function createEarthMoonScene(
       outboundLaunchProtectEnd,
       returnSplashIndex,
       outboundTube.material.opacity.toFixed(2),
+      skipSilhouetteCull ? "full" : "",
       camera.position.x.toFixed(2),
       camera.position.y.toFixed(2),
       camera.position.z.toFixed(2),
@@ -1061,6 +1073,7 @@ function createEarthMoonScene(
         showReturnTube,
         returnSplashIndex,
         returnPoints.length - 1,
+        skipSilhouetteCull,
       );
       // Faint trace of the flown outbound coast, same cull as during outbound.
       assignTubeSegments(
@@ -1071,6 +1084,7 @@ function createEarthMoonScene(
         showOutboundTube,
         0,
         outboundLaunchProtectEnd,
+        skipSilhouetteCull,
       );
       // Splashdown marker stays on the surface contact — never silhouette-hide it.
       earthEntryTarget.visible = showReturnTube;
@@ -1086,6 +1100,7 @@ function createEarthMoonScene(
       showOutboundTube,
       0,
       outboundLaunchProtectEnd,
+      skipSilhouetteCull,
     );
     outboundTubeB.material.opacity = outboundTube.material.opacity;
     assignTubeSegments(
@@ -1094,6 +1109,9 @@ function createEarthMoonScene(
       returnPoints,
       undefined,
       false,
+      -1,
+      -1,
+      skipSilhouetteCull,
     );
 
     const tliPoint = outboundPoints[outboundTliIndex];
