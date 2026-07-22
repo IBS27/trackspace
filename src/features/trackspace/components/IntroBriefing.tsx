@@ -57,8 +57,12 @@ const VIEWS = [
 
 export function IntroBriefing({
   onNavigate,
+  requested,
+  onRequestClose,
 }: {
   onNavigate: (view: string) => void;
+  requested: boolean;
+  onRequestClose: () => void;
 }) {
   const summary = getSummary(useDataset());
 
@@ -66,16 +70,17 @@ export function IntroBriefing({
   // the briefing appears only after the client confirms it was never dismissed.
   const seen = useSyncExternalStore(subscribeToNothing, readSeen, () => true);
   const [dismissed, setDismissed] = useState(false);
-  const open = !seen && !dismissed;
+  const open = requested || (!seen && !dismissed);
 
   const dismiss = useCallback(() => {
     setDismissed(true);
+    onRequestClose();
     try {
       window.localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // Best effort — worst case the briefing shows again next visit.
     }
-  }, []);
+  }, [onRequestClose]);
 
   useEffect(() => {
     if (!open) return;

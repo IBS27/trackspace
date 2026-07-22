@@ -4277,3 +4277,33 @@
     transition: none;
   }
 }
+
+.trackspace-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 5px;
+  background: #0e131c;
+  color: var(--ts-dim);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.trackspace-help-btn:hover {
+  color: var(--ts-ink);
+  border-color: var(--ts-accent-dim);
+}
+
+.trackspace-help-btn:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackspace-help-btn {
+    transition: none;
+  }
+}
