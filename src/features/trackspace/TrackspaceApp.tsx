@@ -7,6 +7,7 @@ import {
   DetailDrawer,
   type DrawerSelection,
 } from "./components/DetailDrawer";
+import { IntroBriefing } from "./components/IntroBriefing";
 import { DatasetProvider } from "./data/dataset-context";
 import { CURATED, getSummary } from "./data/selectors";
 import type { Dataset } from "./data/types";
@@ -51,6 +52,7 @@ function LiveTrackspaceApp({ initialDataset }: { initialDataset: Dataset }) {
 function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
+  const [briefingRequested, setBriefingRequested] = useState(false);
   const [utcTime, setUtcTime] = useState("00:00:00");
 
   const summary = getSummary(dataset);
@@ -111,6 +113,19 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
         }
         navItems={NAV_ITEMS}
         nextGate={`${summary.nextMilestone.code} · ${summary.nextMilestone.date}`}
+        overlay={
+          <IntroBriefing
+            onNavigate={(view) => {
+              if (isTrackspaceView(view)) {
+                setActiveView(view);
+                setSelection(null);
+              }
+            }}
+            requested={briefingRequested}
+            onRequestClose={() => setBriefingRequested(false)}
+          />
+        }
+        onOpenBriefing={() => setBriefingRequested(true)}
         onNavChange={(view) => {
           if (isTrackspaceView(view)) {
             setActiveView(view);

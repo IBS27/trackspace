@@ -11,8 +11,10 @@ type AppShellProps = {
   drawer: ReactNode;
   navItems: TrackspaceNavItem[];
   onNavChange: (view: string) => void;
+  onOpenBriefing: () => void;
   utcTime: string;
   nextGate: string;
+  overlay?: ReactNode;
   children: ReactNode;
 };
 
@@ -23,11 +25,17 @@ export function AppShell({
   navItems,
   nextGate,
   onNavChange,
+  onOpenBriefing,
+  overlay,
   utcTime,
 }: AppShellProps) {
   return (
     <div className="trackspace-app">
-      <Header nextGate={nextGate} utcTime={utcTime} />
+      <Header
+        nextGate={nextGate}
+        onOpenBriefing={onOpenBriefing}
+        utcTime={utcTime}
+      />
       <TabBar
         activeView={activeView}
         navItems={navItems}
@@ -37,11 +45,20 @@ export function AppShell({
         <main className="trackspace-screen">{children}</main>
       </div>
       <div className="trackspace-drawer-mount">{drawer}</div>
+      <div className="trackspace-drawer-mount">{overlay}</div>
     </div>
   );
 }
 
-function Header({ nextGate, utcTime }: { nextGate: string; utcTime: string }) {
+function Header({
+  nextGate,
+  onOpenBriefing,
+  utcTime,
+}: {
+  nextGate: string;
+  onOpenBriefing: () => void;
+  utcTime: string;
+}) {
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
@@ -61,6 +78,34 @@ function Header({ nextGate, utcTime }: { nextGate: string; utcTime: string }) {
           <span className="trackspace-live-dot" aria-hidden="true" />
           LIVE
         </span>
+        <button
+          type="button"
+          className="trackspace-help-btn"
+          onClick={onOpenBriefing}
+          aria-label="Open mission briefing"
+          title="Mission briefing"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle
+              cx="8"
+              cy="8"
+              r="6.25"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            />
+            <circle cx="8" cy="5.1" r="1" fill="currentColor" />
+            <line
+              x1="8"
+              y1="7.6"
+              x2="8"
+              y2="11.2"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
       </div>
     </header>
   );

@@ -333,7 +333,7 @@
 
   .trackspace-header-stats {
     display: grid;
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto auto 1fr auto;
     width: 100%;
     gap: 14px;
     margin-left: 0;
@@ -4056,6 +4056,254 @@
   .trackspace-prog-lens,
   .trackspace-prog-row,
   .trackspace-prog-row-name {
+    transition: none;
+  }
+}
+
+/* ===== Intro briefing ===== */
+
+.trackspace-intro-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 5, 9, 0.6);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  animation: trackspace-fade 200ms forwards;
+}
+
+.trackspace-intro {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 51;
+  width: min(470px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #0f141d, #0b0e16);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translate(-50%, calc(-50% + 14px));
+  animation: trackspace-intro-rise 280ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.trackspace-intro::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(91, 208, 255, 0.55),
+    transparent
+  );
+}
+
+@keyframes trackspace-intro-rise {
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.trackspace-intro-head {
+  position: relative;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--ts-line);
+}
+
+.trackspace-intro-kicker {
+  margin-bottom: 8px;
+  color: var(--ts-accent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.trackspace-intro-head h2 {
+  margin: 0;
+  padding-right: 30px;
+  color: var(--ts-ink);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.trackspace-intro-body {
+  padding: 16px 20px 18px;
+}
+
+.trackspace-intro-body > p {
+  margin: 0 0 16px;
+  color: var(--ts-ink);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.trackspace-intro-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border: 1px solid var(--ts-line);
+  border-radius: 6px;
+  background: #0c1017;
+}
+
+.trackspace-intro-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.trackspace-intro-stat span {
+  color: var(--ts-dim);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.trackspace-intro-stat b {
+  color: var(--ts-ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.trackspace-intro-stat b.trackspace-intro-stat-accent {
+  color: var(--ts-accent);
+}
+
+.trackspace-intro-stat b.trackspace-intro-stat-blocker {
+  color: var(--ts-blocker);
+}
+
+.trackspace-intro-stat-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 1px;
+  vertical-align: 1px;
+}
+
+.trackspace-intro-statusbar {
+  display: flex;
+  flex-basis: 100%;
+  gap: 3px;
+  height: 3px;
+}
+
+.trackspace-intro-views {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trackspace-intro-view {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 1px;
+  width: calc(100% + 20px);
+  margin: 0 -10px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.trackspace-intro-view:hover {
+  border-color: var(--ts-line);
+  background: #10151f;
+}
+
+.trackspace-intro-view:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: -2px;
+}
+
+.trackspace-intro-glyph {
+  grid-row: 1 / span 2;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 4px;
+  background: #0e131c;
+  color: var(--ts-accent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.trackspace-intro-view-name {
+  color: var(--ts-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.trackspace-intro-view-note {
+  color: var(--ts-dim);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackspace-intro-scrim,
+  .trackspace-intro {
+    animation-duration: 1ms;
+  }
+
+  .trackspace-intro-view {
+    transition: none;
+  }
+}
+
+.trackspace-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 5px;
+  background: #0e131c;
+  color: var(--ts-dim);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.trackspace-help-btn:hover {
+  color: var(--ts-ink);
+  border-color: var(--ts-accent-dim);
+}
+
+.trackspace-help-btn:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trackspace-help-btn {
     transition: none;
   }
 }
