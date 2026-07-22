@@ -333,7 +333,7 @@
 
   .trackspace-header-stats {
     display: grid;
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto auto 1fr auto;
     width: 100%;
     gap: 14px;
     margin-left: 0;
