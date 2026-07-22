@@ -7,6 +7,7 @@ import {
   DetailDrawer,
   type DrawerSelection,
 } from "./components/DetailDrawer";
+import { IntroBriefing } from "./components/IntroBriefing";
 import { DatasetProvider } from "./data/dataset-context";
 import { CURATED, getSummary } from "./data/selectors";
 import type { Dataset } from "./data/types";
@@ -111,6 +112,16 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
         }
         navItems={NAV_ITEMS}
         nextGate={`${summary.nextMilestone.code} · ${summary.nextMilestone.date}`}
+        overlay={
+          <IntroBriefing
+            onNavigate={(view) => {
+              if (isTrackspaceView(view)) {
+                setActiveView(view);
+                setSelection(null);
+              }
+            }}
+          />
+        }
         onNavChange={(view) => {
           if (isTrackspaceView(view)) {
             setActiveView(view);

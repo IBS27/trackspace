@@ -13,6 +13,7 @@ type AppShellProps = {
   onNavChange: (view: string) => void;
   utcTime: string;
   nextGate: string;
+  overlay?: ReactNode;
   children: ReactNode;
 };
 
@@ -23,6 +24,7 @@ export function AppShell({
   navItems,
   nextGate,
   onNavChange,
+  overlay,
   utcTime,
 }: AppShellProps) {
   return (
@@ -37,6 +39,7 @@ export function AppShell({
         <main className="trackspace-screen">{children}</main>
       </div>
       <div className="trackspace-drawer-mount">{drawer}</div>
+      <div className="trackspace-drawer-mount">{overlay}</div>
     </div>
   );
 }
