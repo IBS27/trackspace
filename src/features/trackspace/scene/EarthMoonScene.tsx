@@ -44,7 +44,7 @@ const STATUS_COLORS: Record<Status, string> = {
   ready: "#8df0ad",
   watch: "#ffd166",
   blocker: "#ff5468",
-  unknown: "#8fa2bd",
+  unknown: "#9a9aa4",
 };
 
 const LOCATION_KIND_LABEL: Record<LocationKind, string> = {
@@ -270,19 +270,19 @@ function createEarthMoonScene(
     labelCanvas.width = 512;
     labelCanvas.height = 128;
     const ctx = labelCanvas.getContext("2d")!;
-    ctx.fillStyle = "rgba(3, 8, 13, 0.86)";
+    ctx.fillStyle = "rgba(3, 3, 4, 0.9)";
     ctx.fillRect(12, 12, 488, 94);
-    ctx.strokeStyle = "rgba(106, 151, 183, 0.42)";
+    ctx.strokeStyle = "rgba(150, 150, 160, 0.42)";
     ctx.lineWidth = 2;
     ctx.strokeRect(12, 12, 488, 94);
     ctx.fillStyle = color;
     ctx.fillRect(12, 12, 5, 94);
     ctx.font = "600 34px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillStyle = "#e4f2fb";
+    ctx.fillStyle = "#f1f1f4";
     ctx.textBaseline = "top";
     ctx.fillText(code, 34, 26);
     ctx.font = "500 18px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillStyle = "#7990a5";
+    ctx.fillStyle = "#91919a";
     ctx.fillText(detail.toUpperCase(), 34, 70);
 
     const texture = new THREE.CanvasTexture(labelCanvas);
