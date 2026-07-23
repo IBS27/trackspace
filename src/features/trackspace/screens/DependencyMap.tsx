@@ -174,7 +174,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                 refY="3.5"
                 orient="auto"
               >
-                <path d="M0,0 L7,3.5 L0,7 z" fill="#3a475c" />
+                <path d="M0,0 L7,3.5 L0,7 z" fill="#48484f" />
               </marker>
             </defs>
             {edges.map((edge) => {
@@ -198,7 +198,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                       ? statusColor(edge.status)
                       : edge.status === "blocker"
                         ? "rgba(255, 84, 104, 0.45)"
-                        : "#2a3445",
+                        : "#34343a",
                     strokeWidth: hot ? 2.2 : 1.4,
                     opacity: active ? 1 : 0.12,
                   }}
