@@ -388,6 +388,52 @@
   width: 100%;
   height: 100%;
   display: block;
+  /* The scene fades itself in once every texture has decoded. */
+  outline-offset: -3px;
+}
+
+.trackspace-scene-canvas:focus-visible {
+  outline: 1px solid rgba(145, 210, 255, 0.7);
+}
+
+/* Keyboard and screen-reader mirror of the 3D site markers. Visually hidden
+   until focused, at which point it surfaces as a normal chip. */
+.trackspace-scene-sitelist {
+  position: absolute;
+  z-index: 7;
+  top: 22px;
+  left: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trackspace-scene-sitelist button {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.trackspace-scene-sitelist button:focus-visible {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 6px 10px;
+  overflow: visible;
+  clip-path: none;
+  border: 1px solid rgba(145, 210, 255, 0.5);
+  border-radius: 6px;
+  background: rgba(5, 5, 6, 0.92);
+  color: #ededf1;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .trackspace-scene-vignette,
@@ -470,6 +516,23 @@
   border-radius: 50%;
   background: #ffd89b;
   box-shadow: 0 0 10px rgba(255, 216, 155, 0.8);
+  flex: none;
+}
+
+/* Mission clock. Tabular figures keep the readout from twitching as it ticks. */
+.trackspace-scene-identity i em {
+  color: #d8d8de;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.trackspace-scene-identity small {
+  margin-top: 5px;
+  color: var(--ts-faint);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .trackspace-scene-viewbar {

@@ -2,14 +2,27 @@
 
 // Earth/Moon scene for the Command Center stage.
 //
-// Renders NASA-derived imagery (bundled under public/textures/, originally
-// from the three.js examples): day/night Earth with city lights on the dark
-// side, a drifting cloud layer, and the real lunar surface. The Moon runs an
-// inclined elliptical orbit with Earth at the focus and stays tidally locked.
-// Sizes are to scale (Moon ≈ 0.27 Earth radii); the orbital distance is
-// compressed so both bodies stay in frame.
+// Renders NASA imagery (bundled under public/textures/, all public domain):
+// day/night Earth with city lights on the dark side, a drifting cloud layer,
+// and the real lunar surface. The Moon runs an inclined elliptical orbit with
+// Earth at the focus and stays tidally locked. Sizes are to scale (Moon ≈ 0.27
+// Earth radii); the orbital distance is compressed so both bodies stay in frame.
+//
+// Texture provenance:
+//   earth_day_*.webp     Blue Marble Next Generation, July 2004 (NASA Visible
+//                        Earth #73751), resampled to 4096x2048 and 1024x512.
+//   earth_lights_*.webp  Black Marble / Earth at Night 2012 (NASA Visible Earth
+//                        #79765). Ships a blue land/ocean/ice base under the
+//                        lights; the lights shader isolates cities by chroma.
+//   earth_clouds/normal/specular, moon  three.js examples (NASA-derived).
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import * as THREE from "three";
 import { Line2 } from "three/addons/lines/Line2.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
@@ -32,6 +45,29 @@ const MARKER_RING_INNER_RADIUS = 0.046;
 const MARKER_RING_OUTER_RADIUS = 0.064;
 const MARKER_HIT_RADIUS_PX = 36;
 
+// A single clock drives Earth's spin, the Moon's orbit, and the mission
+// timeline, so the T+ readout, the terminator, and the transfer geometry all
+// describe the same instant instead of running on three unrelated rates.
+// Master pacing knob. Everything else is derived from it, so changing this
+// scales Earth's spin, the Moon's orbit, and the mission timeline together
+// without breaking their ratios. A full outbound/lunar/return cycle takes
+// (3 + 2.5 + 3) days x this, so ~3m24s at 1x.
+const SIM_DAYS_PER_REAL_SECOND = 1 / 24; // one Earth rotation per 24s at 1x
+const MOON_PERIOD_DAYS = 27.322;
+// Real cloud motion relative to the surface is a few percent — jet-stream
+// winds against a 1670 km/h equatorial rotation. A larger lead reads as the
+// whole planet whirling rather than as weather.
+const CLOUD_DRIFT_RATIO = 1.06;
+// Apollo 11's profile: ~3 days TLI to LOI, ~2.5 days in lunar orbit, ~3 days
+// home. Earth turns once per mission day, so these durations are also what
+// sets how many rotations you watch during a leg — keep them honest.
+const MISSION_OUTBOUND_DAYS = 3;
+const MISSION_LUNAR_ORBIT_DAYS = 2.5;
+const MISSION_RETURN_DAYS = 3;
+// Real mean range is ~60.3 Earth radii; the scene squeezes it so both bodies
+// stay in frame. Surfaced in the identity block so the view isn't read literally.
+const RANGE_COMPRESSION = Math.round((60.3 * EARTH_RADIUS) / ORBIT_SEMI_MAJOR);
+
 type SceneFocus = "system" | "earth" | "moon" | "orion";
 type SceneLayer = "sites" | "trajectory" | "maneuvers";
 type SimulationSpeed = 1 | 8 | 32;
@@ -39,6 +75,19 @@ type MissionPhase = "outbound" | "lunar-orbit" | "return";
 
 const SCENE_FOCUS_OPTIONS = ["system", "earth", "moon", "orion"] as const;
 const SIMULATION_SPEED_OPTIONS = [1, 8, 32] as const;
+
+const MISSION_PHASE_LABEL: Record<MissionPhase, string> = {
+  outbound: "Translunar coast",
+  "lunar-orbit": "Lunar orbit",
+  return: "Earth return",
+};
+
+function formatMissionClock(days: number): string {
+  const total = Math.max(0, days);
+  const wholeDays = Math.floor(total);
+  const hours = Math.floor((total - wholeDays) * 24);
+  return `T+ ${String(wholeDays).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h`;
+}
 
 const STATUS_COLORS: Record<Status, string> = {
   ready: "#8df0ad",
@@ -82,10 +131,17 @@ type TrackspaceCanvas = HTMLCanvasElement & {
   };
 };
 
+type SceneTelemetry = {
+  phase: MissionPhase;
+  elapsedDays: number;
+};
+
 type SceneCallbacks = {
   onLocationOpen: (id: string) => void;
   onHoverChange: (hover: SceneHover | null) => void;
   onFocusChange: (focus: SceneFocus) => void;
+  onTelemetry: (telemetry: SceneTelemetry) => void;
+  onContextLost: () => void;
 };
 
 type SceneController = {
@@ -94,6 +150,10 @@ type SceneController = {
   setPaused: (paused: boolean) => void;
   setSpeed: (speed: SimulationSpeed) => void;
   setLayer: (layer: SceneLayer, visible: boolean) => void;
+  setLocations: (locations: readonly Location[]) => void;
+  setHighlight: (id: string | null) => void;
+  /** Keyboard camera control: relative azimuth/elevation/zoom nudge. */
+  nudgeCamera: (dAzim: number, dElev: number, dDist: number) => void;
   resetView: () => void;
 };
 
@@ -111,35 +171,109 @@ function surfacePoint(radius: number, lat: number, lon: number): THREE.Vector3 {
 
 function createEarthMoonScene(
   canvas: HTMLCanvasElement,
-  locations: readonly Location[],
   callbacks: SceneCallbacks,
 ) {
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    alpha: true,
+    antialias: true,
+    powerPreference: "high-performance",
+  });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
+  // Earth casts onto the Moon and Orion; Orion goes dark behind the Moon.
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+
+  // Antialiasing plus a full-screen additive sun sprite makes this heavily
+  // fill-bound, so back off device pixel ratio once the canvas gets large.
+  const LARGE_CANVAS_PIXELS = 1_500_000;
+  function pixelRatioFor(width: number, height: number) {
+    const dpr = window.devicePixelRatio || 1;
+    return Math.min(dpr, width * height > LARGE_CANVAS_PIXELS ? 1.5 : 2);
+  }
+  renderer.setPixelRatio(pixelRatioFor(canvas.clientWidth, canvas.clientHeight));
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
   const target = new THREE.Vector3(0, 0, 0);
   const disposables: { dispose(): void }[] = [];
+  // Guards async work that outlives the scene (background texture upgrades).
+  let disposed = false;
   const lineMaterials: LineMaterial[] = [];
   const lineResolution = new THREE.Vector2();
+  const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  const loader = new THREE.TextureLoader();
+  // Fade the canvas in once every plate has decoded — otherwise Earth renders
+  // as an untextured white ball for the first few frames.
+  canvas.style.opacity = "0";
+  canvas.style.transition = "opacity 420ms ease";
+  let revealed = false;
+  const reveal = () => {
+    if (revealed) return;
+    revealed = true;
+    canvas.style.opacity = "1";
+  };
+  const loadingManager = new THREE.LoadingManager(reveal, undefined, reveal);
+  // Safety net: a stalled request must not leave the stage permanently blank.
+  const revealTimer = window.setTimeout(reveal, 4000);
+
+  const loader = new THREE.TextureLoader(loadingManager);
   const loadColor = (url: string) => {
     const tex = loader.load(url);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
+    tex.anisotropy = maxAnisotropy;
     disposables.push(tex);
     return tex;
   };
   const loadData = (url: string) => {
     const tex = loader.load(url);
-    tex.anisotropy = 8;
+    tex.anisotropy = maxAnisotropy;
     disposables.push(tex);
     return tex;
   };
+
+  // Earth's day and night plates ship at 1024 for an immediate first paint and
+  // are upgraded to 4096 in the background. Both sizes are derived from the same
+  // NASA source, so the swap is a pure sharpen with no colour or feature shift.
+  // The upgrade loader deliberately sits outside the LoadingManager: the reveal
+  // fade must not wait on a megabyte of imagery.
+  const upgradeLoader = new THREE.TextureLoader();
+  type NetworkInformation = { saveData?: boolean; effectiveType?: string };
+  const connection = (
+    navigator as Navigator & { connection?: NetworkInformation }
+  ).connection;
+  // On a metered or slow link the 1024 plate is a complete, correct scene.
+  const wantsHighResPlates =
+    connection?.saveData !== true &&
+    connection?.effectiveType !== "2g" &&
+    connection?.effectiveType !== "slow-2g";
+
+  function upgradePlate(
+    url: string,
+    replaced: THREE.Texture,
+    apply: (texture: THREE.Texture) => void,
+  ) {
+    if (!wantsHighResPlates) return;
+    upgradeLoader.load(
+      url,
+      (texture) => {
+        // The scene may have been torn down while the plate was in flight.
+        if (disposed) {
+          texture.dispose();
+          return;
+        }
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = maxAnisotropy;
+        disposables.push(texture);
+        apply(texture);
+        replaced.dispose();
+      },
+      undefined,
+      // A failed upgrade leaves the 1024 plate in place, not a broken scene.
+      () => {},
+    );
+  }
 
   type NavigationPath = {
     root: THREE.Group;
@@ -306,6 +440,19 @@ function createEarthMoonScene(
   const sunDir = new THREE.Vector3(-6.5, 1.8, 2).normalize();
   const sun = new THREE.DirectionalLight(0xfff3e2, 4.6 * Math.PI);
   sun.position.copy(sunDir).multiplyScalar(50);
+  // Ortho frustum wide enough for the Moon at apoapsis, tight enough that a
+  // 2048 map still resolves Orion (~0.1 units) against the lunar limb.
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -9.5;
+  sun.shadow.camera.right = 9.5;
+  sun.shadow.camera.top = 9.5;
+  sun.shadow.camera.bottom = -9.5;
+  sun.shadow.camera.near = 38;
+  sun.shadow.camera.far = 64;
+  // normalBias keeps spheres from self-shadowing into stripes near the terminator.
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.02;
   scene.add(sun);
   // Faint cool fill so the night side reads as a silhouette, not a hole.
   scene.add(new THREE.AmbientLight(0x33415c, 0.16 * Math.PI));
@@ -395,22 +542,67 @@ function createEarthMoonScene(
   const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 96, 64);
   disposables.push(earthGeo);
 
+  const cloudTexture = loadColor("/textures/earth_clouds_1024.png");
+
+  // Cloud shadows. A shadow-mapped cloud shell would need alphaTest, which
+  // hard-edges the clouds themselves, so the surface samples the cloud plate
+  // directly instead. The two shells spin at different rates, so the lookup is
+  // offset by their relative rotation plus a small sunward lead.
+  const cloudShadowUniforms = {
+    tsCloudMap: { value: cloudTexture },
+    tsCloudUvOffset: { value: 0 },
+  };
+  const CLOUD_SHADOW_STRENGTH = 0.45;
+  const CLOUD_SHADOW_SUN_LEAD = 0.004;
+
+  const dayTexture = loadColor("/textures/earth_day_1024.webp");
+
   const earthMat = new THREE.MeshPhongMaterial({
-    map: loadColor("/textures/earth_atmos_2048.jpg"),
+    map: dayTexture,
     specularMap: loadData("/textures/earth_specular_2048.jpg"),
     normalMap: loadData("/textures/earth_normal_2048.jpg"),
     normalScale: new THREE.Vector2(0.8, 0.8),
     specular: new THREE.Color(0x3a3f47),
     shininess: 18,
   });
+  earthMat.onBeforeCompile = (shader) => {
+    shader.uniforms.tsCloudMap = cloudShadowUniforms.tsCloudMap;
+    shader.uniforms.tsCloudUvOffset = cloudShadowUniforms.tsCloudUvOffset;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "void main() {",
+        `uniform sampler2D tsCloudMap;
+         uniform float tsCloudUvOffset;
+         void main() {`,
+      )
+      .replace(
+        "#include <map_fragment>",
+        `#include <map_fragment>
+         float tsCloud = texture2D(
+           tsCloudMap,
+           vec2(fract(vMapUv.x + tsCloudUvOffset + ${CLOUD_SHADOW_SUN_LEAD.toFixed(4)}), vMapUv.y)
+         ).a;
+         diffuseColor.rgb *= 1.0 - ${CLOUD_SHADOW_STRENGTH.toFixed(3)} * tsCloud;`,
+      );
+  };
+  // Distinct cache key so this variant doesn't collide with stock MeshPhong.
+  earthMat.customProgramCacheKey = () => "trackspace-earth-cloudshadow";
   const earth = new THREE.Mesh(earthGeo, earthMat);
+  earth.castShadow = true;
+  earth.receiveShadow = true;
   earthGroup.add(earth);
   disposables.push(earthMat);
 
+  upgradePlate("/textures/earth_day_4096.webp", dayTexture, (texture) => {
+    earthMat.map = texture;
+    earthMat.needsUpdate = true;
+  });
+
   // City lights, masked to the night side of the terminator.
+  const lightsTexture = loadColor("/textures/earth_lights_1024.webp");
   const lightsMat = new THREE.ShaderMaterial({
     uniforms: {
-      lightsMap: { value: loadColor("/textures/earth_lights_2048.png") },
+      lightsMap: { value: lightsTexture },
       sunDir: { value: sunDir },
     },
     vertexShader: `
@@ -428,8 +620,12 @@ function createEarthMoonScene(
       varying vec3 vWorldNormal;
       void main() {
         float night = smoothstep(0.08, -0.18, dot(normalize(vWorldNormal), sunDir));
-        vec3 lights = texture2D(lightsMap, vUv).rgb;
-        gl_FragColor = vec4(lights * vec3(1.0, 0.88, 0.62) * night * 1.6, 1.0);
+        vec3 plate = texture2D(lightsMap, vUv).rgb;
+        // Black Marble ships a blue land/ocean/ice base beneath the lights.
+        // Cities are the only warm signal on the plate, so chroma isolates them
+        // cleanly — a brightness threshold would set Antarctica glowing instead.
+        float glow = clamp((plate.r - plate.b) * 3.0, 0.0, 1.0);
+        gl_FragColor = vec4(vec3(1.0, 0.88, 0.62) * glow * night * 1.6, 1.0);
       }`,
     blending: THREE.AdditiveBlending,
     transparent: true,
@@ -438,10 +634,14 @@ function createEarthMoonScene(
   earth.add(new THREE.Mesh(earthGeo, lightsMat));
   disposables.push(lightsMat);
 
+  upgradePlate("/textures/earth_lights_4096.webp", lightsTexture, (texture) => {
+    lightsMat.uniforms.lightsMap.value = texture;
+  });
+
   // Cloud layer, drifting slightly faster than the surface.
   const cloudGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.012, 96, 64);
   const cloudMat = new THREE.MeshLambertMaterial({
-    map: loadColor("/textures/earth_clouds_1024.png"),
+    map: cloudTexture,
     transparent: true,
     opacity: 0.85,
     depthWrite: false,
@@ -450,16 +650,42 @@ function createEarthMoonScene(
   earthGroup.add(clouds);
   disposables.push(cloudGeo, cloudMat);
 
-  // Atmosphere rim (fresnel on a back-side shell).
+  // Atmosphere rim: fresnel on a back-side shell, modulated by the sun term.
+  // Without the sun term the halo rings the planet evenly, including the night
+  // limb, which reads as a glass shell rather than scattered light.
   const atmoMat = new THREE.ShaderMaterial({
     uniforms: {
       c: { value: new THREE.Color(0x6fb7ff) },
+      nightColor: { value: new THREE.Color(0x27406b) },
       p: { value: 3.6 },
       s: { value: 0.65 },
+      sunDir: { value: sunDir },
     },
-    vertexShader: `varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader: `uniform vec3 c; uniform float p; uniform float s; varying vec3 vN;
-      void main(){ float i = pow(max(s - dot(vN, vec3(0.0,0.0,1.0)), 0.0), p); gl_FragColor = vec4(c, clamp(i,0.0,1.0)); }`,
+    vertexShader: `
+      varying vec3 vN;
+      varying vec3 vWorldNormal;
+      void main(){
+        vN = normalize(normalMatrix * normal);
+        vWorldNormal = normalize(mat3(modelMatrix) * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 c;
+      uniform vec3 nightColor;
+      uniform float p;
+      uniform float s;
+      uniform vec3 sunDir;
+      varying vec3 vN;
+      varying vec3 vWorldNormal;
+      void main(){
+        float i = pow(max(s - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), p);
+        float sunT = smoothstep(-0.35, 0.30, dot(normalize(vWorldNormal), sunDir));
+        // Sunlit limb blazes; the night limb keeps only a faint airglow.
+        gl_FragColor = vec4(
+          mix(nightColor, c, sunT),
+          clamp(i, 0.0, 1.0) * mix(0.08, 1.0, sunT)
+        );
+      }`,
     blending: THREE.AdditiveBlending,
     side: THREE.BackSide,
     transparent: true,
@@ -475,13 +701,22 @@ function createEarthMoonScene(
   orbitPlane.rotation.x = ORBIT_INCLINATION;
   root.add(orbitPlane);
 
-  const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 64, 48);
+  // Denser than Earth's mesh relative to its radius: the "moon" focus sits at
+  // 1.15 units, close enough that a coarse limb would read as a polygon.
+  const moonGeo = new THREE.SphereGeometry(MOON_RADIUS, 96, 64);
+  const moonTexture = loadColor("/textures/moon_1024.jpg");
   const moonMat = new THREE.MeshStandardMaterial({
-    map: loadColor("/textures/moon_1024.jpg"),
+    map: moonTexture,
+    // Lunar albedo tracks relief closely enough that the colour plate doubles
+    // as a bump map — craters catch the terminator instead of reading flat.
+    bumpMap: moonTexture,
+    bumpScale: 0.6,
     roughness: 1,
     metalness: 0,
   });
   const moon = new THREE.Mesh(moonGeo, moonMat);
+  moon.castShadow = true;
+  moon.receiveShadow = true;
   orbitPlane.add(moon);
   disposables.push(moonGeo, moonMat);
 
@@ -510,6 +745,8 @@ function createEarthMoonScene(
     ring: THREE.Mesh;
   };
   const markerEntries: MarkerEntry[] = [];
+  let sitesVisible = true;
+  let highlightId: string | null = null;
   const markerGeo = new THREE.SphereGeometry(MARKER_DOT_RADIUS, 16, 16);
   const ringGeo = new THREE.RingGeometry(
     MARKER_RING_INNER_RADIUS,
@@ -573,12 +810,26 @@ function createEarthMoonScene(
     });
   }
 
-  for (const location of locations) {
-    if (location.body === "earth") {
-      addLocationMarker(location, "earth", earth, EARTH_RADIUS);
-    } else if (location.body === "moon") {
-      addLocationMarker(location, "moon", moon, MOON_RADIUS);
+  // Markers are swapped in place rather than by rebuilding the scene, so a new
+  // Dataset array identity from Convex no longer costs a full texture reload.
+  function setLocations(next: readonly Location[]) {
+    for (const entry of markerEntries) {
+      entry.root.removeFromParent();
+      entry.root.clear();
     }
+    markerEntries.length = 0;
+    for (const location of next) {
+      if (location.body === "earth") {
+        addLocationMarker(location, "earth", earth, EARTH_RADIUS);
+      } else if (location.body === "moon") {
+        addLocationMarker(location, "moon", moon, MOON_RADIUS);
+      }
+    }
+    for (const entry of markerEntries) entry.root.visible = sitesVisible;
+    if (highlightId && !markerEntries.some((e) => e.location.id === highlightId)) {
+      highlightId = null;
+    }
+    callbacks.onHoverChange(null);
   }
 
   // A restrained orbital-plane grid makes the compressed scale legible and
@@ -654,6 +905,14 @@ function createEarthMoonScene(
   // Hide near-side chords that project across Earth's face.
   const SILHOUETTE_EARTH_RADIUS = EARTH_RADIUS * 1.12;
   // Polyline curve — CatmullRom overshoots and pulls arcs inside Earth.
+  //
+  // getPointAt/getTangentAt are overridden to bypass Curve's arc-length
+  // reparameterization. TubeGeometry samples through getPointAt, so without
+  // this a tube ring would land at an arc-length fraction rather than on the
+  // source sample of the same index — and the per-sample visibility attribute
+  // would be applied to the wrong rings on unevenly spaced paths (the launch
+  // ascent packs 56 samples into a fraction of the coast's length). It also
+  // skips building a 200-division length table on every rebuild.
   class PolylineCurve3 extends THREE.Curve<THREE.Vector3> {
     constructor(private readonly pts: THREE.Vector3[]) {
       super();
@@ -666,27 +925,33 @@ function createEarthMoonScene(
       const i = Math.min(Math.floor(scaled), pts.length - 2);
       return optionalTarget.copy(pts[i]).lerp(pts[i + 1], scaled - i);
     }
+    getPointAt(u: number, optionalTarget = new THREE.Vector3()) {
+      return this.getPoint(u, optionalTarget);
+    }
+    getTangentAt(u: number, optionalTarget = new THREE.Vector3()) {
+      return this.getTangent(u, optionalTarget);
+    }
   }
   // Transfer tubes depth-test against Earth (unlike Line2 screen-space strokes).
+  //
+  // The silhouette cull used to chop these into visible runs and rebuild a
+  // TubeGeometry per run — which, with the camera drifting every frame, meant
+  // reallocating ~2k-vertex buffers several times a second. Geometry is now
+  // built once per mission plan and culled through a per-sample `aVisible`
+  // attribute that the fragment shader discards on, so gaps cost one buffer
+  // write instead of a rebuild (and a single tube can hold several runs).
+  const TUBE_RADIAL_SEGMENTS = 6;
   type TubePath = {
     mesh: THREE.Mesh;
     material: THREE.MeshBasicMaterial;
     radius: number;
+    visibility: THREE.BufferAttribute | null;
+    sampleCount: number;
   };
   function createTubePath(
     color: THREE.ColorRepresentation,
     radius: number,
   ): TubePath {
-    const geometry = new THREE.TubeGeometry(
-      new PolylineCurve3([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0.01, 0, 0),
-      ]),
-      8,
-      radius,
-      5,
-      false,
-    );
     const material = new THREE.MeshBasicMaterial({
       color,
       depthTest: true,
@@ -695,46 +960,87 @@ function createEarthMoonScene(
       opacity: 0.92,
       toneMapped: false,
     });
-    const mesh = new THREE.Mesh(geometry, material);
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = `attribute float aVisible;
+        varying float vVisible;
+        ${shader.vertexShader}`.replace(
+        "void main() {",
+        `void main() {
+           vVisible = aVisible;`,
+      );
+      shader.fragmentShader = `varying float vVisible;
+        ${shader.fragmentShader}`.replace(
+        "void main() {",
+        `void main() {
+           if ( vVisible < 0.5 ) discard;`,
+      );
+    };
+    material.customProgramCacheKey = () => "trackspace-tube-visibility";
+    const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material);
     mesh.frustumCulled = false;
-    // Geometry is swapped on every rebuild — dispose whichever is current.
+    mesh.visible = false;
+    // Geometry is swapped when the plan changes — dispose whichever is current.
     disposables.push(material, { dispose: () => mesh.geometry.dispose() });
-    return { mesh, material, radius };
+    return { mesh, material, radius, visibility: null, sampleCount: 0 };
   }
+
+  /** Rebuild tube geometry. Called on plan changes only, never per frame. */
   function setTubePathPoints(path: TubePath, points: readonly THREE.Vector3[]) {
     const safe =
       points.length > 1
         ? points.map((p) => p.clone())
         : [new THREE.Vector3(), new THREE.Vector3(0.001, 0, 0)];
-    const segments = Math.min(320, Math.max(32, safe.length));
-    const nextGeo = new THREE.TubeGeometry(
+    // One tubular segment per source sample, so sample index i maps exactly to
+    // vertex ring i — that 1:1 mapping is what makes attribute culling work.
+    const tubularSegments = safe.length - 1;
+    const geometry = new THREE.TubeGeometry(
       new PolylineCurve3(safe),
-      segments,
+      tubularSegments,
       path.radius,
-      6,
+      TUBE_RADIAL_SEGMENTS,
       false,
     );
+    const vertexCount = (tubularSegments + 1) * (TUBE_RADIAL_SEGMENTS + 1);
+    const visibility = new THREE.BufferAttribute(
+      new Float32Array(vertexCount).fill(1),
+      1,
+    );
+    visibility.setUsage(THREE.DynamicDrawUsage);
+    geometry.setAttribute("aVisible", visibility);
     path.mesh.geometry.dispose();
-    path.mesh.geometry = nextGeo;
+    path.mesh.geometry = geometry;
+    path.visibility = visibility;
+    path.sampleCount = safe.length;
+  }
+
+  /** Flag which samples draw. `keep(i)` is evaluated once per source sample. */
+  function setTubePathVisibility(
+    path: TubePath,
+    keep: (index: number) => boolean,
+  ) {
+    const attribute = path.visibility;
+    if (!attribute) return;
+    const array = attribute.array as Float32Array;
+    const stride = TUBE_RADIAL_SEGMENTS + 1;
+    for (let i = 0; i < path.sampleCount; i++) {
+      array.fill(keep(i) ? 1 : 0, i * stride, (i + 1) * stride);
+    }
+    attribute.needsUpdate = true;
   }
 
   // Shared world-space thickness for outbound, lunar capture, and return.
   const TRAJECTORY_TUBE_RADIUS = 0.012;
   const outboundTube = createTubePath(0x79d9ff, TRAJECTORY_TUBE_RADIUS);
-  const outboundTubeB = createTubePath(0x79d9ff, TRAJECTORY_TUBE_RADIUS);
   const returnTube = createTubePath(0xffb07a, TRAJECTORY_TUBE_RADIUS);
-  const returnTubeB = createTubePath(0xffb07a, TRAJECTORY_TUBE_RADIUS);
-  outboundTubeB.mesh.visible = false;
-  returnTube.mesh.visible = false;
-  returnTubeB.mesh.visible = false;
-  trajectoryPathsGroup.add(
-    outboundTube.mesh,
-    outboundTubeB.mesh,
-    returnTube.mesh,
-    returnTubeB.mesh,
-  );
+  trajectoryPathsGroup.add(outboundTube.mesh, returnTube.mesh);
   const orionSpacecraft = createOrionSpacecraft();
   const transferVehicle = orionSpacecraft.group;
+  transferVehicle.traverse((object) => {
+    if ((object as THREE.Mesh).isMesh) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+    }
+  });
   trajectoryPathsGroup.add(transferVehicle);
   const vehicleTangent = new THREE.Vector3();
   const vehicleUp = new THREE.Vector3();
@@ -754,6 +1060,13 @@ function createEarthMoonScene(
   });
   const leadArc = moonLeadPath.root;
   trajectoryPathsGroup.add(leadArc);
+  // Rebuilt every frame, so the sample vectors are allocated once and mutated
+  // in place rather than cloned (33 throwaway Vector3s per frame otherwise).
+  const MOON_LEAD_SAMPLES = 32;
+  const leadPoints = Array.from(
+    { length: MOON_LEAD_SAMPLES + 1 },
+    () => new THREE.Vector3(),
+  );
 
   const burnGeometry = new THREE.RingGeometry(0.045, 0.068, 28);
   const burnMaterial = new THREE.MeshBasicMaterial({
@@ -798,6 +1111,8 @@ function createEarthMoonScene(
   }
   const lunarCaptureTube = createTubePath(0xb8ecff, TRAJECTORY_TUBE_RADIUS);
   setTubePathPoints(lunarCaptureTube, capturePoints);
+  // Never silhouette-culled — captureGroup.visible carries its phase gating.
+  lunarCaptureTube.mesh.visible = true;
   captureGroup.add(lunarCaptureTube.mesh);
 
   const loiMarker = new THREE.Mesh(burnGeometry, burnMaterial);
@@ -859,6 +1174,43 @@ function createEarthMoonScene(
   maneuverNodesGroup.add(tliLabel, periluneLabel, entryLabel);
   lunarNodesGroup.add(loiLabel, teiLabel);
 
+  // The labels draw with depthTest off so they never z-fight their own node
+  // ring, which also meant "LOI" floated over Earth's disk while the burn it
+  // annotates was behind the planet. Fade them against the occluders by hand.
+  const maneuverLabels = [
+    tliLabel,
+    periluneLabel,
+    loiLabel,
+    teiLabel,
+    entryLabel,
+  ];
+  const labelWorld = new THREE.Vector3();
+  const moonWorld = new THREE.Vector3();
+  const earthCenter = new THREE.Vector3();
+  function updateLabelOcclusion(dt: number) {
+    moon.getWorldPosition(moonWorld);
+    const ease = 1 - Math.exp(-dt * 12);
+    for (const label of maneuverLabels) {
+      if (!label.visible) continue;
+      label.getWorldPosition(labelWorld);
+      const hidden =
+        isSphereOccluded(
+          labelWorld,
+          camera.position,
+          earthCenter,
+          SILHOUETTE_EARTH_RADIUS,
+        ) ||
+        isSphereOccluded(
+          labelWorld,
+          camera.position,
+          moonWorld,
+          MOON_RADIUS * 1.06,
+        );
+      const material = label.material as THREE.SpriteMaterial;
+      material.opacity += ((hidden ? 0 : 1) - material.opacity) * ease;
+    }
+  }
+
   disposables.push(
     orionSpacecraft,
     burnGeometry,
@@ -871,15 +1223,13 @@ function createEarthMoonScene(
     nodeCoreGeometry,
   );
 
-  const MOON_LEAD_ANGLE = THREE.MathUtils.degToRad(40);
-  const MOON_SIMULATION_RATE = 0.012;
-  const TRANSFER_SIMULATION_RATE = MOON_SIMULATION_RATE / MOON_LEAD_ANGLE;
+  // Rates are expressed per simulated day and converted once per frame, so the
+  // Moon's angular rate, Earth's spin, and the T+ readout cannot drift apart.
+  const MOON_RATE_PER_DAY = (Math.PI * 2) / MOON_PERIOD_DAYS;
+  // The transfer is aimed where the Moon will actually be, so the lead angle is
+  // whatever it travels during the outbound coast — not a hand-picked constant.
+  const MOON_LEAD_ANGLE = MOON_RATE_PER_DAY * MISSION_OUTBOUND_DAYS;
   const LUNAR_ORBIT_COUNT = 2;
-  const LUNAR_ORBIT_DURATION = 16;
-  const LUNAR_ORBIT_SIMULATION_RATE = 1 / LUNAR_ORBIT_DURATION;
-  const LUNAR_MOON_ADVANCE = THREE.MathUtils.degToRad(2.2);
-  const LUNAR_MOON_SIMULATION_RATE =
-    LUNAR_MOON_ADVANCE / LUNAR_ORBIT_DURATION;
 
   const moonArrivalPos = new THREE.Vector3();
   const emAxis = new THREE.Vector3();
@@ -904,6 +1254,11 @@ function createEarthMoonScene(
   let outboundArcEnds: number[] = [];
   let outboundTotalLength = 1;
   let outboundTliIndex = 0;
+  // Arc-length fractions of the two powered ends, so the Kepler-timed coast can
+  // hand off to (and from) the launch and entry polylines at the right point.
+  let outboundTliArcFraction = 0;
+  let returnEntryIndex = 0;
+  let returnEntryArcFraction = 1;
   // Launch ascent through early departure — protected from silhouette cull.
   let outboundLaunchProtectEnd = 0;
   let returnPoints: THREE.Vector3[] = [];
@@ -913,6 +1268,11 @@ function createEarthMoonScene(
   let returnSplashIndex = 0;
   let missionPhase: MissionPhase = "outbound";
   let missionProgress = 0.12;
+  // Wall-clock of the simulated mission, shared by the T+ readout and by every
+  // body's motion. Reset at the top of each cycle, not at each phase boundary.
+  let missionElapsedDays = missionProgress * MISSION_OUTBOUND_DAYS;
+  let telemetryTimer = 0;
+  let lastTelemetryKey = "";
   let showOutboundTube = true;
   let showReturnTube = false;
   let lastCullKey = "";
@@ -949,104 +1309,57 @@ function createEarthMoonScene(
     return tNear > 0 && distToPoint < tNear;
   }
 
-  function collectVisibleSegments(
-    points: readonly THREE.Vector3[],
+  const occludeRayDir = new THREE.Vector3();
+  const occludeFromCenter = new THREE.Vector3();
+
+  /** World-space test: does `sphere` sit between the camera and `pointWorld`? */
+  function isSphereOccluded(
+    pointWorld: THREE.Vector3,
     cameraWorld: THREE.Vector3,
-    // Indices that must stay (launch ascent / splashdown). Depth test hides
-    // the backside; pierce cull only removes near-side Earth chords.
-    protectStart = -1,
-    protectEnd = -1,
+    centerWorld: THREE.Vector3,
+    radius: number,
   ) {
-    const segments: THREE.Vector3[][] = [];
-    let run: THREE.Vector3[] = [];
-    for (let i = 0; i < points.length; i++) {
-      const point = points[i];
-      const protectedPoint = i >= protectStart && i <= protectEnd;
-      if (protectedPoint || !isEarthNearSidePierce(point, cameraWorld)) {
-        run.push(point);
-      } else if (run.length > 1) {
-        segments.push(run);
-        run = [];
-      } else {
-        run = [];
-      }
-    }
-    if (run.length > 1) segments.push(run);
-    return segments;
+    occludeRayDir.copy(pointWorld).sub(cameraWorld);
+    const distToPoint = occludeRayDir.length();
+    if (distToPoint < 1e-6) return false;
+    occludeRayDir.multiplyScalar(1 / distToPoint);
+    occludeFromCenter.copy(cameraWorld).sub(centerWorld);
+    const camDistSq = occludeFromCenter.lengthSq();
+    if (camDistSq <= radius * radius) return false;
+    const b = occludeFromCenter.dot(occludeRayDir);
+    const discr = b * b - (camDistSq - radius * radius);
+    if (discr <= 0) return false;
+    const tNear = -b - Math.sqrt(discr);
+    return tNear > 0 && distToPoint > tNear;
   }
 
-  function assignTubeSegments(
-    primary: TubePath,
-    secondary: TubePath,
+  /**
+   * Hide only near-side chords that pierce Earth's disk. The far-side arc stays
+   * in the mesh and is occluded by depth-test, so the tube isn't stubbed off at
+   * the limb. Launch + splashdown indices stay protected. Purely an attribute
+   * write — geometry is untouched.
+   */
+  function applyTubeCull(
+    path: TubePath,
     points: readonly THREE.Vector3[],
-    tip: THREE.Vector3 | undefined,
     visible: boolean,
     protectStart = -1,
     protectEnd = -1,
   ) {
-    if (!visible || points.length < 2) {
-      primary.mesh.visible = false;
-      secondary.mesh.visible = false;
+    if (!visible || path.sampleCount < 2 || path.sampleCount !== points.length) {
+      path.mesh.visible = false;
       return;
     }
+    path.mesh.visible = true;
     occludeCam.copy(camera.position);
-    const segments = collectVisibleSegments(
-      points,
-      occludeCam,
-      protectStart,
-      protectEnd,
+    setTubePathVisibility(
+      path,
+      (i) =>
+        (i >= protectStart && i <= protectEnd) ||
+        !isEarthNearSidePierce(points[i], occludeCam),
     );
-    let main = segments[0] ?? null;
-    let extra: THREE.Vector3[] | null = null;
-    if (tip) {
-      for (const segment of segments) {
-        if (segment[segment.length - 1]?.distanceToSquared(tip) < 0.08) {
-          main = segment;
-          break;
-        }
-      }
-    }
-    // Prefer keeping a protected Earth-contact segment as the secondary tube
-    // when the primary is the far tip (LOI / TEI→Moon side).
-    if (protectStart >= 0 && protectEnd >= protectStart) {
-      const pad = points[protectStart];
-      for (const segment of segments) {
-        if (
-          segment !== main &&
-          pad &&
-          segment[0]?.distanceToSquared(pad) < 0.08
-        ) {
-          extra = segment;
-          break;
-        }
-      }
-    }
-    if (!extra) {
-      for (const segment of segments) {
-        if (segment !== main && segment.length > 3) {
-          extra = segment;
-          break;
-        }
-      }
-    }
-    if (main && main.length > 1) {
-      setTubePathPoints(primary, main);
-      primary.mesh.visible = true;
-    } else {
-      primary.mesh.visible = false;
-    }
-    if (extra && extra.length > 1) {
-      setTubePathPoints(secondary, extra);
-      secondary.mesh.visible = true;
-      secondary.material.opacity = primary.material.opacity;
-    } else {
-      secondary.mesh.visible = false;
-    }
   }
 
-  // Hide only near-side chords that pierce Earth's disk. Far-side arc stays
-  // in the mesh and is occluded by depth-test, so the tube isn't stubbed off
-  // at the limb. Launch + splashdown indices stay protected.
   function updateTrajectorySilhouetteCull(force = false) {
     const cullKey = [
       missionPhase,
@@ -1056,7 +1369,6 @@ function createEarthMoonScene(
       returnPoints.length,
       outboundLaunchProtectEnd,
       returnSplashIndex,
-      outboundTube.material.opacity.toFixed(2),
       camera.position.x.toFixed(2),
       camera.position.y.toFixed(2),
       camera.position.z.toFixed(2),
@@ -1065,21 +1377,17 @@ function createEarthMoonScene(
     lastCullKey = cullKey;
 
     if (missionPhase === "return") {
-      assignTubeSegments(
+      applyTubeCull(
         returnTube,
-        returnTubeB,
         returnPoints,
-        returnPoints[returnPoints.length - 1],
         showReturnTube,
         returnSplashIndex,
         returnPoints.length - 1,
       );
       // Faint trace of the flown outbound coast, same cull as during outbound.
-      assignTubeSegments(
+      applyTubeCull(
         outboundTube,
-        outboundTubeB,
         outboundPoints,
-        outboundPoints[outboundPoints.length - 1],
         showOutboundTube,
         0,
         outboundLaunchProtectEnd,
@@ -1090,23 +1398,14 @@ function createEarthMoonScene(
       return;
     }
 
-    assignTubeSegments(
+    applyTubeCull(
       outboundTube,
-      outboundTubeB,
       outboundPoints,
-      outboundPoints[outboundPoints.length - 1],
       showOutboundTube,
       0,
       outboundLaunchProtectEnd,
     );
-    outboundTubeB.material.opacity = outboundTube.material.opacity;
-    assignTubeSegments(
-      returnTube,
-      returnTubeB,
-      returnPoints,
-      undefined,
-      false,
-    );
+    applyTubeCull(returnTube, returnPoints, false);
 
     const tliPoint = outboundPoints[outboundTliIndex];
     if (tliPoint && missionPhase === "outbound") {
@@ -1152,6 +1451,83 @@ function createEarthMoonScene(
         returnNormal,
         radius * Math.sin(trueAnomaly) * TRANSFER_FLATTEN,
       );
+  }
+
+  /**
+   * True anomaly at a given mean anomaly — Kepler's equation, Newton-solved.
+   *
+   * This is what makes a coast read correctly. On these transfer ellipses
+   * (e ≈ 0.58) the vehicle is ~3.7x faster at perigee than at apoapsis, so it
+   * leaps away from Earth after TLI and then drifts the last stretch in to the
+   * Moon. Easing along arc length instead inverts that: Orion ends up crawling
+   * beside a visibly spinning Earth for most of the leg, which reads as the
+   * planet spinning too fast rather than the vehicle moving too slowly.
+   */
+  function trueAnomalyAt(meanAnomaly: number, eccentricity: number) {
+    let anomaly = meanAnomaly;
+    for (let i = 0; i < 6; i++) {
+      const step =
+        (anomaly - eccentricity * Math.sin(anomaly) - meanAnomaly) /
+        Math.max(1 - eccentricity * Math.cos(anomaly), 1e-6);
+      anomaly -= step;
+      if (Math.abs(step) < 1e-9) break;
+    }
+    return (
+      2 *
+      Math.atan2(
+        Math.sqrt(1 + eccentricity) * Math.sin(anomaly / 2),
+        Math.sqrt(1 - eccentricity) * Math.cos(anomaly / 2),
+      )
+    );
+  }
+
+  // Ascent and entry are minutes against a multi-day coast, so they get a token
+  // slice of the leg rather than an arc-length-proportional share.
+  const ASCENT_TIME_FRACTION = 0.04;
+  const DESCENT_TIME_FRACTION = 0.04;
+  // Attitude comes from a forward difference in time, so it stays correct even
+  // where Kepler timing makes the along-path speed vary by nearly 4x.
+  const ATTITUDE_LOOKAHEAD = 0.004;
+
+  /** Orion's position on the outbound leg at `progress` of the phase. */
+  function outboundPointAt(progress: number, out: THREE.Vector3) {
+    const t = THREE.MathUtils.clamp(progress, 0, 1);
+    if (t < ASCENT_TIME_FRACTION) {
+      return pointAlongArc(
+        outboundPoints,
+        outboundArcEnds,
+        outboundTotalLength,
+        (t / ASCENT_TIME_FRACTION) * outboundTliArcFraction,
+        out,
+      );
+    }
+    const coast = (t - ASCENT_TIME_FRACTION) / (1 - ASCENT_TIME_FRACTION);
+    // ν: 0 at TLI (perigee) → π at the far-side LOI target (apoapsis).
+    return pointOnEarthTransfer(
+      trueAnomalyAt(Math.PI * coast, transferEccentricity),
+      out,
+    );
+  }
+
+  /** Orion's position on the return leg at `progress` of the phase. */
+  function returnPointAt(progress: number, out: THREE.Vector3) {
+    const t = THREE.MathUtils.clamp(progress, 0, 1);
+    const coastEnd = 1 - DESCENT_TIME_FRACTION;
+    if (t < coastEnd) {
+      // ν: π at TEI (apoapsis) → 2π at the entry interface (perigee).
+      return pointOnReturnTransfer(
+        trueAnomalyAt(Math.PI * (1 + t / coastEnd), returnEccentricity),
+        out,
+      );
+    }
+    const descent = (t - coastEnd) / DESCENT_TIME_FRACTION;
+    return pointAlongArc(
+      returnPoints,
+      returnArcEnds,
+      returnTotalLength,
+      returnEntryArcFraction + descent * (1 - returnEntryArcFraction),
+      out,
+    );
   }
 
   function buildArcLengthTable(points: readonly THREE.Vector3[]) {
@@ -1309,6 +1685,10 @@ function createEarthMoonScene(
     const outboundArcs = buildArcLengthTable(outboundPoints);
     outboundArcEnds = outboundArcs.ends;
     outboundTotalLength = outboundArcs.total;
+    outboundTliArcFraction =
+      outboundArcEnds[outboundTliIndex] / outboundTotalLength;
+    // Only place the tube geometry is rebuilt: once per mission cycle.
+    setTubePathPoints(outboundTube, outboundPoints);
 
     tliMarker.position.copy(outboundPoints[outboundTliIndex]);
     tliLabel.position.copy(tliMarker.position);
@@ -1318,7 +1698,6 @@ function createEarthMoonScene(
     periluneLabel.position.y += 0.16;
 
     outboundTube.material.opacity = 0.95;
-    outboundTubeB.material.opacity = 0.95;
     showOutboundTube = true;
     showReturnTube = false;
     leadArc.visible = true;
@@ -1339,41 +1718,25 @@ function createEarthMoonScene(
   function updateOutboundTransfer(progress: number) {
     updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
-    // Quadratic ease — most of the coast is spent far from Earth.
-    const pathProgress = clamped * clamped;
-    pointAlongArc(
-      outboundPoints,
-      outboundArcEnds,
-      outboundTotalLength,
-      pathProgress,
-      transferPoint,
-    );
-    const lookProgress = Math.min(pathProgress + 0.012, 1);
-    pointAlongArc(
-      outboundPoints,
-      outboundArcEnds,
-      outboundTotalLength,
-      lookProgress,
-      pathScratch,
-    );
-    if (lookProgress <= pathProgress) {
-      pointAlongArc(
-        outboundPoints,
-        outboundArcEnds,
-        outboundTotalLength,
-        Math.max(pathProgress - 0.012, 0),
-        pathScratch,
-      );
-      orientVehicle(pathScratch, transferPoint);
-    } else {
+    outboundPointAt(clamped, transferPoint);
+    // Sample ahead in time (not arc length) for attitude; mirror at the end.
+    if (clamped + ATTITUDE_LOOKAHEAD <= 1) {
+      outboundPointAt(clamped + ATTITUDE_LOOKAHEAD, pathScratch);
       orientVehicle(transferPoint, pathScratch);
+    } else {
+      outboundPointAt(Math.max(clamped - ATTITUDE_LOOKAHEAD, 0), pathScratch);
+      orientVehicle(pathScratch, transferPoint);
+      // orientVehicle parks the craft at its first argument, which on this
+      // branch is the trailing sample — put it back on the current point.
+      transferVehicle.position.copy(transferPoint);
     }
 
     const remainingAngle = Math.max(0, transferArrivalAngle - moonAngle);
-    const leadPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= 32; i++) {
-      moonPositionAt(moonAngle + (remainingAngle * i) / 32, pathScratch);
-      leadPoints.push(pathScratch.clone());
+    for (let i = 0; i <= MOON_LEAD_SAMPLES; i++) {
+      moonPositionAt(
+        moonAngle + (remainingAngle * i) / MOON_LEAD_SAMPLES,
+        leadPoints[i],
+      );
     }
     setNavigationPathPoints(moonLeadPath, leadPoints);
   }
@@ -1382,7 +1745,6 @@ function createEarthMoonScene(
     missionPhase = "lunar-orbit";
     missionProgress = 0;
     outboundTube.material.opacity = 0.28;
-    outboundTubeB.material.opacity = 0.28;
     leadArc.visible = false;
     periluneTarget.visible = false;
     periluneLabel.visible = false;
@@ -1442,6 +1804,7 @@ function createEarthMoonScene(
       );
     }
     const entryIndex = returnPoints.length - 1;
+    returnEntryIndex = entryIndex;
     returnPoints[entryIndex].copy(returnAxis).multiplyScalar(parkingRadius);
 
     // Continue prograde past perigee (+returnNormal). Negative angle would
@@ -1478,6 +1841,9 @@ function createEarthMoonScene(
     const returnArcs = buildArcLengthTable(returnPoints);
     returnArcEnds = returnArcs.ends;
     returnTotalLength = returnArcs.total;
+    returnEntryArcFraction =
+      returnArcEnds[returnEntryIndex] / returnTotalLength;
+    setTubePathPoints(returnTube, returnPoints);
 
     teiMarker.position.copy(lunarAxis).multiplyScalar(captureRadius);
     teiLabel.position.copy(teiMarker.position);
@@ -1487,12 +1853,10 @@ function createEarthMoonScene(
     entryLabel.position.copy(earthEntryTarget.position);
     entryLabel.position.y += 0.14;
     returnTube.material.opacity = 0.95;
-    returnTubeB.material.opacity = 0.95;
     showReturnTube = true;
     // Keep a faint trace of the flown outbound coast during the return leg.
     showOutboundTube = true;
     outboundTube.material.opacity = 0.14;
-    outboundTubeB.material.opacity = 0.14;
     earthEntryTarget.visible = true;
     entryLabel.visible = true;
     captureGroup.visible = false;
@@ -1517,38 +1881,21 @@ function createEarthMoonScene(
   function updateReturnTransfer(progress: number) {
     updateSystemReferences();
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
-    pointAlongArc(
-      returnPoints,
-      returnArcEnds,
-      returnTotalLength,
-      clamped,
-      returnPoint,
-    );
-    const lookProgress = Math.min(clamped + 0.012, 1);
-    pointAlongArc(
-      returnPoints,
-      returnArcEnds,
-      returnTotalLength,
-      lookProgress,
-      pathScratch,
-    );
-    if (lookProgress <= clamped) {
-      pointAlongArc(
-        returnPoints,
-        returnArcEnds,
-        returnTotalLength,
-        Math.max(clamped - 0.012, 0),
-        pathScratch,
-      );
-      orientVehicle(pathScratch, returnPoint);
-    } else {
+    returnPointAt(clamped, returnPoint);
+    if (clamped + ATTITUDE_LOOKAHEAD <= 1) {
+      returnPointAt(clamped + ATTITUDE_LOOKAHEAD, pathScratch);
       orientVehicle(returnPoint, pathScratch);
+    } else {
+      returnPointAt(Math.max(clamped - ATTITUDE_LOOKAHEAD, 0), pathScratch);
+      orientVehicle(pathScratch, returnPoint);
+      transferVehicle.position.copy(returnPoint);
     }
   }
 
   function restartMissionCycle() {
     missionPhase = "outbound";
     missionProgress = 0;
+    missionElapsedDays = 0;
     planOutboundTransfer();
     updateOutboundTransfer(0);
   }
@@ -1573,7 +1920,10 @@ function createEarthMoonScene(
     disposables.push(tex);
     return tex;
   })();
-  const dpr = renderer.getPixelRatio();
+  // Point size is in drawing-buffer pixels, so it has to follow the pixel ratio
+  // whenever resize() re-derives it for a larger canvas.
+  const starMaterials: { material: THREE.PointsMaterial; baseSize: number }[] =
+    [];
   let randomSeed = 0x83d2e71;
   const random = () => {
     randomSeed = (randomSeed * 1664525 + 1013904223) >>> 0;
@@ -1609,13 +1959,14 @@ function createEarthMoonScene(
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
     const m = new THREE.PointsMaterial({
       map: starSprite,
-      size: layer.size * dpr,
+      size: layer.size * renderer.getPixelRatio(),
       vertexColors: true,
       transparent: true,
       opacity: layer.opacity,
       sizeAttenuation: false,
       depthWrite: false,
     });
+    starMaterials.push({ material: m, baseSize: layer.size });
     scene.add(new THREE.Points(g, m));
     disposables.push(g, m);
   }
@@ -1770,6 +2121,18 @@ function createEarthMoonScene(
     callbacks.onHoverChange(null);
     return true;
   }
+  function nudgeCamera(dAzim: number, dElev: number, dDist: number) {
+    azimGoal = null;
+    elevGoal = null;
+    azim += dAzim;
+    elev = Math.max(-0.9, Math.min(0.95, elev + dElev));
+    if (dDist !== 0) {
+      const range = FOCUS_RANGES[focus];
+      dist = Math.max(range.min, Math.min(range.max, dist + dDist));
+      distGoal = null;
+    }
+    idle = 0;
+  }
   function onDown(e: MouseEvent | TouchEvent) {
     dragging = true;
     idle = 0;
@@ -1851,26 +2214,83 @@ function createEarthMoonScene(
     }
     if (next && next !== focus) focusScene(next);
   }
+  // Two-finger pinch. Without this, touch users could orbit but had no way at
+  // all to change `dist` — the wheel handler is the only other zoom path.
+  let pinchSpread = 0;
+  let pinchStartDist = 0;
+  function touchSpread(touches: TouchList) {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY,
+    );
+  }
+  function onTouchStart(e: TouchEvent) {
+    if (e.touches.length >= 2) {
+      dragging = false;
+      pinchSpread = touchSpread(e.touches);
+      pinchStartDist = dist;
+      return;
+    }
+    pinchSpread = 0;
+    onDown(e);
+  }
+  function onTouchMove(e: TouchEvent) {
+    if (e.touches.length >= 2) {
+      if (pinchSpread <= 0) return;
+      const spread = touchSpread(e.touches);
+      if (spread > 1) {
+        const range = FOCUS_RANGES[focus];
+        dist = Math.max(
+          range.min,
+          Math.min(range.max, pinchStartDist * (pinchSpread / spread)),
+        );
+        distGoal = null;
+        idle = 0;
+      }
+      return;
+    }
+    onMove(e);
+  }
+  function onTouchEnd(e: TouchEvent) {
+    if (pinchSpread > 0) {
+      // Lifting one finger of a pinch must not read as a tap on a marker.
+      pinchSpread = 0;
+      dragging = false;
+      pointerMoved = true;
+      return;
+    }
+    onUp(e);
+  }
   canvas.addEventListener("dblclick", onDblClick);
   canvas.addEventListener("mousemove", onMouseMove);
   canvas.addEventListener("mouseleave", onMouseLeave);
   canvas.addEventListener("mousedown", onDown);
   window.addEventListener("mousemove", onMove);
   window.addEventListener("mouseup", onUp);
-  canvas.addEventListener("touchstart", onDown, { passive: true });
-  canvas.addEventListener("touchmove", onMove, { passive: true });
-  canvas.addEventListener("touchend", onUp);
+  // Touch move/end live on window: a finger that leaves the canvas mid-drag
+  // used to never fire touchend, leaving `dragging` stuck true.
+  canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: true });
+  window.addEventListener("touchend", onTouchEnd);
+  window.addEventListener("touchcancel", onTouchEnd);
   canvas.addEventListener("wheel", onWheel, { passive: false });
   canvas.style.cursor = "grab";
+  // The browser must not claim the gesture for page pan/zoom.
+  canvas.style.touchAction = "none";
 
   function resize() {
     const r = canvas.getBoundingClientRect();
     const w = Math.max(1, r.width);
     const h = Math.max(1, r.height);
+    renderer.setPixelRatio(pixelRatioFor(w, h));
     renderer.setSize(w, h, false);
     renderer.getDrawingBufferSize(lineResolution);
     for (const material of lineMaterials) {
       material.resolution.copy(lineResolution);
+    }
+    const ratio = renderer.getPixelRatio();
+    for (const star of starMaterials) {
+      star.material.size = star.baseSize * ratio;
     }
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -1887,14 +2307,26 @@ function createEarthMoonScene(
     const dt = Math.min(0.05, (now - t0) / 1000);
     t0 = now;
     idle += dt;
-    if (!reducedMotion && !paused) {
-      const simulatedDt = dt * simulationSpeed;
-      if (!dragging && idle > 1.4 && focus !== "orion") azim -= dt * 0.04;
-      earth.rotation.y += simulatedDt * 0.05;
-      clouds.rotation.y += simulatedDt * 0.062;
+    // Idle drift is unrequested motion, so it stays gated on the OS preference
+    // even when the user has explicitly resumed the simulation.
+    if (!reducedMotion && !dragging && idle > 1.4 && focus !== "orion") {
+      azim -= dt * 0.04;
+    }
+    if (!paused) {
+      const simDays = dt * simulationSpeed * SIM_DAYS_PER_REAL_SECOND;
+      const TAU = Math.PI * 2;
+      missionElapsedDays += simDays;
+      // Wrapped, not accumulated: an hours-long session would otherwise erode
+      // float precision in the rotation and in the cloud-shadow offset.
+      earth.rotation.y = (earth.rotation.y + simDays * TAU) % TAU;
+      clouds.rotation.y =
+        (clouds.rotation.y + simDays * TAU * CLOUD_DRIFT_RATIO) % TAU;
+      // Line the cloud plate up with the surface texel underneath it.
+      cloudShadowUniforms.tsCloudUvOffset.value =
+        (earth.rotation.y - clouds.rotation.y) / TAU;
+      moonAngle += simDays * MOON_RATE_PER_DAY;
       if (missionPhase === "outbound") {
-        moonAngle += simulatedDt * MOON_SIMULATION_RATE;
-        missionProgress += simulatedDt * TRANSFER_SIMULATION_RATE;
+        missionProgress += simDays / MISSION_OUTBOUND_DAYS;
         if (missionProgress >= 1) {
           missionProgress = 1;
           moonAngle = transferArrivalAngle;
@@ -1906,8 +2338,7 @@ function createEarthMoonScene(
           updateOutboundTransfer(missionProgress);
         }
       } else if (missionPhase === "lunar-orbit") {
-        moonAngle += simulatedDt * LUNAR_MOON_SIMULATION_RATE;
-        missionProgress += simulatedDt * LUNAR_ORBIT_SIMULATION_RATE;
+        missionProgress += simDays / MISSION_LUNAR_ORBIT_DAYS;
         if (missionProgress >= 1) {
           missionProgress = 1;
           placeMoon();
@@ -1918,8 +2349,7 @@ function createEarthMoonScene(
           updateLunarOrbit(missionProgress);
         }
       } else {
-        moonAngle += simulatedDt * MOON_SIMULATION_RATE;
-        missionProgress += simulatedDt * TRANSFER_SIMULATION_RATE;
+        missionProgress += simDays / MISSION_RETURN_DAYS;
         if (missionProgress >= 1) {
           missionProgress = 1;
           placeMoon();
@@ -1930,10 +2360,29 @@ function createEarthMoonScene(
           updateReturnTransfer(missionProgress);
         }
       }
-      markerEntries.forEach((entry, i) => {
-        const base = entry.body === "moon" ? 0.72 : 1;
-        entry.ring.scale.setScalar(base * (1 + Math.sin(now * 0.003 + i) * 0.18));
-      });
+    }
+
+    // Runs while paused too, so a keyboard-focused site still reads as selected.
+    markerEntries.forEach((entry, i) => {
+      const base = entry.body === "moon" ? 0.72 : 1;
+      const pulse = paused ? 1 : 1 + Math.sin(now * 0.003 + i) * 0.18;
+      const highlighted = entry.location.id === highlightId;
+      entry.ring.scale.setScalar(base * pulse * (highlighted ? 1.9 : 1));
+      entry.marker.scale.setScalar(base * (highlighted ? 1.5 : 1));
+    });
+
+    telemetryTimer += dt;
+    if (telemetryTimer >= 0.25) {
+      telemetryTimer = 0;
+      // Keyed on the displayed hour so 32x playback doesn't spam React.
+      const key = `${missionPhase}|${Math.floor(missionElapsedDays * 24)}`;
+      if (key !== lastTelemetryKey) {
+        lastTelemetryKey = key;
+        callbacks.onTelemetry({
+          phase: missionPhase,
+          elapsedDays: missionElapsedDays,
+        });
+      }
     }
     // Ease the camera target onto the focused body (the Moon and Orion keep
     // moving, so the target tracks them every frame once captured).
@@ -1972,19 +2421,57 @@ function createEarthMoonScene(
     }
     applyCam();
     updateTrajectorySilhouetteCull();
+    updateLabelOcclusion(dt);
 
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }
+
+  function startLoop() {
+    if (!running || raf !== 0) return;
+    t0 = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+  function stopLoop() {
+    if (raf === 0) return;
+    cancelAnimationFrame(raf);
+    raf = 0;
+  }
+
   resize();
   applyCam();
   planOutboundTransfer();
   updateOutboundTransfer(missionProgress);
   updateTrajectorySilhouetteCull(true);
-  raf = requestAnimationFrame(frame);
+  startLoop();
 
   const ro = new ResizeObserver(resize);
   ro.observe(canvas);
+
+  // requestAnimationFrame already idles on a hidden tab, but it keeps firing
+  // when the user navigates to another Trackspace screen and the stage is
+  // merely scrolled out of view. Stop rendering entirely in that case.
+  const io = new IntersectionObserver(
+    (entries) => {
+      const onScreen = entries.some((entry) => entry.isIntersecting);
+      if (onScreen) startLoop();
+      else stopLoop();
+    },
+    { threshold: 0 },
+  );
+  io.observe(canvas);
+
+  // A lost context can't be repaired in place — every buffer, texture, and
+  // program is gone. Ask React for a fresh canvas once the GPU comes back.
+  function onContextLost(event: Event) {
+    event.preventDefault();
+    stopLoop();
+  }
+  function onContextRestored() {
+    callbacks.onContextLost();
+  }
+  canvas.addEventListener("webglcontextlost", onContextLost);
+  canvas.addEventListener("webglcontextrestored", onContextRestored);
 
   // Introspection hook for automated tests: current focus plus each body's
   // projected screen position (fractions of the canvas size).
@@ -2021,14 +2508,23 @@ function createEarthMoonScene(
     },
     setLayer(layer, visible) {
       if (layer === "sites") {
+        sitesVisible = visible;
         for (const entry of markerEntries) entry.root.visible = visible;
-        if (!visible) callbacks.onHoverChange(null);
+        if (!visible) {
+          highlightId = null;
+          callbacks.onHoverChange(null);
+        }
       } else if (layer === "trajectory") {
         trajectoryPathsGroup.visible = visible;
       } else {
         maneuverNodesGroup.visible = visible;
       }
     },
+    setLocations,
+    setHighlight(id) {
+      highlightId = id;
+    },
+    nudgeCamera,
     resetView() {
       focusScene("system");
       distGoal = FOCUS_RANGES.system.dist;
@@ -2037,18 +2533,24 @@ function createEarthMoonScene(
     destroy() {
       delete (canvas as TrackspaceCanvas).__trackspace;
       callbacks.onHoverChange(null);
+      disposed = true;
       running = false;
-      cancelAnimationFrame(raf);
+      stopLoop();
+      window.clearTimeout(revealTimer);
       ro.disconnect();
+      io.disconnect();
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
       canvas.removeEventListener("dblclick", onDblClick);
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseleave", onMouseLeave);
       canvas.removeEventListener("mousedown", onDown);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
-      canvas.removeEventListener("touchstart", onDown);
-      canvas.removeEventListener("touchmove", onMove);
-      canvas.removeEventListener("touchend", onUp);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
       canvas.removeEventListener("wheel", onWheel);
       for (const d of disposables) d.dispose();
       renderer.dispose();
@@ -2062,6 +2564,22 @@ type EarthMoonSceneProps = {
   onLocationOpen: (id: string) => void;
 };
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function readReducedMotion() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function readReducedMotionOnServer() {
+  return false;
+}
+
 export function EarthMoonScene({
   locations,
   onLocationOpen,
@@ -2071,14 +2589,41 @@ export function EarthMoonScene({
   const openRef = useRef(onLocationOpen);
   const [hover, setHover] = useState<SceneHover | null>(null);
   const [focus, setFocus] = useState<SceneFocus>("system");
-  const [paused, setPaused] = useState(false);
+  // Reduced motion starts the simulation paused rather than freezing it, so the
+  // play and speed controls still work for anyone who opts back in. `null`
+  // means "no explicit choice yet — follow the OS preference".
+  const reducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    readReducedMotion,
+    readReducedMotionOnServer,
+  );
+  const [pausedOverride, setPausedOverride] = useState<boolean | null>(null);
+  const paused = pausedOverride ?? reducedMotion;
   const [speed, setSpeed] = useState<SimulationSpeed>(1);
+  // Bumped when the GPU hands the context back, forcing a fresh canvas element
+  // and a full scene rebuild — a lost context can't be revived in place.
+  const [sceneKey, setSceneKey] = useState(0);
+  const [telemetry, setTelemetry] = useState<SceneTelemetry>({
+    phase: "outbound",
+    elapsedDays: 0,
+  });
   const [layers, setLayers] = useState<Record<SceneLayer, boolean>>({
     sites: true,
     trajectory: true,
     maneuvers: true,
   });
   const sceneStateRef = useRef({ paused, speed, layers, focus });
+
+  const keyboardSites = useMemo(
+    () =>
+      locations.filter(
+        (location) =>
+          (location.body === "earth" || location.body === "moon") &&
+          typeof location.lat === "number" &&
+          typeof location.lon === "number",
+      ),
+    [locations],
+  );
 
   useEffect(() => {
     sceneStateRef.current = { paused, speed, layers, focus };
@@ -2091,10 +2636,12 @@ export function EarthMoonScene({
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const scene = createEarthMoonScene(canvas, locations, {
+    const scene = createEarthMoonScene(canvas, {
       onLocationOpen: (id) => openRef.current(id),
       onHoverChange: setHover,
       onFocusChange: setFocus,
+      onTelemetry: setTelemetry,
+      onContextLost: () => setSceneKey((key) => key + 1),
     });
     controllerRef.current = scene;
     const sceneState = sceneStateRef.current;
@@ -2108,7 +2655,19 @@ export function EarthMoonScene({
       controllerRef.current = null;
       scene.destroy();
     };
-  }, [locations]);
+  }, [sceneKey]);
+
+  // Markers are swapped on the live scene: a new Dataset array identity no
+  // longer tears down the renderer and re-fetches every texture.
+  useEffect(() => {
+    controllerRef.current?.setLocations(locations);
+  }, [locations, sceneKey]);
+
+  // `paused` is derived, so it can change without a click (the OS preference
+  // flipping). Push it to the scene here rather than only from the handler.
+  useEffect(() => {
+    controllerRef.current?.setPaused(paused);
+  }, [paused, sceneKey]);
 
   const selectFocus = (nextFocus: SceneFocus) => {
     setFocus(nextFocus);
@@ -2116,15 +2675,12 @@ export function EarthMoonScene({
   };
 
   const togglePaused = () => {
-    const nextPaused = !paused;
-    setPaused(nextPaused);
-    controllerRef.current?.setPaused(nextPaused);
+    setPausedOverride(!paused);
   };
 
   const selectSpeed = (nextSpeed: SimulationSpeed) => {
     setSpeed(nextSpeed);
-    setPaused(false);
-    controllerRef.current?.setPaused(false);
+    setPausedOverride(false);
     controllerRef.current?.setSpeed(nextSpeed);
   };
 
@@ -2139,20 +2695,81 @@ export function EarthMoonScene({
     controllerRef.current?.resetView();
   };
 
+  const onCanvasKeyDown = (event: React.KeyboardEvent<HTMLCanvasElement>) => {
+    const controller = controllerRef.current;
+    if (!controller) return;
+    const step = event.shiftKey ? 0.3 : 0.11;
+    switch (event.key) {
+      case "ArrowLeft":
+        controller.nudgeCamera(-step, 0, 0);
+        break;
+      case "ArrowRight":
+        controller.nudgeCamera(step, 0, 0);
+        break;
+      case "ArrowUp":
+        controller.nudgeCamera(0, step, 0);
+        break;
+      case "ArrowDown":
+        controller.nudgeCamera(0, -step, 0);
+        break;
+      case "+":
+      case "=":
+        controller.nudgeCamera(0, 0, -0.6);
+        break;
+      case "-":
+      case "_":
+        controller.nudgeCamera(0, 0, 0.6);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  };
+
   return (
     <>
       <canvas
+        key={sceneKey}
         ref={ref}
+        tabIndex={0}
+        onKeyDown={onCanvasKeyDown}
         className="trackspace-scene-canvas"
-        aria-label="Interactive Earth and Moon orbit view with source-backed locations"
+        aria-label="Interactive Earth and Moon orbit view. Arrow keys orbit the camera, plus and minus zoom."
       />
       <div className="trackspace-scene-vignette" aria-hidden="true" />
       <div className="trackspace-scene-scanline" aria-hidden="true" />
 
-      <div className="trackspace-scene-identity" aria-hidden="true">
-        <span>Cislunar digital twin</span>
-        <b>EARTH—MOON / LIVE</b>
-        <i>Sun vector · nominal</i>
+      {/* The canvas can't expose its markers to assistive tech, so the same
+          sites are mirrored here. Focusing an entry highlights it in 3D. */}
+      <ul className="trackspace-scene-sitelist">
+        {keyboardSites.map((location) => (
+          <li key={location.id}>
+            <button
+              type="button"
+              onFocus={() => controllerRef.current?.setHighlight(location.id)}
+              onBlur={() => controllerRef.current?.setHighlight(null)}
+              onClick={() => onLocationOpen(location.id)}
+            >
+              {`${location.name}, ${LOCATION_KIND_LABEL[location.kind]} on the ${location.body}, status ${location.status}`}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="trackspace-scene-identity">
+        <span aria-hidden="true">Cislunar digital twin</span>
+        <b aria-hidden="true">EARTH—MOON / LIVE</b>
+        <i>
+          <span aria-live="polite">
+            {MISSION_PHASE_LABEL[telemetry.phase]}
+          </span>
+          <em aria-hidden="true">
+            {formatMissionClock(telemetry.elapsedDays)}
+          </em>
+        </i>
+        <small aria-hidden="true">
+          Bodies to scale · range compressed ×{RANGE_COMPRESSION}
+        </small>
       </div>
 
       <div className="trackspace-scene-viewbar" aria-label="Scene focus">
