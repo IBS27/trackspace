@@ -484,7 +484,8 @@
   text-transform: uppercase;
 }
 
-.trackspace-scene-identity span {
+/* Direct child only: the phase label inside `i` inherits that row's own type. */
+.trackspace-scene-identity > span {
   margin-bottom: 6px;
   color: var(--ts-faint);
   font-size: 8px;
