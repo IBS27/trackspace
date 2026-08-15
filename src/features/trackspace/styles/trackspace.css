@@ -1378,6 +1378,82 @@
   line-height: 1.6;
 }
 
+.trackspace-fold {
+  margin-bottom: 12px;
+}
+
+.trackspace-fold.is-open {
+  margin-bottom: 20px;
+}
+
+.trackspace-fold-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ts-faint);
+  cursor: pointer;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.trackspace-fold-head:hover {
+  color: var(--ts-ink);
+}
+
+.trackspace-fold-head:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
+.trackspace-fold-chevron {
+  display: inline-block;
+  transition: transform 140ms ease;
+}
+
+.trackspace-fold-head[aria-expanded="true"] .trackspace-fold-chevron {
+  transform: rotate(90deg);
+}
+
+.trackspace-fold-count {
+  padding: 1px 6px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 8px;
+  color: var(--ts-dim);
+  letter-spacing: 0;
+}
+
+.trackspace-fold-body {
+  margin-top: 9px;
+}
+
+.trackspace-more {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ts-accent);
+  cursor: pointer;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trackspace-more:hover {
+  text-decoration: underline;
+}
+
+.trackspace-more:focus-visible {
+  outline: 2px solid var(--ts-accent);
+  outline-offset: 2px;
+}
+
 .trackspace-drawer-section p.trackspace-muted,
 .trackspace-muted {
   color: var(--ts-dim);
@@ -2228,6 +2304,10 @@
     rgba(91, 208, 255, 0.34),
     transparent
   );
+}
+
+.trackspace-assess p {
+  margin: 0;
 }
 
 .trackspace-assess-label {
