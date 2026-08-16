@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { useDataset } from "../data/dataset-context";
 import { isDiscoveryEvent } from "../data/discoveries";
@@ -151,12 +153,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
           </button>
           <div className="trackspace-drawer-meta">{meta}</div>
         </div>
-        <div
-          className="trackspace-drawer-body"
-          key={`${selection.type}:${selection.id}`}
-        >
-          {body}
-        </div>
+        <div className="trackspace-drawer-body">{body}</div>
       </aside>
     </>
   );
@@ -180,21 +177,17 @@ function DrawerSection({
 function FoldSection({
   label,
   count,
+  defaultOpen = false,
   children,
 }: {
   label: string;
   count?: number;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <div className={`trackspace-drawer-section trackspace-fold${open ? " is-open" : ""}`}>
-      <button
-        type="button"
-        className="trackspace-fold-head"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
+    <details className="trackspace-drawer-section trackspace-fold" open={defaultOpen}>
+      <summary className="trackspace-drawer-label trackspace-fold-head">
         <span className="trackspace-fold-chevron" aria-hidden="true">
           ▸
         </span>
@@ -204,36 +197,53 @@ function FoldSection({
             {count}
           </span>
         )}
-      </button>
-      {open && <div className="trackspace-fold-body">{children}</div>}
-    </div>
+      </summary>
+      {children}
+    </details>
   );
 }
 
 export function ClampedText({
   text,
   className,
+  lines = 3,
 }: {
   text: string;
   className?: string;
+  lines?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const lead = text.match(/^[\s\S]*?[.!?](?=\s)/)?.[0] ?? text;
-  if (text.length - lead.length <= 60) {
-    return <p className={className}>{text}</p>;
-  }
+  const [overflows, setOverflows] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || expanded) return;
+    const measure = () => setOverflows(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
+  const classes = ["trackspace-clamp", className, expanded ? "" : "is-clamped"]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <p className={className}>
-      {`${expanded ? text : lead} `}
-      <button
-        type="button"
-        className="trackspace-more"
-        aria-expanded={expanded}
-        onClick={() => setExpanded((value) => !value)}
-      >
-        {expanded ? "Less" : "More"}
-      </button>
-    </p>
+    <div className={classes} style={{ "--ts-clamp-lines": lines } as React.CSSProperties}>
+      <p ref={ref}>{text}</p>
+      {(overflows || expanded) && (
+        <button
+          type="button"
+          className="trackspace-more"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {expanded ? "Less" : "More"}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -415,14 +425,16 @@ function EventBody({
       <DrawerSection label="What happened">
         <ClampedText text={event.what} />
       </DrawerSection>
-      <DrawerSection label="Affected capabilities">
-        <div className="trackspace-capset">
-          {event.caps.map((id) => (
-            <CapabilityTag key={id} id={id} onOpen={onOpen} />
-          ))}
-        </div>
-      </DrawerSection>
-      <FoldSection label="Confirmed" count={event.confirmed.length}>
+      {event.caps.length > 0 && (
+        <DrawerSection label="Affected capabilities">
+          <div className="trackspace-capset">
+            {event.caps.map((id) => (
+              <CapabilityTag key={id} id={id} onOpen={onOpen} />
+            ))}
+          </div>
+        </DrawerSection>
+      )}
+      <FoldSection label="Confirmed" count={event.confirmed.length} defaultOpen>
         {event.confirmed.length ? (
           <ul className="trackspace-evidence-list is-ok">
             {event.confirmed.map((item) => (
@@ -442,21 +454,23 @@ function EventBody({
           </p>
         )}
       </FoldSection>
-      <FoldSection label="Open / Unknown" count={event.unknown.length}>
-        <ul className="trackspace-evidence-list is-open">
-          {event.unknown.map((item) => (
-            <li key={item}>
-              <span className="trackspace-evidence-mark">?</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </FoldSection>
+      {event.unknown.length > 0 && (
+        <FoldSection label="Open / Unknown" count={event.unknown.length} defaultOpen>
+          <ul className="trackspace-evidence-list is-open">
+            {event.unknown.map((item) => (
+              <li key={item}>
+                <span className="trackspace-evidence-mark">?</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </FoldSection>
+      )}
       <FoldSection label="Possible downstream impact">
         <div className="trackspace-downbox">{event.downstream}</div>
       </FoldSection>
       <LocationRows locations={locations} onOpen={onOpen} />
-      <FoldSection label="Sources & provenance" count={event.sources.length}>
+      <FoldSection label="Sources & provenance" count={event.sources.length} defaultOpen>
         <SourceList sources={event.sources} />
       </FoldSection>
     </>
@@ -583,7 +597,7 @@ function CapabilityBody({
         </FoldSection>
       )}
       <LocationRows locations={locations} onOpen={onOpen} />
-      <FoldSection label="Sources & provenance" count={capability.sources.length}>
+      <FoldSection label="Sources & provenance" count={capability.sources.length} defaultOpen>
         <SourceList sources={capability.sources} />
       </FoldSection>
     </>
@@ -690,7 +704,7 @@ function LocationBody({
           </div>
         </FoldSection>
       )}
-      <FoldSection label="Sources & provenance" count={location.sources.length}>
+      <FoldSection label="Sources & provenance" count={location.sources.length} defaultOpen>
         <SourceList sources={location.sources} />
       </FoldSection>
     </>
@@ -720,9 +734,9 @@ function MilestoneBody({
           ))}
         </div>
       </DrawerSection>
-      <FoldSection label="Assessment">
-        <p className="trackspace-muted">{milestone.summary}</p>
-      </FoldSection>
+      <DrawerSection label="Assessment">
+        <ClampedText text={milestone.summary} className="trackspace-muted" />
+      </DrawerSection>
       {events.length > 0 && (
         <FoldSection label="Related events" count={events.length}>
           <div className="trackspace-rows">
@@ -738,7 +752,7 @@ function MilestoneBody({
         </FoldSection>
       )}
       <LocationRows locations={locations} onOpen={onOpen} />
-      <FoldSection label="Sources & provenance" count={milestone.sources.length}>
+      <FoldSection label="Sources & provenance" count={milestone.sources.length} defaultOpen>
         <SourceList sources={milestone.sources} />
       </FoldSection>
     </>

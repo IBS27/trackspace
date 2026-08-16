@@ -120,8 +120,8 @@
 
 .trackspace-logo-mark {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 33px;
+  height: 22px;
   flex: 0 0 auto;
   background: var(--ts-ink);
   -webkit-mask: url("/trackspace-logo.svg") center / contain no-repeat;
@@ -1378,29 +1378,22 @@
   line-height: 1.6;
 }
 
-.trackspace-fold {
+.trackspace-fold:not([open]) {
   margin-bottom: 12px;
 }
 
-.trackspace-fold.is-open {
-  margin-bottom: 20px;
+.trackspace-fold-head {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
 
-.trackspace-fold-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ts-faint);
-  cursor: pointer;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  text-align: left;
+.trackspace-fold-head::-webkit-details-marker {
+  display: none;
+}
+
+.trackspace-fold:not([open]) > .trackspace-fold-head {
+  margin-bottom: 0;
 }
 
 .trackspace-fold-head:hover {
@@ -1417,7 +1410,7 @@
   transition: transform 140ms ease;
 }
 
-.trackspace-fold-head[aria-expanded="true"] .trackspace-fold-chevron {
+.trackspace-fold[open] > .trackspace-fold-head .trackspace-fold-chevron {
   transform: rotate(90deg);
 }
 
@@ -1429,11 +1422,19 @@
   letter-spacing: 0;
 }
 
-.trackspace-fold-body {
-  margin-top: 9px;
+.trackspace-clamp p {
+  margin: 0;
+}
+
+.trackspace-clamp.is-clamped p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--ts-clamp-lines, 3);
+  overflow: hidden;
 }
 
 .trackspace-more {
+  margin-top: 4px;
   padding: 0;
   border: 0;
   background: none;
@@ -2304,10 +2305,6 @@
     rgba(91, 208, 255, 0.34),
     transparent
   );
-}
-
-.trackspace-assess p {
-  margin: 0;
 }
 
 .trackspace-assess-label {
