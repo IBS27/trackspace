@@ -1,0 +1,1876 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trackspace Logo Designs</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0c0f;
+      --panel: #141518;
+      --panel-2: #1a1c20;
+      --line: #2a2d33;
+      --line-soft: #202226;
+      --text: #f1f3f5;
+      --muted: #9aa1aa;
+      --soft: #c7ccd3;
+      --accent: #c7d2fe;
+      --radius: 8px;
+
+      /* Real app tokens, used inside the preview chips. */
+      --app-bg: #050505;
+      --app-panel: #0d0d0e;
+      --app-line: #202023;
+      --app-ink: #dedee3;
+      --app-dim: #94949e;
+      --app-accent: #5bd0ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .shell {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header { padding: 44px 0 30px; border-bottom: 1px solid var(--line); }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 28px;
+    }
+
+    .mark { color: var(--text); font-weight: 700; }
+
+    h1 {
+      max-width: 760px;
+      margin: 0 0 14px;
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.05;
+    }
+
+    .lede { max-width: 760px; color: var(--soft); font-size: 18px; margin: 0; }
+
+    section { padding: 36px 0; border-bottom: 1px solid var(--line-soft); }
+    section:last-of-type { border-bottom: 0; }
+
+    h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-note { margin: 0 0 22px; color: var(--muted); max-width: 720px; }
+
+    ul { margin: 0; padding-left: 18px; color: var(--soft); }
+    li { margin-bottom: 6px; }
+    li:last-child { margin-bottom: 0; }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      color: var(--accent);
+    }
+
+    /* ---- design grid ---- */
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .card-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .card-name { font-weight: 600; font-size: 15px; }
+
+    .stage {
+      background: var(--app-bg);
+      color: var(--app-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 34px 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.026) 1px, transparent 1px);
+      background-size: 34px 34px, 34px 34px;
+    }
+
+    .stage svg { width: 96px; height: 96px; display: block; }
+
+    /* size + colour test strip */
+    .tests {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      background: var(--panel-2);
+      flex-wrap: wrap;
+    }
+
+    .sizes {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      color: var(--app-ink);
+    }
+
+    .s32 { width: 32px; height: 32px; }
+    .s24 { width: 24px; height: 24px; }
+    .s16 { width: 16px; height: 16px; }
+
+    .chips { display: flex; gap: 8px; margin-left: auto; }
+
+    .chip {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+    }
+
+    .chip svg { width: 20px; height: 20px; }
+    .chip-dark { background: var(--app-bg); color: var(--app-ink); }
+    .chip-accent { background: var(--app-bg); color: var(--app-accent); }
+    .chip-light { background: #f2f3f5; color: #101114; border-color: #d5d8dd; }
+
+    /* header lockup, matching the real app header */
+    .lockup {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 14px 16px;
+      background: var(--app-bg);
+      color: var(--app-ink);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .lockup svg { width: 32px; height: 32px; flex: 0 0 auto; }
+
+    .lockup-text { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+    .wordmark {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .wordmark span { color: var(--app-accent); }
+
+    .subtitle {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--app-dim);
+      white-space: nowrap;
+    }
+
+    .card-note {
+      padding: 14px 16px;
+      color: var(--soft);
+      font-size: 14px;
+      margin: 0;
+      flex: 1 1 auto;
+    }
+
+    .card-note b { color: var(--text); font-weight: 600; }
+
+    footer b { color: var(--text); font-weight: 600; }
+
+    .pick {
+      display: inline-block;
+      margin-left: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #050505;
+      background: var(--app-accent);
+      border-radius: 4px;
+      padding: 2px 7px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-soft);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    td:first-child { white-space: nowrap; color: var(--text); }
+
+    footer {
+      padding: 30px 0 60px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      .chips { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Every mark is defined once here and reused at each size. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 1 Ground Track -->
+    <symbol id="m1" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+        <circle cx="32" cy="32" r="21"/>
+        <path d="M11.6 38.6c6-10.4 13.4-12.6 20.4-6.6s14.4 3.8 20.4-6.6"/>
+      </g>
+    </symbol>
+
+    <!-- 2 Orbit Node -->
+    <symbol id="m2" viewBox="0 0 64 64">
+      <ellipse cx="32" cy="32" rx="24" ry="10.5" transform="rotate(-28 32 32)"
+               fill="none" stroke="currentColor" stroke-width="3.2"/>
+      <circle cx="32" cy="32" r="8.5" fill="currentColor"/>
+      <circle cx="53.2" cy="20.7" r="4.2" fill="currentColor"/>
+    </symbol>
+
+    <!-- 3 Lock -->
+    <symbol id="m3" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 23V15a3 3 0 0 1 3-3h8"/>
+        <path d="M41 12h8a3 3 0 0 1 3 3v8"/>
+        <path d="M52 41v8a3 3 0 0 1-3 3h-8"/>
+        <path d="M23 52h-8a3 3 0 0 1-3-3v-8"/>
+        <circle cx="32" cy="32" r="9"/>
+      </g>
+      <circle cx="32" cy="32" r="3.2" fill="currentColor"/>
+    </symbol>
+
+    <!-- 4 Terminator -->
+    <symbol id="m4" viewBox="0 0 64 64">
+      <mask id="m4cut">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="47" cy="25" r="19" fill="#000"/>
+      </mask>
+      <circle cx="32" cy="32" r="22" fill="currentColor" mask="url(#m4cut)"/>
+      <circle cx="49.5" cy="15.5" r="4.2" fill="currentColor"/>
+    </symbol>
+
+    <!-- 5 Readiness Arc -->
+    <symbol id="m5" viewBox="0 0 64 64">
+      <path d="M32 9.5a22.5 22.5 0 1 1-22.5 22.5"
+            fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+      <circle cx="32" cy="9.5" r="4.2" fill="currentColor"/>
+      <circle cx="32" cy="32" r="7" fill="currentColor"/>
+    </symbol>
+
+    <!-- 6 Milestone Track -->
+    <symbol id="m6" viewBox="0 0 64 64">
+      <path d="M9 51c9.5 0 17-4.2 22.5-12.6S43.5 18 54 13"
+            fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="9" cy="51" r="4" fill="currentColor"/>
+      <circle cx="31.5" cy="38.4" r="4.6" fill="currentColor"/>
+      <circle cx="54" cy="13" r="6" fill="currentColor"/>
+    </symbol>
+
+    <!-- 7 Trace -->
+    <symbol id="m7" viewBox="0 0 64 64">
+      <path d="M8 52C21 52 35 46 43 25" pathLength="100"
+            fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"
+            stroke-dasharray="4 9 10 9 68"/>
+      <circle cx="43" cy="25" r="6" fill="currentColor"/>
+    </symbol>
+
+    <!-- 8 Gate -->
+    <symbol id="m8" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M27 12h-8a5 5 0 0 0-5 5v30a5 5 0 0 0 5 5h8"/>
+        <path d="M37 12h8a5 5 0 0 1 5 5v30a5 5 0 0 1-5 5h-8"/>
+      </g>
+      <circle cx="32" cy="32" r="6.5" fill="currentColor"/>
+    </symbol>
+
+    <!-- 9 Sector -->
+    <symbol id="m9" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+        <rect x="10" y="10" width="44" height="44" rx="12"/>
+        <path d="M32 10v9M32 45v9M10 32h9M45 32h9"/>
+      </g>
+      <circle cx="32" cy="32" r="5" fill="currentColor"/>
+    </symbol>
+
+    <!-- 10 Pass -->
+    <symbol id="m10" viewBox="0 0 64 64">
+      <path d="M0 47.7a70 70 0 0 1 64 0V56H0Z" fill="currentColor"/>
+      <path d="M6 28a86 86 0 0 1 52 0" fill="none" stroke="currentColor"
+            stroke-width="3.6" stroke-linecap="round"/>
+      <circle cx="44" cy="24.8" r="5.6" fill="currentColor"/>
+    </symbol>
+
+    <!-- 11 Porthole -->
+    <symbol id="m11" viewBox="0 0 64 64">
+      <clipPath id="m11clip"><circle cx="32" cy="32" r="17.5"/></clipPath>
+      <circle cx="32" cy="32" r="19.5" fill="none" stroke="currentColor" stroke-width="4"/>
+      <g clip-path="url(#m11clip)">
+        <circle cx="32" cy="66" r="28" fill="currentColor"/>
+      </g>
+      <circle cx="23" cy="24" r="3.8" fill="currentColor"/>
+    </symbol>
+
+    <!-- 12 Phase Meter -->
+    <symbol id="m12" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3.4"/>
+      <path d="M32 17a15 15 0 0 0 0 30 6 15 0 0 0 0-30Z" fill="currentColor"/>
+    </symbol>
+
+    <!-- 13 Occultation -->
+    <symbol id="m13" viewBox="0 0 64 64">
+      <mask id="m13cut">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="42" cy="24" r="14" fill="#000"/>
+      </mask>
+      <circle cx="28" cy="32" r="20" fill="currentColor" mask="url(#m13cut)"/>
+      <circle cx="42" cy="24" r="10.5" fill="currentColor"/>
+    </symbol>
+
+    <!-- 14 Radial Gantt -->
+    <symbol id="m14" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+        <path d="M32 10A22 22 0 1 1 12.95 21"/>
+        <path d="M32 16.5A15.5 15.5 0 1 1 24.25 45.4"/>
+        <path d="M32 23a9 9 0 0 1 7.79 13.5"/>
+      </g>
+    </symbol>
+
+    <!-- 15 Plan and Actual -->
+    <symbol id="m15" viewBox="0 0 64 64">
+      <path d="M12 48C26 45 38 36 52 11" pathLength="100" fill="none" stroke="currentColor"
+            stroke-width="3" stroke-linecap="round" stroke-dasharray="5 8"/>
+      <path d="M12 48c12 2 22-1 32-8" fill="none" stroke="currentColor"
+            stroke-width="3.4" stroke-linecap="round"/>
+      <circle cx="12" cy="48" r="4.4" fill="currentColor"/>
+      <circle cx="44" cy="40" r="5.4" fill="currentColor"/>
+    </symbol>
+
+    <!-- 16 Constellation -->
+    <symbol id="m16" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 18 33 13l18 7"/>
+        <path d="M33 13 31 32l-2 19"/>
+      </g>
+      <g fill="currentColor">
+        <circle cx="13" cy="18" r="3.6"/>
+        <circle cx="33" cy="13" r="4.6"/>
+        <circle cx="51" cy="20" r="3.6"/>
+        <circle cx="31" cy="32" r="3.6"/>
+        <circle cx="29" cy="51" r="4.2"/>
+      </g>
+    </symbol>
+
+    <!-- 17 Docking -->
+    <symbol id="m17" viewBox="0 0 64 64">
+      <g fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round">
+        <path d="M26.21 34.53A10 10 0 1 1 30.99 25.76"/>
+        <path d="M37.79 29.47A10 10 0 1 1 33 38.24"/>
+      </g>
+    </symbol>
+
+    <!-- 18 Echo -->
+    <symbol id="m18" viewBox="0 0 64 64">
+      <mask id="m18cut">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="40" cy="26" r="16" fill="none" stroke="#000" stroke-width="8"/>
+      </mask>
+      <circle cx="22" cy="42" r="12" fill="currentColor" mask="url(#m18cut)"/>
+      <circle cx="40" cy="26" r="16" fill="none" stroke="currentColor" stroke-width="3.4"/>
+    </symbol>
+
+  <!-- 19 Solar Array -->
+  <symbol id="m19" viewBox="0 0 64 64">
+    <mask id="m19cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <g fill="#000">
+        <rect x="13.2" y="26" width="1.8" height="12"/>
+        <rect x="18.4" y="26" width="1.8" height="12"/>
+        <rect x="45.2" y="26" width="1.8" height="12"/>
+        <rect x="50.4" y="26" width="1.8" height="12"/>
+      </g>
+    </mask>
+    <g transform="rotate(-18 32 32)" fill="currentColor" mask="url(#m19cut)">
+      <rect x="26" y="21" width="12" height="22" rx="3"/>
+      <rect x="8" y="26" width="16" height="12" rx="2.5"/>
+      <rect x="40" y="26" width="16" height="12" rx="2.5"/>
+    </g>
+  </symbol>
+
+  <!-- 20 Dish -->
+  <symbol id="m20" viewBox="0 0 64 64">
+    <g transform="rotate(-30 32 34)">
+      <path d="M12 34a20 20 0 0 0 40 0Z" fill="currentColor"/>
+      <path d="M32 34V17" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+      <circle cx="32" cy="14" r="4.2" fill="currentColor"/>
+    </g>
+  </symbol>
+
+  <!-- 21 Lander -->
+  <symbol id="m21" viewBox="0 0 64 64">
+    <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+      <path d="M24 36 13 50"/>
+      <path d="M40 36 51 50"/>
+    </g>
+    <g fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+      <path d="M25 21h14l4 14H21Z"/>
+      <rect x="28.5" y="13" width="7" height="8" rx="2"/>
+    </g>
+  </symbol>
+
+  <!-- 22 Capsule -->
+  <symbol id="m22" viewBox="0 0 64 64">
+    <mask id="m22cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="10" y="38" width="44" height="2.6" fill="#000"/>
+      <rect x="21" y="24" width="9" height="5.5" rx="2.75" fill="#000"/>
+    </mask>
+    <path d="M14 44C14 24 22 13 32 13s18 11 18 31v1a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2Z"
+          fill="currentColor" mask="url(#m22cut)"/>
+  </symbol>
+
+  <!-- 23 Stack -->
+  <symbol id="m23" viewBox="0 0 64 64">
+    <g transform="rotate(35 32 32)" fill="currentColor">
+      <path d="M24 24c0-10 8-18 8-18s8 8 8 18Z"/>
+      <rect x="24" y="27" width="16" height="13" rx="3"/>
+      <path d="M24 43h16v9l3 6H21l3-6Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+    </g>
+  </symbol>
+
+  <!-- 24 Helmet -->
+  <symbol id="m24" viewBox="0 0 64 64">
+    <mask id="m24cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <ellipse cx="32" cy="31" rx="14" ry="11" fill="#000"/>
+      <rect x="17" y="44.5" width="30" height="2.4" fill="#000"/>
+    </mask>
+    <g fill="currentColor" mask="url(#m24cut)">
+      <circle cx="32" cy="29" r="19"/>
+      <rect x="19" y="45" width="26" height="7" rx="3"/>
+    </g>
+  </symbol>
+
+  <!-- 25 Rover -->
+  <symbol id="m25" viewBox="0 0 64 64">
+    <path d="M43 26 48 15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="49" cy="13" r="3.8" fill="currentColor"/>
+    <rect x="11" y="24" width="34" height="13" rx="4" fill="currentColor"/>
+    <g fill="none" stroke="currentColor" stroke-width="3.4">
+      <circle cx="20" cy="43" r="6.5"/>
+      <circle cx="38" cy="43" r="6.5"/>
+    </g>
+  </symbol>
+
+  <!-- 26 Habitat -->
+  <symbol id="m26" viewBox="0 0 64 64">
+    <mask id="m26cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="28.5" y="35" width="7" height="10" rx="3.5" fill="#000"/>
+    </mask>
+    <path d="M14 45a18 18 0 0 1 36 0Z" fill="currentColor" mask="url(#m26cut)"/>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="49" cy="20" r="3.8" fill="currentColor"/>
+  </symbol>
+
+  <!-- 27 Duo -->
+  <symbol id="m27" viewBox="0 0 64 64">
+    <mask id="m27cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="18.5" y="37" width="7" height="8" rx="3.5" fill="#000"/>
+    </mask>
+    <g fill="currentColor" mask="url(#m27cut)">
+      <path d="M9 45a13 13 0 0 1 26 0Z"/>
+      <path d="M44 45a7 7 0 0 1 14 0Z"/>
+      <rect x="31" y="41" width="16" height="4" rx="2"/>
+    </g>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="13" cy="20" r="3.6" fill="currentColor"/>
+  </symbol>
+
+  <!-- 28 Mast -->
+  <symbol id="m28" viewBox="0 0 64 64">
+    <mask id="m28cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="28.5" y="36" width="7" height="9" rx="3.5" fill="#000"/>
+    </mask>
+    <path d="M16 45a16 16 0 0 1 32 0Z" fill="currentColor" mask="url(#m28cut)"/>
+    <path d="M43 37 50 21" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="51" cy="18" r="4" fill="currentColor"/>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- 29 Outline -->
+  <symbol id="m29" viewBox="0 0 64 64">
+    <path d="M14 46a18 18 0 0 1 36 0" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M28.5 46v-5.5a3.5 3.5 0 0 1 7 0V46Z" fill="currentColor"/>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="49" cy="20" r="3.8" fill="currentColor"/>
+  </symbol>
+
+  <!-- 30 Limb -->
+  <symbol id="m30" viewBox="0 0 64 64">
+    <mask id="m30cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="28.5" y="33" width="7" height="9" rx="3.5" fill="#000"/>
+    </mask>
+    <path d="M17 42a15 15 0 0 1 30 0Z" fill="currentColor" mask="url(#m30cut)"/>
+    <path d="M4 45a110 110 0 0 1 56 0" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="49" cy="16" r="3.8" fill="currentColor"/>
+  </symbol>
+
+  <!-- 31 Pass -->
+  <symbol id="m31" viewBox="0 0 64 64">
+    <mask id="m31cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="28.5" y="38" width="7" height="8" rx="3.5" fill="#000"/>
+    </mask>
+    <path d="M18 46a14 14 0 0 1 28 0Z" fill="currentColor" mask="url(#m31cut)"/>
+    <path d="M6 49h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M9 30a34 34 0 0 1 46 0" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="40" cy="22" r="4.4" fill="currentColor"/>
+  </symbol>
+
+  <!-- 32 Settlement -->
+  <symbol id="m32" viewBox="0 0 64 64">
+    <mask id="m32cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="30.5" y="37" width="7" height="9" rx="3.5" fill="#000"/>
+    </mask>
+    <g fill="currentColor" mask="url(#m32cut)">
+      <path d="M7 46a6 6 0 0 1 12 0Z"/>
+      <path d="M22 46a12 12 0 0 1 24 0Z"/>
+      <path d="M49 46a6 6 0 0 1 12 0Z"/>
+    </g>
+    <path d="M5 49h54" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="46" cy="18" r="3.6" fill="currentColor"/>
+  </symbol>
+
+  <!-- 33 Deck -->
+  <symbol id="m33" viewBox="0 0 64 64">
+    <mask id="m33cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="17" y="34" width="30" height="2.6" rx="1.3" fill="#000"/>
+      <rect x="28.5" y="37.5" width="7" height="7.5" rx="3.5" fill="#000"/>
+    </mask>
+    <path d="M14 45a18 18 0 0 1 36 0Z" fill="currentColor" mask="url(#m33cut)"/>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="49" cy="20" r="3.8" fill="currentColor"/>
+  </symbol>
+
+  <!-- 34 Module -->
+  <symbol id="m34" viewBox="0 0 64 64">
+    <mask id="m34cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <rect x="24.5" y="36" width="7" height="9" rx="3.5" fill="#000"/>
+      <rect x="41" y="34" width="2.4" height="11" fill="#000"/>
+    </mask>
+    <g fill="currentColor" mask="url(#m34cut)">
+      <path d="M13 45a15 15 0 0 1 30 0Z"/>
+      <rect x="42" y="36" width="16" height="9" rx="4.5"/>
+    </g>
+    <path d="M6 48h52" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/>
+    <circle cx="14" cy="20" r="3.6" fill="currentColor"/>
+  </symbol>
+
+    <!-- current mark, for comparison -->
+    <symbol id="m0" viewBox="0 0 72 72">
+      <path fill="currentColor" d="M59.66 42.19c.32-2.01-.95-3.81-2.96-4.13-1.91-.32-3.7.95-4.02 2.86-.32 1.91.95 3.81 2.86 4.13 1.9.32 3.8-.95 4.12-2.86Zm1.8.32c-.53 2.86-3.28 4.87-6.25 4.34-2.96-.53-4.87-3.28-4.45-6.25.53-2.96 3.39-4.87 6.25-4.45 2.97.54 4.98 3.4 4.45 6.36ZM44.31 57.75c-.11 1.48-.11 2.96-.11 4.55 2.86-1.06 8.26-4.13 8.36-7.83-2.85 1.48-5.6 2.54-8.25 3.28ZM42.72 40.6c-3.49-1.16-8.15 2.86-10.16 5.29 1.48.53 2.96.95 4.45 1.38 1.48-2.22 3.38-4.55 5.71-6.67ZM64.21 32.24 67.6 37c.53-1.38.74-2.75.85-4.13-1.38-.42-2.76-.63-4.24-.63ZM40.08 54.79l7.73-5.5c1.69-1.16-.11-3.7-1.69-2.54l-7.83 5.5c-1.6 1.06.09 3.7 1.79 2.54Zm4.76-1.06L42.93 55l.74.95c.74-.21 1.48-.42 2.33-.64l-1.16-1.58Zm-2.44-6.67 2.54-1.8c3.7-2.65 7.62 2.96 4.02 5.5l-2.54 1.8 1.38 2.01c7.2-2.85 15.46-8.57 18.95-15.55l-4.66-6.67c-7.83.95-15.88 6.77-21.07 12.7l1.38 2.01Zm-3.38 2.44 1.91-1.38-1.16-1.59c-.42.64-.95 1.38-1.38 2.01l.63.96Zm6.56-22.87c2.65-3.18 14.4-17.68 11.11-21.17-1.48-1.48-6.35.53-8.05 1.38 1.69.53 2.54 1.69 2.75 3.39.75 4.76-3.48 12.49-5.81 16.4Zm3.28-11.01c-1.38-1.69-2.96-3.28-4.76-4.45-5.72-4.02-12.7-5.4-19.37-3.81C12.34 10.22 4.4 22.29 6.52 34.89c1.69 9.63 9 17.25 18.52 19.37 4.76-1.48 9.1-3.49 11.54-4.98l-.11-.21c-1.91-.53-3.81-1.16-5.72-1.8-.64-.21-.85-.95-.42-1.48 2.65-3.81 9-9.21 13.87-6.56 2.96-2.54 6.46-4.87 9.95-6.46.64-3.39-.53-8.36-1.91-11.64-5.4 7.3-12.39 14.4-14.71 16.62-.85.74-2.12-.42-1.27-1.27 3.18-3.92 10.27-13.66 12.6-20.86ZM33.62 10.12c-1.91 0-3.39 1.48-3.39 3.28 0 1.91 1.48 3.39 3.39 3.39 1.8 0 3.28-1.48 3.28-3.39 0-1.8-1.48-3.28-3.28-3.28Zm0-1.91c2.86 0 5.19 2.33 5.19 5.19 0 2.96-2.33 5.29-5.19 5.29-2.86 0-5.29-2.33-5.29-5.29 0-2.86 2.43-5.19 5.29-5.19ZM40.6 18.9c-.85 0-1.59.74-1.59 1.59 0 .95.74 1.59 1.59 1.59.85 0 1.59-.74 1.59-1.59 0-.84-.63-1.59-1.59-1.59Zm0-1.9c1.91 0 3.49 1.59 3.49 3.49 0 1.91-1.59 3.49-3.49 3.49-1.91 0-3.39-1.59-3.39-3.49.01-1.9 1.49-3.49 3.39-3.49Zm-11.64 4.34c-1.27 0-2.22.95-2.22 2.12 0 1.16.95 2.12 2.22 2.12 1.16 0 2.12-.95 2.12-2.12 0-1.17-.96-2.12-2.12-2.12Zm0-1.91c2.12 0 3.92 1.8 3.92 4.02s-1.8 4.02-3.92 4.02c-2.22 0-4.02-1.8-4.02-4.02s1.8-4.02 4.02-4.02ZM18.06 46.22c.95.74-.21 2.22-1.16 1.48-4.13-3.39-6.99-8.05-7.83-13.23-.21-1.27 1.59-1.59 1.8-.32.84 4.76 3.38 9 7.19 12.07Zm4.55 2.64c1.16.53.42 2.22-.74 1.69-.74-.32-1.38-.64-2.12-.95-1.06-.64-.11-2.22.95-1.69.64.42 1.27.74 1.91.95ZM37.01 56.06c-7.3 3.28-21.91 7.73-29.22 4.87-2.33-.85-3.7-2.12-4.34-3.7.42 4.55 4.66 6.35 10.9 6.35 8.57 0 19.9-3.39 27.31-7.2l-.21-.32-.32.21c-1.48 1.17-3.17.74-4.12-.21ZM4.61 53.73c0 2.33 1.06 4.45 3.81 5.5 6.67 2.54 20.75-1.69 27.52-4.76-.32-.95-.21-2.01.42-2.86-4.66 2.43-13.23 5.72-20.22 6.56-4.22.43-10.04.22-11.53-4.44Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="shell">
+  <header>
+    <div class="topline">
+      <span class="mark">Trackspace</span>
+      <span>Logo options</span>
+    </div>
+    <h1>Thirty-four marks to replace the current logo</h1>
+    <p class="lede">
+      Each one is a geometric SVG built for the same job the current mark does: a
+      32&nbsp;px header mark, a 16&nbsp;px favicon, and a single flat colour. Set&nbsp;A is
+      direct, Set&nbsp;B takes more risk, Set&nbsp;C is spacecraft, and Set&nbsp;D works the habitat mark eight ways. Pick a number and I will wire it into the app,
+      the icon, and the manifest.
+    </p>
+  </header>
+
+  <section>
+    <h2>What the mark must do</h2>
+    <p class="section-note">
+      The header mark is drawn as a CSS mask filled with <code>--ts-ink</code>, so the
+      artwork has to work as one flat shape. These constraints shaped every option below.
+    </p>
+    <ul>
+      <li><b>One colour.</b> No gradients, no multi-tone fills, no strokes that depend on a second colour.</li>
+      <li><b>Legible at 16&nbsp;px.</b> Minimum stroke weight is 3&nbsp;units on a 64&nbsp;unit grid, which is about 0.8&nbsp;px at favicon size.</li>
+      <li><b>Optical balance in a square.</b> Every mark centres in a 64×64 box with a 8–10&nbsp;unit margin, so it drops into the existing 32&nbsp;px slot with no layout change.</li>
+      <li><b>Pairs with the wordmark.</b> The wordmark is monospace, uppercase, tight. The mark stays geometric so it does not fight it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The current mark</h2>
+    <p class="section-note">
+      For comparison. It is a detailed illustration: many small parts, several separate
+      dots and hairlines. At 32&nbsp;px the detail turns to noise, and at 16&nbsp;px most of
+      it disappears.
+    </p>
+    <div class="grid" style="grid-template-columns: minmax(0, 460px);">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">00</span>
+          <span class="card-name">Current</span>
+        </div>
+        <div class="stage"><svg><use href="#m0"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m0"/></svg>
+            <svg class="s24"><use href="#m0"/></svg>
+            <svg class="s16"><use href="#m0"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m0"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m0"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m0"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m0"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">Too much detail for the sizes it is used at.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Set A: direct</h2>
+    <p class="section-note">
+      Each card shows the mark large, then at 32/24/16&nbsp;px, then on dark, accent and
+      light backgrounds, then in the real header lockup.
+    </p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">01</span>
+          <span class="card-name">Ground Track</span>
+          <span class="pick">Recommended</span>
+        </div>
+        <div class="stage"><svg><use href="#m1"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m1"/></svg>
+            <svg class="s24"><use href="#m1"/></svg>
+            <svg class="s16"><use href="#m1"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m1"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m1"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m1"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m1"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A satellite ground track crossing a body. It says <b>track</b> and <b>space</b>
+          in one shape, and the wave keeps it from reading as a generic globe.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">02</span>
+          <span class="card-name">Orbit Node</span>
+        </div>
+        <div class="stage"><svg><use href="#m2"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m2"/></svg>
+            <svg class="s24"><use href="#m2"/></svg>
+            <svg class="s16"><use href="#m2"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m2"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m2"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m2"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m2"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A body, an orbit and one tracked object on it. The heavy centre disc gives it
+          weight at small sizes; the offset node stops it from being symmetric and dull.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">03</span>
+          <span class="card-name">Lock</span>
+        </div>
+        <div class="stage"><svg><use href="#m3"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m3"/></svg>
+            <svg class="s24"><use href="#m3"/></svg>
+            <svg class="s16"><use href="#m3"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m3"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m3"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m3"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m3"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A tracking reticle: four corner brackets around a locked target. It fits the
+          instrument tone of the dashboard, but the four gaps get thin below 20&nbsp;px.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">04</span>
+          <span class="card-name">Terminator</span>
+        </div>
+        <div class="stage"><svg><use href="#m4"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m4"/></svg>
+            <svg class="s24"><use href="#m4"/></svg>
+            <svg class="s16"><use href="#m4"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m4"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m4"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m4"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m4"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The lit face of the Moon with one object above it. The most solid shape of the
+          set, so it holds up best at 16&nbsp;px and on light backgrounds.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">05</span>
+          <span class="card-name">Readiness Arc</span>
+        </div>
+        <div class="stage"><svg><use href="#m5"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m5"/></svg>
+            <svg class="s24"><use href="#m5"/></svg>
+            <svg class="s16"><use href="#m5"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m5"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m5"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m5"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m5"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A three-quarter arc with the marker at the head: progress to the next gate,
+          drawn as an orbit. Closest to what the product measures.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">06</span>
+          <span class="card-name">Milestone Track</span>
+        </div>
+        <div class="stage"><svg><use href="#m6"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m6"/></svg>
+            <svg class="s24"><use href="#m6"/></svg>
+            <svg class="s16"><use href="#m6"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m6"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m6"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m6"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m6"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A rising path with three nodes: launch, gate, target. Reads as schedule more
+          than as space, so it is the safest option if the product grows past lunar work.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">07</span>
+          <span class="card-name">Trace</span>
+        </div>
+        <div class="stage"><svg><use href="#m7"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m7"/></svg>
+            <svg class="s24"><use href="#m7"/></svg>
+            <svg class="s16"><use href="#m7"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m7"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m7"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m7"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m7"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          An object with its own history behind it: the trail thickens from stray ticks
+          into a solid path. The only mark in the set that shows motion over time.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">08</span>
+          <span class="card-name">Gate</span>
+        </div>
+        <div class="stage"><svg><use href="#m8"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m8"/></svg>
+            <svg class="s24"><use href="#m8"/></svg>
+            <svg class="s16"><use href="#m8"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m8"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m8"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m8"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m8"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The product's own vocabulary: an object between two gate brackets. Very stable
+          as an icon tile, but it is the least literally spatial mark here.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">09</span>
+          <span class="card-name">Sector</span>
+        </div>
+        <div class="stage"><svg><use href="#m9"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m9"/></svg>
+            <svg class="s24"><use href="#m9"/></svg>
+            <svg class="s16"><use href="#m9"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m9"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m9"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m9"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m9"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A framed cell with a tracked object at its centre. It echoes the grid background
+          of the app and squares off nicely as an icon tile.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">10</span>
+          <span class="card-name">Pass</span>
+        </div>
+        <div class="stage"><svg><use href="#m10"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m10"/></svg>
+            <svg class="s24"><use href="#m10"/></svg>
+            <svg class="s16"><use href="#m10"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m10"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m10"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m10"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m10"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A planet limb, an orbit above it, and one object on the pass. Wide and calm,
+          but it is bottom-heavy, so it sits lower in the square than the others.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Set B: more creative</h2>
+    <p class="section-note">
+      The first set stays inside the usual icon vocabulary. This set takes more risk: marks
+      built on an idea from the mission rather than on a picture of one. Same constraints,
+      same tests.
+    </p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">11</span>
+          <span class="card-name">Porthole</span>
+        </div>
+        <div class="stage"><svg><use href="#m11"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m11"/></svg>
+            <svg class="s24"><use href="#m11"/></svg>
+            <svg class="s16"><use href="#m11"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m11"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m11"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m11"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m11"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The view from the base: a window, a limb, and one body in the sky. The warmest mark here, and almost all solid, so it survives any size.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">12</span>
+          <span class="card-name">Phase Meter</span>
+          <span class="pick">Strong pick</span>
+        </div>
+        <div class="stage"><svg><use href="#m12"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m12"/></svg>
+            <svg class="s24"><use href="#m12"/></svg>
+            <svg class="s16"><use href="#m12"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m12"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m12"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m12"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m12"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A gauge ring whose fill is a moon phase. The part that is lit is the part that is ready, so the mark carries the product's meaning, not just its subject.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">13</span>
+          <span class="card-name">Occultation</span>
+        </div>
+        <div class="stage"><svg><use href="#m13"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m13"/></svg>
+            <svg class="s24"><use href="#m13"/></svg>
+            <svg class="s16"><use href="#m13"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m13"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m13"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m13"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m13"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          One body passing in front of another, cut with a hard halo. Bold, never blurs, and it is the most current-looking shape in the file.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">14</span>
+          <span class="card-name">Radial Gantt</span>
+        </div>
+        <div class="stage"><svg><use href="#m14"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m14"/></svg>
+            <svg class="s24"><use href="#m14"/></svg>
+            <svg class="s16"><use href="#m14"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m14"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m14"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m14"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m14"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Three nested arcs, aligned at the top and stopping at different points: three tracks of one programme, drawn as a schedule ring.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">15</span>
+          <span class="card-name">Plan and Actual</span>
+        </div>
+        <div class="stage"><svg><use href="#m15"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m15"/></svg>
+            <svg class="s24"><use href="#m15"/></svg>
+            <svg class="s16"><use href="#m15"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m15"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m15"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m15"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m15"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The planned path dashed, the flown path solid, diverging from a shared start. Exactly what the dashboard is for, but it reads as a chart.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">16</span>
+          <span class="card-name">Constellation</span>
+        </div>
+        <div class="stage"><svg><use href="#m16"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m16"/></svg>
+            <svg class="s24"><use href="#m16"/></svg>
+            <svg class="s16"><use href="#m16"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m16"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m16"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m16"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m16"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A T drawn as a star pattern, with the stars set off-grid so it does not look like a diagram. The links are the thinnest lines in the file.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">17</span>
+          <span class="card-name">Docking</span>
+        </div>
+        <div class="stage"><svg><use href="#m17"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m17"/></svg>
+            <svg class="s24"><use href="#m17"/></svg>
+            <svg class="s16"><use href="#m17"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m17"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m17"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m17"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m17"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Two ports on approach, openings facing across the diagonal. Abstract enough to stay interesting, though it can read as a link icon.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">18</span>
+          <span class="card-name">Echo</span>
+        </div>
+        <div class="stage"><svg><use href="#m18"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m18"/></svg>
+            <svg class="s24"><use href="#m18"/></svg>
+            <svg class="s16"><use href="#m18"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m18"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m18"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m18"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m18"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Where the object is, and where the signal says it is. The offset ring is the light-time lag: quiet, odd, and the most abstract option here.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Set C: spacecraft</h2>
+    <p class="section-note">
+      Hardware, not diagrams. These name the thing the programme is building. They are the
+      easiest set to understand at a glance and the hardest to keep from looking like
+      clip art, so each one is cut down to the fewest parts that still read.
+    </p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">19</span>
+          <span class="card-name">Solar Array</span>
+        </div>
+        <div class="stage"><svg><use href="#m19"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m19"/></svg>
+            <svg class="s24"><use href="#m19"/></svg>
+            <svg class="s16"><use href="#m19"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m19"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m19"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m19"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m19"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The satellite everyone draws, cut down to three blocks and tilted off axis. The most immediately readable mark in the file, and also the most expected.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">20</span>
+          <span class="card-name">Dish</span>
+        </div>
+        <div class="stage"><svg><use href="#m20"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m20"/></svg>
+            <svg class="s24"><use href="#m20"/></svg>
+            <svg class="s16"><use href="#m20"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m20"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m20"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m20"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m20"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A tracking antenna, tipped off axis. It says listening and following rather than flying, which is what the dashboard actually does.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">21</span>
+          <span class="card-name">Lander</span>
+        </div>
+        <div class="stage"><svg><use href="#m21"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m21"/></svg>
+            <svg class="s24"><use href="#m21"/></svg>
+            <svg class="s16"><use href="#m21"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m21"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m21"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m21"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m21"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A descent stage on splayed legs. Exactly on subject for a lunar programme, though the legs are the thinnest parts and soften first.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">22</span>
+          <span class="card-name">Capsule</span>
+        </div>
+        <div class="stage"><svg><use href="#m22"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m22"/></svg>
+            <svg class="s24"><use href="#m22"/></svg>
+            <svg class="s16"><use href="#m22"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m22"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m22"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m22"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m22"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A crew capsule with a window slot and the heat shield joint cut in. Large solid area, so it is one of the safest at favicon size.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">23</span>
+          <span class="card-name">Stack</span>
+        </div>
+        <div class="stage"><svg><use href="#m23"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m23"/></svg>
+            <svg class="s24"><use href="#m23"/></svg>
+            <svg class="s16"><use href="#m23"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m23"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m23"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m23"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m23"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A launch vehicle tilted 35 degrees, with the stage joints left visible. The most energetic mark here, and the least neutral.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">24</span>
+          <span class="card-name">Helmet</span>
+        </div>
+        <div class="stage"><svg><use href="#m24"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m24"/></svg>
+            <svg class="s24"><use href="#m24"/></svg>
+            <svg class="s16"><use href="#m24"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m24"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m24"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m24"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m24"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A visor and a neck ring. It puts people in the mark rather than hardware, which nothing else in the file does.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">25</span>
+          <span class="card-name">Rover</span>
+        </div>
+        <div class="stage"><svg><use href="#m25"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m25"/></svg>
+            <svg class="s24"><use href="#m25"/></svg>
+            <svg class="s16"><use href="#m25"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m25"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m25"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m25"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m25"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Body, wheels, mast. Unmistakable at 32&nbsp;px and the friendliest mark here, but it is playful next to the tone of the dashboard.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">26</span>
+          <span class="card-name">Habitat</span>
+          <span class="pick">Chosen</span>
+        </div>
+        <div class="stage"><svg><use href="#m26"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m26"/></svg>
+            <svg class="s24"><use href="#m26"/></svg>
+            <svg class="s16"><use href="#m26"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m26"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m26"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m26"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m26"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          A pressurised dome with a hatch, on the surface, with one body overhead. The closest any mark comes to the words under the wordmark.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Set D: habitat variations</h2>
+    <p class="section-note">
+      26 is the one to build on. These are the same four parts &mdash; dome, surface,
+      hatch, sky &mdash; pushed in eight directions. Every one keeps the original weight and
+      the same surface line, so any of them drops into the header with no other change.
+      26 itself is above, in Set&nbsp;C.
+    </p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">27</span>
+          <span class="card-name">Duo</span>
+        </div>
+        <div class="stage"><svg><use href="#m27"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m27"/></svg>
+            <svg class="s24"><use href="#m27"/></svg>
+            <svg class="s16"><use href="#m27"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m27"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m27"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m27"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m27"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Two pressurised modules and a connecting tunnel. It says base rather than shelter, though the second module thins to a bump at 16&nbsp;px.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">28</span>
+          <span class="card-name">Mast</span>
+        </div>
+        <div class="stage"><svg><use href="#m28"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m28"/></svg>
+            <svg class="s24"><use href="#m28"/></svg>
+            <svg class="s16"><use href="#m28"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m28"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m28"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m28"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m28"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The original with a comms mast. The mast breaks the symmetry and fills the top right, which the plain dome leaves empty.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">29</span>
+          <span class="card-name">Outline</span>
+        </div>
+        <div class="stage"><svg><use href="#m29"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m29"/></svg>
+            <svg class="s24"><use href="#m29"/></svg>
+            <svg class="s16"><use href="#m29"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m29"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m29"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m29"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m29"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The dome as an arch instead of a solid, hatch still filled. The lightest version, and the closest in weight to the wordmark next to it.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">30</span>
+          <span class="card-name">Limb</span>
+        </div>
+        <div class="stage"><svg><use href="#m30"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m30"/></svg>
+            <svg class="s24"><use href="#m30"/></svg>
+            <svg class="s16"><use href="#m30"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m30"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m30"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m30"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m30"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The straight surface replaced by a slight curve, so the base sits on a world instead of on a floor. Smallest change here, biggest gain in meaning.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">31</span>
+          <span class="card-name">Pass</span>
+          <span class="pick">Strong pick</span>
+        </div>
+        <div class="stage"><svg><use href="#m31"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m31"/></svg>
+            <svg class="s24"><use href="#m31"/></svg>
+            <svg class="s16"><use href="#m31"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m31"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m31"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m31"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m31"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The base with something in orbit above it. The thing being tracked and the thing it is tracked for, in one mark; the only variation that shows both.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">32</span>
+          <span class="card-name">Settlement</span>
+        </div>
+        <div class="stage"><svg><use href="#m32"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m32"/></svg>
+            <svg class="s24"><use href="#m32"/></svg>
+            <svg class="s16"><use href="#m32"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m32"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m32"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m32"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m32"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Three domes on the surface: a programme rather than a building. Also the busiest of the set at favicon size.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">33</span>
+          <span class="card-name">Deck</span>
+        </div>
+        <div class="stage"><svg><use href="#m33"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m33"/></svg>
+            <svg class="s24"><use href="#m33"/></svg>
+            <svg class="s16"><use href="#m33"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m33"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m33"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m33"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m33"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          The original with an internal deck line cut in, the same treatment as the capsule's shield joint. Depth without extra parts.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">34</span>
+          <span class="card-name">Module</span>
+        </div>
+        <div class="stage"><svg><use href="#m34"/></svg></div>
+        <div class="tests">
+          <div class="sizes">
+            <svg class="s32"><use href="#m34"/></svg>
+            <svg class="s24"><use href="#m34"/></svg>
+            <svg class="s16"><use href="#m34"/></svg>
+          </div>
+          <div class="chips">
+            <span class="chip chip-dark"><svg><use href="#m34"/></svg></span>
+            <span class="chip chip-accent"><svg><use href="#m34"/></svg></span>
+            <span class="chip chip-light"><svg><use href="#m34"/></svg></span>
+          </div>
+        </div>
+        <div class="lockup">
+          <svg><use href="#m34"/></svg>
+          <span class="lockup-text">
+            <span class="wordmark">TRACK<span>SPACE</span></span>
+            <span class="subtitle">LUNAR BASE READINESS</span>
+          </span>
+        </div>
+        <p class="card-note">
+          Dome plus a horizontal module, split by a hard gap. Reads as assembled hardware rather than as one shelter.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>How to choose</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>If you want</th>
+          <th>Pick</th>
+          <th>Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>The clearest meaning</td>
+          <td>01 Ground Track</td>
+          <td>Only mark that shows tracking and space at once, and it stays unique at small sizes.</td>
+        </tr>
+        <tr>
+          <td>The strongest favicon</td>
+          <td>04 Terminator</td>
+          <td>Largest solid area, so it stays readable in a browser tab and on light surfaces.</td>
+        </tr>
+        <tr>
+          <td>The closest fit to the product</td>
+          <td>05 Readiness Arc</td>
+          <td>The dashboard measures progress to the next gate; the mark shows exactly that.</td>
+        </tr>
+        <tr>
+          <td>Room to grow past lunar work</td>
+          <td>06 Milestone Track</td>
+          <td>Reads as programme schedule, not as one mission type.</td>
+        </tr>
+        <tr>
+          <td>The most distinctive shape</td>
+          <td>07 Trace</td>
+          <td>Nothing else in this category looks like it, and the broken trail is memorable.</td>
+        </tr>
+        <tr>
+          <td>Meaning, not just subject</td>
+          <td>12 Phase Meter</td>
+          <td>The lit part is the ready part: a lunar image and a progress gauge in one shape.</td>
+        </tr>
+        <tr>
+          <td>The boldest, most current look</td>
+          <td>13 Occultation</td>
+          <td>Large solid forms and a hard halo cut; strongest of all of them as an app icon.</td>
+        </tr>
+        <tr>
+          <td>The base and the tracking together</td>
+          <td>31 Pass</td>
+          <td>A habitat with an object in orbit above it: subject and purpose in one mark.</td>
+        </tr>
+        <tr>
+          <td>The mark to match the subtitle</td>
+          <td>26 Habitat</td>
+          <td>A dome, a hatch and a surface: lunar base readiness, drawn.</td>
+        </tr>
+        <tr>
+          <td>Instant recognition</td>
+          <td>19 Solar Array</td>
+          <td>Nobody has to be told what it is; the cost is that it is the expected answer.</td>
+        </tr>
+        <tr>
+          <td>The most neutral, safest mark</td>
+          <td>09 Sector</td>
+          <td>Geometric frame that matches the app grid and never competes with the wordmark.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <b>Chosen: 26 Habitat.</b> It is now in
+    <code>public/trackspace-logo.svg</code> (header mask) and <code>src/app/icon.svg</code>,
+    with <code>icon.png</code>, <code>apple-icon.png</code> and <code>favicon.ico</code>
+    generated from the same artwork. The rest of this file stays as the record of what was
+    considered.
+  </footer>
+</div>
+
+</body>
+</html>

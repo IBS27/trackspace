@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
+import { ClampedText, EventRow } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS } from "../data/seed";
@@ -83,10 +83,13 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
             {readyCount}/{milestone.caps.length} caps ready
           </span>
         </div>
-        <p className="trackspace-mspage-objective">{milestone.objective}</p>
+        <ClampedText
+          text={milestone.objective}
+          className="trackspace-mspage-objective"
+        />
         <div className="trackspace-assess">
           <span className="trackspace-assess-label">ASSESSMENT</span>
-          {milestone.summary}
+          <ClampedText text={milestone.summary} />
         </div>
 
         <div className="trackspace-mscols">
@@ -164,23 +167,12 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
             <div className="trackspace-rows">
               {events.length > 0 ? (
                 events.map((event) => (
-                  <button
-                    type="button"
-                    className="trackspace-crow"
+                  <EventRow
                     key={event.id}
-                    onClick={() => onOpen({ type: "event", id: event.id })}
-                  >
-                    <span className="trackspace-crow-date">{event.date}</span>
-                    <span className="trackspace-crow-main">
-                      <span className="trackspace-crow-title">
-                        {event.title}
-                      </span>
-                      <span className="trackspace-crow-meta">
-                        <StatusChip status={event.status} />
-                        <ConfidenceChip confidence={event.conf} />
-                      </span>
-                    </span>
-                  </button>
+                    event={event}
+                    onOpen={onOpen}
+                    withConfidence
+                  />
                 ))
               ) : (
                 <p className="trackspace-mssec-empty">
