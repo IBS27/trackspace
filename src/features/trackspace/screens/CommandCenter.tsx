@@ -1,4 +1,7 @@
-import { useCallback, useMemo } from "react";
+import { memo, useState } from "react";
+
+import { MissionAtlas } from "../atlas/MissionAtlas";
+import type { AtlasSelection } from "../atlas/model";
 
 import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
@@ -6,25 +9,19 @@ import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
 import {
-  getSceneLocations,
   getSummary,
   getUpcomingMilestones,
 } from "../data/selectors";
-import { EarthMoonScene } from "../scene/EarthMoonScene";
 
 type CommandCenterProps = {
   onOpen: (selection: DrawerSelection) => void;
 };
 
-export function CommandCenter({ onOpen }: CommandCenterProps) {
+export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCenterProps) {
   const dataset = useDataset();
   const summary = getSummary(dataset);
   const upcomingMilestones = getUpcomingMilestones(3, dataset.milestones);
-  const sceneLocations = useMemo(() => getSceneLocations(dataset), [dataset]);
-  const openLocation = useCallback(
-    (id: string) => onOpen({ type: "location", id }),
-    [onOpen],
-  );
+  const [atlasSelection, setAtlasSelection] = useState<AtlasSelection | null>(null);
   // Milestones are in chronological order, so the last achieved one is the most
   // recent program milestone reached — derived, not a hardcoded delta.
   const lastAchieved = dataset.milestones.filter((m) => m.status === "ready").at(-1);
@@ -32,37 +29,12 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
   return (
     <div className="trackspace-cc">
       <div className="trackspace-cc-stage">
-        <EarthMoonScene locations={sceneLocations} onLocationOpen={openLocation} />
-        <span className="trackspace-corner trackspace-corner-tl" />
-        <span className="trackspace-corner trackspace-corner-tr" />
-        <span className="trackspace-corner trackspace-corner-bl" />
-        <span className="trackspace-corner trackspace-corner-br" />
-        <div className="trackspace-hud">
-          <div className="trackspace-hud-readout">
-            <div className="trackspace-hud-readout-title">
-              Sustained-Presence Index
-            </div>
-            <div className="trackspace-hud-row">
-              <span>Composite readiness</span>
-              <b>{summary.overall}%</b>
-            </div>
-            <div className="trackspace-hud-row">
-              <span>Hard blockers</span>
-              <b className="trackspace-blocker">{summary.blockers.length}</b>
-            </div>
-            <div className="trackspace-hud-row">
-              <span>Next crewed flight</span>
-              <b>{summary.nextMilestone.code}</b>
-            </div>
-            <div className="trackspace-hud-row">
-              <span>Target window</span>
-              <b>{summary.nextMilestone.date}</b>
-            </div>
-          </div>
-          <div className="trackspace-hud-hint">
-            DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A SITE FOR EVIDENCE
-          </div>
-        </div>
+        <MissionAtlas
+          dataset={dataset}
+          selection={atlasSelection}
+          onSelectionChange={setAtlasSelection}
+          onOpen={onOpen}
+        />
       </div>
 
       <div className="trackspace-cc-side">
@@ -122,7 +94,8 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
                 type="button"
                 className="trackspace-side-blocker"
                 key={capability.id}
-                onClick={() => onOpen({ type: "capability", id: capability.id })}
+                aria-pressed={atlasSelection?.kind === "capability" && atlasSelection.id === capability.id}
+                onClick={() => setAtlasSelection({ kind: "capability", id: capability.id })}
               >
                 <span className="trackspace-side-blocker-top">
                   <span className="trackspace-side-blocker-name">
@@ -149,7 +122,8 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
                 type="button"
                 className="trackspace-side-row"
                 key={event.id}
-                onClick={() => onOpen({ type: "event", id: event.id })}
+                aria-pressed={atlasSelection?.kind === "event" && atlasSelection.id === event.id}
+                onClick={() => setAtlasSelection({ kind: "event", id: event.id })}
               >
                 <span className="trackspace-side-row-date trackspace-tabular">
                   {event.date}
@@ -176,7 +150,8 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
                 type="button"
                 className="trackspace-side-row"
                 key={milestone.id}
-                onClick={() => onOpen({ type: "milestone", id: milestone.id })}
+                aria-pressed={atlasSelection?.kind === "milestone" && atlasSelection.id === milestone.id}
+                onClick={() => setAtlasSelection({ kind: "milestone", id: milestone.id })}
               >
                 <span className="trackspace-side-row-date trackspace-tabular">
                   {milestone.date}
@@ -201,4 +176,4 @@ export function CommandCenter({ onOpen }: CommandCenterProps) {
       </div>
     </div>
   );
-}
+});

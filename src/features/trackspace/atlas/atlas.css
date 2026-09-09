@@ -1,0 +1,192 @@
+.trackspace-atlas {
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(240px, 1fr) auto;
+  background: #050505;
+}
+.trackspace-atlas .atlas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #202023;
+  background: #090909;
+}
+.trackspace-atlas .atlas-identity { flex-shrink: 0; }
+.trackspace-atlas .atlas-eyebrow,
+.trackspace-atlas .atlas-section-label,
+.trackspace-atlas .atlas-viewport-caption,
+.trackspace-atlas .atlas-layer-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.trackspace-atlas .atlas-eyebrow { color: #85858e; }
+.trackspace-atlas .atlas-identity h2 { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: -.035em; }
+.trackspace-atlas .atlas-views { display: flex; gap: 2px; padding: 3px; border: 1px solid #303035; border-radius: 5px; background: #101011; }
+.trackspace-atlas .atlas-views button {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #94949e;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.trackspace-atlas .atlas-views button[aria-pressed="true"] { color: #d4f2ff; background: #182026; border-color: #344a56; }
+.trackspace-atlas .atlas-views button:hover { color: #d4f2ff; }
+.trackspace-atlas .atlas-viewport { position: relative; min-height: 0; overflow: hidden; }
+.trackspace-atlas .atlas-viewport::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.38), transparent 24%, transparent 80%, rgba(0,0,0,.55)); }
+.trackspace-atlas .atlas-viewport-caption, .trackspace-atlas .atlas-viewport-footer { z-index: 1; }
+.trackspace-atlas .atlas-viewport > canvas { display: block; width: 100%; height: 100%; }
+.trackspace-atlas .atlas-viewport-caption {
+  position: absolute;
+  top: 20px;
+  left: 22px;
+  color: #94949e;
+  pointer-events: none;
+  display: grid;
+  gap: 3px;
+}
+.trackspace-atlas .atlas-viewport-caption strong { color: #dedee3; font-size: 11px; font-weight: 500; letter-spacing: .13em; }
+.trackspace-atlas .atlas-viewport-footer { position: absolute; bottom: 15px; left: 22px; right: 22px; display: flex; justify-content: space-between; gap: 14px; color: #8a8a94; font: 9px/1.5 var(--font-geist-mono), ui-monospace, monospace; pointer-events: none; }
+.trackspace-atlas .atlas-viewport-footer span { padding: 3px 0; text-shadow: 0 1px 5px #000; }
+.trackspace-atlas .atlas-loading,
+.trackspace-atlas .atlas-error { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 30px; color: #a6a6af; font-size: 12px; text-align: center; background: #050505; }
+.trackspace-atlas .atlas-loading-orbit { width: 38px; height: 38px; border: 1px solid #2f4d61; border-radius: 50%; box-shadow: inset -8px -2px 14px #081728, -2px 0 14px #183047; background: radial-gradient(circle at 28% 28%, #48758f, #0b1b2c 65%); }
+.trackspace-atlas .atlas-error strong { color: #dedee3; font-weight: 500; }
+.trackspace-atlas .atlas-error p { margin: 0; max-width: 320px; line-height: 1.6; }
+.trackspace-atlas .atlas-context {
+  border-top: 1px solid #303035;
+  background: #0d0d0e;
+  height: clamp(270px, 36vh, 350px);
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.trackspace-atlas .atlas-layerbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 8px 20px; border-bottom: 1px solid #202023; }
+.trackspace-atlas .atlas-layer-label { color: #85858e; margin-right: 3px; }
+.trackspace-atlas .atlas-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: #b1b1ba; font-size: 11px; white-space: nowrap; }
+.trackspace-atlas .atlas-toggle input { appearance: none; width: 12px; height: 12px; margin: 0; border: 1px solid #505058; border-radius: 2px; background: #101011; cursor: pointer; }
+.trackspace-atlas .atlas-toggle input:checked { background: #76c0dd; border-color: #76c0dd; box-shadow: inset 0 0 0 2px #0c1721; }
+.trackspace-atlas .atlas-toggle input:checked + span { color: #dedee3; }
+.trackspace-atlas .atlas-layer-divider { width: 1px; height: 13px; background: #303035; margin: 0 3px; }
+.trackspace-atlas .atlas-context-body {
+  padding: 0 20px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-content: start;
+  gap: 24px;
+  overflow: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.trackspace-atlas .atlas-context-heading { display: flex; align-items: center; gap: 20px; justify-content: space-between; padding: 16px 20px; }
+.trackspace-atlas .atlas-context-title { min-width: 0; }
+.trackspace-atlas .atlas-context-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-shrink: 0; }
+.trackspace-atlas .atlas-context-actions .trackspace-status-chip { font-size: 10px; }
+.trackspace-atlas .atlas-summary { min-width: 0; }
+.trackspace-atlas .atlas-impact { margin-top: 18px; padding-top: 14px; border-top: 1px solid #29292e; }
+.trackspace-atlas .atlas-section-label { color: #94949e; margin: 0 0 8px; display: block; }
+.trackspace-atlas .atlas-context h3 { font-size: 18px; font-weight: 500; letter-spacing: -.02em; margin: 0; line-height: 1.4; color: #dedee3; }
+.trackspace-atlas .atlas-description { margin: 0; color: #b9b9c2; font-size: 13px; line-height: 1.75; max-width: 65ch; }
+.trackspace-atlas .atlas-clear { border: 0; color: #94949e; background: transparent; cursor: pointer; padding: 4px; width: 28px; height: 28px; line-height: 1; font-size: 22px; }
+.trackspace-atlas .atlas-evidence { display: inline-flex; align-items: center; gap: 12px; border: 1px solid #2e4d5f; border-radius: 3px; padding: 7px 11px; background: #141a1e; color: #bfe8fb; font-size: 12px; white-space: nowrap; cursor: pointer; }
+.trackspace-atlas .atlas-evidence:hover { border-color: #5b9abd; background: #1a2329; }
+.trackspace-atlas .atlas-context-links { min-width: 0; padding-left: 24px; border-left: 1px solid #29292e; }
+.trackspace-atlas .atlas-sites { display: flex; flex-wrap: wrap; gap: 5px; }
+.trackspace-atlas .atlas-site { border: 1px solid #303035; border-radius: 3px; background: #131315; color: #c3c3cc; padding: 6px 9px; cursor: pointer; font-size: 12px; line-height: 1.5; text-align: left; }
+.trackspace-atlas .atlas-site[aria-pressed="true"] { border-color: #4e93b4; background: #182126; color: #d3effc; }
+.trackspace-atlas .atlas-site:hover { border-color: #5b7e94; color: #e2eff8; }
+.trackspace-atlas .atlas-site-dot { display: inline-block; width: 5px; height: 5px; margin: 0 6px 1px 0; border-radius: 50%; background: #63b9dd; }
+.trackspace-atlas .atlas-dependencies { margin-top: 18px; }
+.trackspace-atlas .atlas-dependency-row + .atlas-dependency-row { margin-top: 14px; }
+.trackspace-atlas .atlas-dependency-row .atlas-section-label { margin-bottom: 7px; font-size: 10px; letter-spacing: .03em; text-transform: none; }
+.trackspace-atlas .atlas-capabilities { display: flex; flex-wrap: wrap; gap: 6px; }
+.trackspace-atlas .atlas-capability { padding: 5px 8px; border: 1px solid #303035; border-radius: 2px; background: transparent; color: #c3c3cc; font-size: 12px; line-height: 1.5; text-align: left; cursor: pointer; }
+.trackspace-atlas .atlas-capability:hover { color: #e4eef5; border-color: #7593a6; }
+.trackspace-atlas .atlas-capability[data-status="blocker"] { border-color: #59303a; color: #f1939e; }
+.trackspace-atlas .atlas-capability[data-status="ready"] { color: #8fc9b3; }
+.trackspace-atlas .atlas-note { color: #92929c; font-size: 11px; line-height: 1.6; margin: 16px 0 0; }
+.trackspace-atlas .atlas-infrastructure-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.trackspace-atlas .atlas-empty { margin: 0; color: #a4a4ae; font-size: 12px; line-height: 1.65; }
+.trackspace-atlas button:focus-visible,
+.trackspace-atlas input:focus-visible { outline: 2px solid #8bd7fa; outline-offset: 3px; }
+.trackspace-side-blocker[aria-pressed="true"],
+.trackspace-side-row[aria-pressed="true"] { background: #141719; box-shadow: inset 2px 0 #65bddd; }
+@media (max-width: 1180px) and (min-width: 901px) {
+  .trackspace-atlas .atlas-header { gap: 10px; padding: 8px 16px; }
+  .trackspace-atlas .atlas-context-body { gap: 16px; padding: 0 16px 16px; }
+  .trackspace-atlas .atlas-context-links { padding-left: 16px; }
+  .trackspace-atlas .atlas-context-heading { padding: 14px 16px; gap: 12px; }
+  .trackspace-atlas .atlas-context-actions { gap: 8px; }
+  .trackspace-atlas .atlas-layerbar { padding-left: 18px; padding-right: 18px; }
+}
+@media (max-width: 900px) {
+  .trackspace-cc:has(.trackspace-atlas) { display: flex; flex-direction: column; height: 100%; overflow: auto; background: #090909; }
+  .trackspace-cc:has(.trackspace-atlas) .trackspace-cc-stage { overflow: visible; flex: 0 0 auto; min-height: 0; }
+  .trackspace-atlas { height: auto; grid-template-rows: auto minmax(360px, 47vh) auto; }
+  .trackspace-atlas .atlas-context { height: auto; max-height: none; overflow: visible; grid-template-rows: auto auto auto; }
+  .trackspace-atlas .atlas-context-body { overflow: visible; }
+  .trackspace-cc:has(.trackspace-atlas) .trackspace-cc-side { overflow: visible; flex: 0 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trackspace-cc:has(.trackspace-atlas) .trackspace-side-section { border-top: 1px solid var(--ts-line); }
+}
+@media (max-width: 540px) {
+  .trackspace-atlas .atlas-header { padding: 8px 15px; flex-direction: column; gap: 7px; align-items: stretch; }
+  .trackspace-atlas .atlas-identity { display: flex; align-items: baseline; gap: 10px; }
+  .trackspace-atlas .atlas-identity h2 { font-size: 13px; }
+  .trackspace-atlas .atlas-eyebrow { font-size: 8px; }
+  .trackspace-atlas .atlas-views { justify-content: space-between; }
+  .trackspace-atlas .atlas-views button { flex: 1; padding: 5px; }
+  .trackspace-atlas { grid-template-rows: auto minmax(330px, 43vh) auto; }
+  .trackspace-atlas .atlas-viewport-caption { left: 15px; top: 15px; }
+  .trackspace-atlas .atlas-viewport-footer { left: 15px; right: 15px; font-size: 8px; }
+  .trackspace-atlas .atlas-viewport-footer .atlas-gesture-hint { display: none; }
+  .trackspace-atlas .atlas-layerbar { padding: 11px 15px; gap: 10px; }
+  .trackspace-atlas .atlas-context-heading { padding: 16px 15px; flex-wrap: wrap; gap: 12px; }
+  .trackspace-atlas .atlas-context-title { flex: 1 1 100%; }
+  .trackspace-atlas .atlas-context-actions { width: 100%; justify-content: flex-start; }
+  .trackspace-atlas .atlas-clear { margin-left: auto; }
+  .trackspace-atlas .atlas-context-body { padding: 0 15px 24px; grid-template-columns: 1fr; gap: 20px; }
+  .trackspace-atlas .atlas-context-links { border-left: 0; padding-left: 0; border-top: 1px solid #29292e; padding-top: 18px; }
+  .trackspace-atlas .atlas-context h3 { font-size: 18px; }
+  .trackspace-cc:has(.trackspace-atlas) .trackspace-cc-side { display: flex; }
+}
+
+.trackspace-atlas .atlas-map-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 205px;
+  padding: 5px 7px;
+  border: 1px solid #38383d;
+  border-radius: 3px;
+  background: rgba(9, 9, 10, .88);
+  color: #c5c5ce;
+  font: 9px/1.4 var(--font-geist-mono), ui-monospace, monospace;
+  white-space: normal;
+  text-align: left;
+  cursor: pointer;
+}
+.trackspace-atlas .atlas-map-label:hover { border-color: #6db8d9; background: #181e23; }
+.trackspace-atlas .atlas-map-label[aria-pressed="true"],
+.trackspace-atlas .atlas-map-label.is-selected { border-color: #89d7f6; color: #e2f6ff; box-shadow: 0 0 0 1px #244f65; }
+.trackspace-atlas .atlas-map-dot { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: var(--marker-color, #6bc4e7); }
+.trackspace-atlas .atlas-map-dot[data-status="ready"] { background: #62c99f; }
+.trackspace-atlas .atlas-map-dot[data-status="watch"] { background: #d9ad64; }
+.trackspace-atlas .atlas-map-dot[data-status="blocker"] { background: #e87f8e; }
+
+.trackspace-atlas .atlas-context-body {
+  scrollbar-width: thin;
+  scrollbar-color: #45454d #131315;
+  scrollbar-gutter: stable;
+}
+.trackspace-atlas .atlas-context-body::-webkit-scrollbar { width: 5px; }
+.trackspace-atlas .atlas-context-body::-webkit-scrollbar-track { background: #131315; }
+.trackspace-atlas .atlas-context-body::-webkit-scrollbar-thumb { background: #45454d; border-radius: 3px; }
