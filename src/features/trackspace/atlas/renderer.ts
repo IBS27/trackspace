@@ -103,7 +103,12 @@ export function createAtlasRenderer(
   terrainLight.shadow.normalBias = 0.015;
   scene.add(terrainLight);
   scene.add(terrainLight.target);
-  const bodies = createBodies(invalidate, callbacks.onReady);
+  const bodies = createBodies(invalidate, () => {
+    // Texture completion can clear a surface-load error overlay; make sure the
+    // south-pole mesh is requested again rather than leaving the view empty.
+    ensureSurface();
+    callbacks.onReady();
+  });
   system.add(bodies.earth, bodies.moon);
   const markerGroup = new THREE.Group();
   system.add(markerGroup);
@@ -305,6 +310,7 @@ export function createAtlasRenderer(
     // and its camera intact instead of disposing handles from the lost context.
     contextLost = false;
     renderer.shadowMap.needsUpdate = true;
+    ensureSurface();
     callbacks.onReady();
     invalidate();
   }
@@ -625,6 +631,9 @@ export function createAtlasRenderer(
     invalidate();
   }
 
+  function ensureSurface() {
+    if (view === "surface" && !terrain) loadSurface();
+  }
   function loadSurface() {
     if (terrainPromise) return;
     const status = document.createElement("div");
@@ -705,6 +714,8 @@ export function createAtlasRenderer(
         callbacks.onReady();
       })
       .catch(() => {
+        // Allow the next surface request to try again instead of pinning the failure.
+        terrainPromise = null;
         if (!disposed)
           callbacks.onError(
             "Lunar terrain could not load. Retry the 3D view, or continue exploring the site evidence.",
