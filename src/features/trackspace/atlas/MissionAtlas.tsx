@@ -70,7 +70,7 @@ function CapabilityLinks({ label, capabilities, onSelect }: {
         {capabilities.map((capability) => (
           <button key={capability.id} type="button" className="atlas-capability" data-status={capability.status}
             title={capability.name} onClick={() => onSelect({ kind: "capability", id: capability.id })}>
-            {capability.short}
+            {capability.name}
           </button>
         ))}
       </div>
@@ -159,7 +159,6 @@ export const MissionAtlas = memo(function MissionAtlas({ dataset, selection, onS
     <section className="trackspace-atlas" aria-label="Interactive mission atlas">
       <div className="atlas-header">
         <div className="atlas-identity">
-          <span className="atlas-eyebrow">Spatial context</span>
           <h2>Mission atlas</h2>
         </div>
         <div className="atlas-views" role="group" aria-label="Atlas viewpoint">
@@ -181,28 +180,28 @@ export const MissionAtlas = memo(function MissionAtlas({ dataset, selection, onS
           <div className="atlas-viewport-footer"><span>{view === "surface" ? "LOLA terrain · illustrative lighting" : view === "system" ? "Distance compressed · geographic context" : "Geographic context · illustrative lighting"}</span><span className="atlas-gesture-hint">Drag to orbit · scroll to zoom</span></div>
         </>}
       </div>
-      <div className="atlas-context">
+      <section className="atlas-context" aria-label="Atlas details">
         <div className="atlas-layerbar" role="group" aria-label="Atlas layers">
           <span className="atlas-layer-label">Layers</span>
           <label className="atlas-toggle"><input type="checkbox" checked={showConnections} onChange={(event) => setShowConnections(event.target.checked)} /><span>Connections</span></label>
           <span className="atlas-layer-divider" aria-hidden="true" />
           {STAGES.map((stage) => <label className="atlas-toggle" key={stage}><input type="checkbox" checked={stages.includes(stage)} onChange={() => setStages((current) => current.includes(stage) ? current.filter((item) => item !== stage) : [...current, stage])} /><span>{stage[0].toUpperCase() + stage.slice(1)}</span></label>)}
         </div>
-        <div className="atlas-context-body">
-          <div>
-            <div className="atlas-context-heading">
-              <div>
-                <span className="atlas-section-label">{selectedInfrastructure ? `${selectedInfrastructure.stage} infrastructure` : context.selection ? selectedEvent ? `What changed · ${selectedEvent.date}` : context.selection.kind : view === "surface" ? "Lunar infrastructure" : "Program geography"}</span>
-                <h3>{selectedInfrastructure?.name ?? (context.selection ? context.title : view === "surface" ? "South pole exploration" : "Earth–Moon infrastructure")}</h3>
-              </div>
-              {context.selection && <button type="button" className="atlas-clear" aria-label="Clear atlas selection" onClick={() => { setViewOverride({ selection: null, view: "system" }); onSelectionChange(null); }}>×</button>}
-            </div>
+        <div className="atlas-context-heading">
+          <div className="atlas-context-title">
+            <span className="atlas-section-label">{selectedInfrastructure ? `${selectedInfrastructure.stage} infrastructure` : context.selection ? selectedEvent ? `What changed · ${selectedEvent.date}` : context.selection.kind : view === "surface" ? "Lunar infrastructure" : "Program geography"}</span>
+            <h3>{selectedInfrastructure?.name ?? (context.selection ? context.title : view === "surface" ? "South pole exploration" : "Earth–Moon infrastructure")}</h3>
+          </div>
+          <div className="atlas-context-actions">
+            {selectedRecord && <StatusChip status={selectedRecord.status} />}
+            {evidence && <button type="button" className="atlas-evidence" onClick={() => onOpen(evidence)}>Open evidence <span aria-hidden="true">↗</span></button>}
+            {context.selection && <button type="button" className="atlas-clear" aria-label="Clear atlas selection" onClick={() => { setViewOverride({ selection: null, view: "system" }); onSelectionChange(null); }}>×</button>}
+          </div>
+        </div>
+        <div className="atlas-context-body" key={`${selection?.kind ?? "overview"}:${selection?.id ?? view}:${selectedInfrastructure?.id ?? ""}`}>
+          <div className="atlas-summary">
             <p className="atlas-description">{selectedInfrastructure?.description ?? (context.selection ? context.subtitle : view === "surface" ? "Explore candidate regions and the systems needed to live and work on the Moon. Select a symbol to inspect its capability." : "Select a site, blocker, milestone, or recent update to explore its place in the lunar program.")}</p>
-            {selectedEvent && <p className="atlas-description">{selectedEvent.downstream}</p>}
-            <div className="atlas-context-meta">
-              {selectedRecord && <StatusChip status={selectedRecord.status} />}
-              {evidence && <button type="button" className="atlas-evidence" onClick={() => onOpen(evidence)}>Open evidence <span aria-hidden="true">↗</span></button>}
-            </div>
+            {selectedEvent && <div className="atlas-impact"><span className="atlas-section-label">Program impact</span><p className="atlas-description">{selectedEvent.downstream}</p></div>}
             {view === "surface" && <p className="atlas-note">Symbols and base layout are illustrative. Planned and conceptual systems have not been deployed.</p>}
             {showConnections && <p className="atlas-note">{context.selection ? "Connections show program relationships, not flight paths." : "Select a capability, milestone, or update to show its connections."}</p>}
           </div>
@@ -218,11 +217,11 @@ export const MissionAtlas = memo(function MissionAtlas({ dataset, selection, onS
               <CapabilityLinks label="Affected capabilities" capabilities={relatedCapabilities} onSelect={onSelectionChange} />
               <CapabilityLinks label="Requires" capabilities={context.upstream} onSelect={onSelectionChange} />
               <CapabilityLinks label="Enables" capabilities={context.downstream} onSelect={onSelectionChange} />
-              {affectedMilestones.length > 0 && <div className="atlas-dependency-row"><span className="atlas-section-label">{selectedEvent ? "Affected milestones" : "Required for"}</span><div className="atlas-capabilities">{affectedMilestones.map((milestone) => <button key={milestone.id} type="button" className="atlas-capability" onClick={() => onSelectionChange({ kind: "milestone", id: milestone.id })}>{milestone.code}</button>)}</div></div>}
+              {affectedMilestones.length > 0 && <div className="atlas-dependency-row"><span className="atlas-section-label">{selectedEvent ? "Affected milestones" : "Required for"}</span><div className="atlas-capabilities">{affectedMilestones.map((milestone) => <button key={milestone.id} type="button" className="atlas-capability" title={milestone.name} onClick={() => onSelectionChange({ kind: "milestone", id: milestone.id })}>{milestone.code}</button>)}</div></div>}
             </div>}
           </div>
         </div>
-      </div>
+      </section>
     </section>
   );
 });
