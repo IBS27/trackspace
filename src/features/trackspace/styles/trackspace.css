@@ -989,8 +989,10 @@
 /* Shared list-button rhythm for sidebar blockers and rows. */
 .trackspace-side-blocker,
 .trackspace-side-row {
-  width: 100%;
-  padding: 11px 0;
+  /* Keep text aligned while giving the selection stripe its own gutter. */
+  width: calc(100% + 20px);
+  margin-inline: -10px;
+  padding: 11px 10px;
   border: 0;
   background: transparent;
   color: inherit;
