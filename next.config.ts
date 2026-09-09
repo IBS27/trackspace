@@ -26,7 +26,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: process.env.TRACKSPACE_DEV_ORIGINS?.split(",").filter(Boolean),
+  allowedDevOrigins: process.env.TRACKSPACE_DEV_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   // Pin the workspace root to this project (a stray lockfile in $HOME would
   // otherwise be inferred as the root).
   turbopack: {

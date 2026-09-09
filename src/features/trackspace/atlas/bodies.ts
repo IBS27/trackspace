@@ -128,6 +128,7 @@ export function createBodies(invalidate: () => void, onReady: () => void) {
   }
   let earthDetailed = false;
   let moonDetailed = false;
+  let moonHeight: THREE.Texture | undefined;
   function detail(body: "earth" | "moon") {
     if (body === "earth" && !earthDetailed) {
       earthDetailed = true;
@@ -176,22 +177,32 @@ export function createBodies(invalidate: () => void, onReady: () => void) {
           moonMaterial.needsUpdate = true;
           invalidate();
         },
+        undefined,
+        () => {
+          moonDetailed = false;
+        },
       );
       resources.push(normalMap);
       // Elevation is independent of surface albedo. Packed height is decoded in the vertex shader.
-      const height = texture("/textures/atlas-moon-height.png", false);
-      height.minFilter = THREE.NearestFilter;
-      height.magFilter = THREE.NearestFilter;
-      moonMaterial.onBeforeCompile = (shader) => {
-        shader.uniforms.lunarHeight = { value: height };
-        shader.vertexShader =
-          "uniform sampler2D lunarHeight;\n" + shader.vertexShader;
-        shader.vertexShader = shader.vertexShader.replace(
-          "#include <begin_vertex>",
-          `#include <begin_vertex>\nvec2 h=texture2D(lunarHeight,uv).rg*255.;float km=(h.r*256.+h.g)/2000.-10.;transformed += normal * km * ${MOON_RADIUS / 1737.4};`,
-        );
-      };
-      moonMaterial.customProgramCacheKey = () => "atlas-lola-moon-v1";
+      if (!moonHeight) {
+        const height = texture("/textures/atlas-moon-height.png", false);
+        height.minFilter = THREE.NearestFilter;
+        height.magFilter = THREE.NearestFilter;
+        moonHeight = height;
+        moonMaterial.onBeforeCompile = (shader) => {
+          shader.uniforms.lunarHeight = { value: height };
+          shader.vertexShader =
+            "uniform sampler2D lunarHeight;\n" + shader.vertexShader;
+          shader.vertexShader = shader.vertexShader.replace(
+            "#include <begin_vertex>",
+            `#include <begin_vertex>\nvec2 h=texture2D(lunarHeight,uv).rg*255.;float km=(h.r*256.+h.g)/2000.-10.;transformed += normal * km * ${MOON_RADIUS / 1737.4};`,
+          );
+        };
+        moonMaterial.customProgramCacheKey = () => "atlas-lola-moon-v1";
+        // The material may already be compiled; rebuild so displacement applies
+        // even if the color and normal plates never arrive.
+        moonMaterial.needsUpdate = true;
+      }
     }
   }
   return {
