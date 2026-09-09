@@ -27,7 +27,7 @@ const VIEWS = [
     id: "command",
     icon: "⊕",
     name: "Command Center",
-    note: "Live Earth–Moon view and the overall readiness index",
+    note: "Explore the Earth–Moon atlas, program sites, and readiness",
   },
   {
     id: "dependency",
