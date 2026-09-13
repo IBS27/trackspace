@@ -16,17 +16,17 @@ const IMPACT_COLOR: Record<Impact, string> = {
 };
 
 const MONTHS = [
-  "jan", "feb", "mar", "apr", "may", "jun",
-  "jul", "aug", "sep", "oct", "nov", "dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/** "now" marker label: the model knows events up to the latest logged one. */
+/** Divider label: everything below is projected; the log runs to this month. */
 function epochLabel(events: TrackspaceEvent[]): string {
   const lastLogged = events.filter((e) => !e.future).at(-1);
-  if (!lastLogged) return "now · model epoch";
+  if (!lastLogged) return "Projected from here";
   const [year, month] = lastLogged.date.split("-");
   const name = MONTHS[Number(month) - 1] ?? month;
-  return `now · model epoch · ${name} ${year}`;
+  return `Projected from here · logged through ${name} ${year}`;
 }
 
 function statusColor(status: Status): string {

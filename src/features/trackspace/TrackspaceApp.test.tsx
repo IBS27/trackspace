@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TrackspaceApp } from "./TrackspaceApp";
 import { CURATED } from "./data/selectors";
 import type { Dataset } from "./data/types";
+import { useQueries } from "convex/react";
+
+vi.mock("convex/react", () => ({ useQueries: vi.fn() }));
 
 // The Command Center's three.js scene needs WebGL, which jsdom lacks.
 vi.mock("./atlas/AtlasScene", () => ({
@@ -31,14 +34,44 @@ vi.mock("./atlas/AtlasScene", () => ({
 afterEach(cleanup);
 
 describe("TrackspaceApp", () => {
-  it("renders the header with the gate, clock, and live status", () => {
+  it("renders the header with the gate, clock, and snapshot status", () => {
     render(<TrackspaceApp />);
 
     const header = screen.getByRole("banner");
     expect(header.textContent).toContain("TRACKSPACE");
     expect(header.textContent).toContain("Next Gate");
     expect(header.textContent).toContain("UTC");
-    expect(header.textContent).toContain("LIVE");
+    expect(header.textContent).toContain("SNAPSHOT");
+  });
+
+  it("keeps the dashboard and navigation usable when the backend is disabled", () => {
+    vi.mocked(useQueries).mockReturnValue({ dataset: new Error("Free plan limits exceeded") });
+    render(<TrackspaceApp live />);
+    expect(screen.getByRole("banner").textContent).toContain("SNAPSHOT");
+    expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Program" }));
+    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+  });
+
+  it("retains the last live dataset and selected view through failure and recovery", () => {
+    const updated = { ...CURATED, milestones: CURATED.milestones.map((item) => ({ ...item, code: "UPDATED" })) };
+    vi.mocked(useQueries).mockReturnValue({ dataset: undefined });
+    const { rerender } = render(<TrackspaceApp live />);
+    expect(screen.getByRole("banner").textContent).toContain("CONNECTING");
+    vi.mocked(useQueries).mockReturnValue({ dataset: updated });
+    rerender(<TrackspaceApp live />);
+    expect(screen.getByRole("banner").textContent).toContain("LIVE");
+    fireEvent.click(screen.getByRole("button", { name: "Program" }));
+    vi.mocked(useQueries).mockReturnValue({ dataset: new Error("Backend unavailable") });
+    rerender(<TrackspaceApp live />);
+    expect(screen.getByRole("banner").textContent).toContain("SNAPSHOT");
+    expect(screen.getByRole("banner").textContent).toContain("UPDATED");
+    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    vi.mocked(useQueries).mockReturnValue({ dataset: CURATED });
+    rerender(<TrackspaceApp live />);
+    expect(screen.getByRole("banner").textContent).toContain("LIVE");
+    expect(screen.getByRole("banner").textContent).not.toContain("UPDATED");
+    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
   });
 
   it("renders a tab for every view with the Command Center active", () => {

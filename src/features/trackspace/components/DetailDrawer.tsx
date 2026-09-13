@@ -28,6 +28,7 @@ import type {
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { ArrowUpRightIcon, CheckIcon, ChevronIcon, CloseIcon } from "./icons";
 import { StatusChip } from "./StatusChip";
 
 export type DrawerSelection =
@@ -70,9 +71,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={event.status} />
         <ConfidenceChip confidence={event.conf} />
-        <span className="trackspace-cchip trackspace-cchip-up">
-          {event.impact} impact
-        </span>
+        <span className="trackspace-tag">{event.impact} impact</span>
       </>
     );
     body = <EventBody event={event} onOpen={onOpen} />;
@@ -88,7 +87,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={capability.status} />
         <ConfidenceChip confidence={capability.conf} />
-        <span className="trackspace-cchip">{capability.readiness}% READY</span>
+        <span className="trackspace-tag trackspace-tabular">{capability.readiness}% ready</span>
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
@@ -103,13 +102,9 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
     meta = (
       <>
         <StatusChip status={milestone.status} />
-        <span className="trackspace-cchip trackspace-cchip-up">
-          {milestone.dateConf} date
-        </span>
+        <span className="trackspace-tag">{milestone.dateConf} date</span>
         {milestone.critical && (
-          <span className="trackspace-cchip trackspace-cchip-critical">
-            CRITICAL PATH
-          </span>
+          <span className="trackspace-tag is-critical">Critical path</span>
         )}
       </>
     );
@@ -141,15 +136,15 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
         aria-label={title}
       >
         <div className="trackspace-drawer-head">
-          <div className="trackspace-drawer-kicker">{kicker}</div>
+          <div className="trackspace-eyebrow trackspace-drawer-kicker">{kicker}</div>
           <h2>{title}</h2>
           <button
             type="button"
-            className="trackspace-drawer-close"
+            className="trackspace-iconbtn trackspace-drawer-close"
             onClick={onClose}
             aria-label="Close details"
           >
-            ✕
+            <CloseIcon size={14} />
           </button>
           <div className="trackspace-drawer-meta">{meta}</div>
         </div>
@@ -168,7 +163,7 @@ function DrawerSection({
 }) {
   return (
     <div className="trackspace-drawer-section">
-      <div className="trackspace-drawer-label">{label}</div>
+      <div className="trackspace-eyebrow trackspace-drawer-label">{label}</div>
       {children}
     </div>
   );
@@ -187,10 +182,8 @@ function FoldSection({
 }) {
   return (
     <details className="trackspace-drawer-section trackspace-fold" open={defaultOpen}>
-      <summary className="trackspace-drawer-label trackspace-fold-head">
-        <span className="trackspace-fold-chevron" aria-hidden="true">
-          ▸
-        </span>
+      <summary className="trackspace-eyebrow trackspace-drawer-label trackspace-fold-head">
+        <ChevronIcon size={12} className="trackspace-fold-chevron" />
         {label}
         {count !== undefined && (
           <span className="trackspace-fold-count trackspace-tabular">
@@ -240,7 +233,7 @@ export function ClampedText({
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? "Less" : "More"}
+          {expanded ? "Show less" : "Show more"}
         </button>
       )}
     </div>
@@ -310,7 +303,14 @@ function SourceList({ sources }: { sources: Source[] }) {
             <span className="trackspace-source-ico">{sourceBadge(source)}</span>
             {source.title}
             <span className="trackspace-source-url">
-              {href ? `↗ ${sourceHost(href)}` : "invalid source URL"}
+              {href ? (
+                <>
+                  {sourceHost(href)}
+                  <ArrowUpRightIcon size={11} />
+                </>
+              ) : (
+                "invalid source URL"
+              )}
             </span>
           </>
         );
@@ -439,7 +439,9 @@ function EventBody({
           <ul className="trackspace-evidence-list is-ok">
             {event.confirmed.map((item) => (
               <li key={item}>
-                <span className="trackspace-evidence-mark">✓</span>
+                <span className="trackspace-evidence-mark">
+                  <CheckIcon size={12} />
+                </span>
                 {item}
               </li>
             ))}
@@ -447,9 +449,9 @@ function EventBody({
         ) : (
           <p className="trackspace-muted">
             {event.future
-              ? "Nothing officially confirmed yet — projected event."
+              ? "Nothing confirmed yet. This event is projected."
               : isDiscoveryEvent(event)
-                ? "Nothing confirmed yet — unreviewed discovery lead."
+                ? "Nothing confirmed yet. This is an unreviewed discovery lead."
                 : "Nothing officially confirmed yet."}
           </p>
         )}
@@ -467,7 +469,7 @@ function EventBody({
         </FoldSection>
       )}
       <FoldSection label="Possible downstream impact">
-        <div className="trackspace-downbox">{event.downstream}</div>
+        <p className="trackspace-note">{event.downstream}</p>
       </FoldSection>
       <LocationRows locations={locations} onOpen={onOpen} />
       <FoldSection label="Sources & provenance" count={event.sources.length} defaultOpen>
@@ -554,7 +556,7 @@ function CapabilityBody({
           </div>
         ) : (
           <p className="trackspace-muted">
-            No upstream dependencies — this is a foundation capability.
+            No upstream dependencies. This is a foundation capability.
           </p>
         )}
       </DrawerSection>

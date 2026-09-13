@@ -1,15 +1,13 @@
 import type { ReactNode } from "react";
+import { VIEWS } from "../views";
+import { InfoIcon } from "./icons";
 
-export type TrackspaceNavItem = {
-  id: string;
-  icon: string;
-  name: string;
-};
+export type DataStatus = "live" | "connecting" | "snapshot";
 
 type AppShellProps = {
+  dataStatus: DataStatus;
   activeView: string;
   drawer: ReactNode;
-  navItems: TrackspaceNavItem[];
   onNavChange: (view: string) => void;
   onOpenBriefing: () => void;
   utcTime: string;
@@ -19,10 +17,10 @@ type AppShellProps = {
 };
 
 export function AppShell({
+  dataStatus,
   activeView,
   children,
   drawer,
-  navItems,
   nextGate,
   onNavChange,
   onOpenBriefing,
@@ -32,92 +30,78 @@ export function AppShell({
   return (
     <div className="trackspace-app">
       <Header
+        dataStatus={dataStatus}
         nextGate={nextGate}
         onOpenBriefing={onOpenBriefing}
         utcTime={utcTime}
       />
-      <TabBar
-        activeView={activeView}
-        navItems={navItems}
-        onNavChange={onNavChange}
-      />
-      <div className="trackspace-body">
-        <main className="trackspace-screen">{children}</main>
+      <TabBar activeView={activeView} onNavChange={onNavChange} />
+      <main className="trackspace-screen">{children}</main>
+      <div className="trackspace-overlays">
+        {drawer}
+        {overlay}
       </div>
-      <div className="trackspace-drawer-mount">{drawer}</div>
-      <div className="trackspace-drawer-mount">{overlay}</div>
     </div>
   );
 }
 
+const CONNECTION: Record<DataStatus, { label: string; title: string }> = {
+  live: { label: "LIVE", title: "Receiving live updates" },
+  connecting: {
+    label: "CONNECTING",
+    title: "Connecting to live updates. Showing the saved dataset.",
+  },
+  snapshot: {
+    label: "SNAPSHOT",
+    title: "Live updates unavailable. Showing the last available dataset. Reload to reconnect.",
+  },
+};
+
 function Header({
+  dataStatus,
   nextGate,
   onOpenBriefing,
   utcTime,
 }: {
+  dataStatus: DataStatus;
   nextGate: string;
   onOpenBriefing: () => void;
   utcTime: string;
 }) {
+  const connection = CONNECTION[dataStatus];
   return (
     <header className="trackspace-header">
       <div className="trackspace-brand" aria-label="Trackspace">
-        <TrackspaceLogoMark />
-        <span className="trackspace-brand-primary">
-          <span className="trackspace-wordmark">
-            TRACK<span>SPACE</span>
-          </span>
-          <span className="trackspace-subtitle">LUNAR BASE READINESS</span>
+        <span className="trackspace-logo-mark" role="img" aria-label="Trackspace logo" />
+        <span className="trackspace-wordmark">
+          TRACK<span>SPACE</span>
         </span>
+        <span className="trackspace-subtitle">Lunar base readiness</span>
       </div>
 
       <div className="trackspace-header-stats" aria-label="Mission status">
         <StatusCell label="Next Gate" value={nextGate} />
         <StatusCell label="UTC" value={utcTime} tabular />
-        <span className="trackspace-live">
-          <span className="trackspace-live-dot" aria-hidden="true" />
-          LIVE
+        <span
+          className="trackspace-conn"
+          data-state={dataStatus}
+          role="status"
+          title={connection.title}
+        >
+          <span className="trackspace-conn-dot" aria-hidden="true" />
+          {connection.label}
         </span>
         <button
           type="button"
-          className="trackspace-help-btn"
+          className="trackspace-iconbtn"
           onClick={onOpenBriefing}
           aria-label="Open mission briefing"
           title="Mission briefing"
         >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <circle
-              cx="8"
-              cy="8"
-              r="6.25"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.3"
-            />
-            <circle cx="8" cy="5.1" r="1" fill="currentColor" />
-            <line
-              x1="8"
-              y1="7.6"
-              x2="8"
-              y2="11.2"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          </svg>
+          <InfoIcon size={15} />
         </button>
       </div>
     </header>
-  );
-}
-
-function TrackspaceLogoMark() {
-  return (
-    <span
-      className="trackspace-logo-mark"
-      role="img"
-      aria-label="Trackspace logo"
-    />
   );
 }
 
@@ -140,32 +124,28 @@ function StatusCell({
 
 function TabBar({
   activeView,
-  navItems,
   onNavChange,
 }: {
   activeView: string;
-  navItems: TrackspaceNavItem[];
   onNavChange: (view: string) => void;
 }) {
   return (
     <nav className="trackspace-tabbar" aria-label="Trackspace views">
-      {navItems.map((item) => (
-        <button
-          type="button"
-          key={item.id}
-          className={`trackspace-tab${item.id === activeView ? " is-active" : ""}`}
-          onClick={() => onNavChange(item.id)}
-          aria-current={item.id === activeView ? "page" : undefined}
-        >
-          <span
-            className={`trackspace-tab-icon trackspace-tab-icon-${item.id}`}
-            aria-hidden="true"
+      {VIEWS.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button
+            type="button"
+            key={item.id}
+            className={`trackspace-tab${item.id === activeView ? " is-active" : ""}`}
+            onClick={() => onNavChange(item.id)}
+            aria-current={item.id === activeView ? "page" : undefined}
           >
-            {item.icon}
-          </span>
-          {item.name}
-        </button>
-      ))}
+            <Icon size={15} />
+            {item.name}
+          </button>
+        );
+      })}
     </nav>
   );
 }

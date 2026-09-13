@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
-import { AppShell, type TrackspaceNavItem } from "./components/AppShell";
+import { useQueries } from "convex/react";
+import { AppShell, type DataStatus } from "./components/AppShell";
 import {
   DetailDrawer,
   type DrawerSelection,
@@ -17,21 +17,8 @@ import { MilestonesScreen } from "./screens/MilestonesScreen";
 import { ProgramScreen } from "./screens/ProgramScreen";
 import { TimelineScreen } from "./screens/TimelineScreen";
 import { api } from "@/lib/convex";
+import { isTrackspaceView, VIEWS, type TrackspaceView } from "./views";
 
-type TrackspaceView =
-  | "command"
-  | "dependency"
-  | "timeline"
-  | "milestones"
-  | "program";
-
-const NAV_ITEMS: TrackspaceNavItem[] = [
-  { id: "command", icon: "⊕", name: "Command Center" },
-  { id: "dependency", icon: "⧉", name: "Dependency Map" },
-  { id: "timeline", icon: "≣", name: "Timeline" },
-  { id: "milestones", icon: "◎", name: "Milestones" },
-  { id: "program", icon: "⌘", name: "Program" },
-];
 
 export function TrackspaceApp({
   dataset = CURATED,
@@ -44,12 +31,32 @@ export function TrackspaceApp({
   return <TrackspaceWorkspace dataset={dataset} />;
 }
 
+const DATASET_QUERY = { dataset: { query: api.trackspace.dataset, args: {} } };
+
 function LiveTrackspaceApp({ initialDataset }: { initialDataset: Dataset }) {
-  const liveDataset = useQuery(api.trackspace.dataset);
-  return <TrackspaceWorkspace dataset={liveDataset ?? initialDataset} />;
+  // Unlike useQuery, useQueries returns query errors instead of throwing them.
+  const { dataset: result } = useQueries(DATASET_QUERY) as {
+    dataset: Dataset | null | undefined | Error;
+  };
+  const liveDataset = result instanceof Error ? null : result;
+  const [lastDataset, setLastDataset] = useState(initialDataset);
+  if (liveDataset && liveDataset !== lastDataset) setLastDataset(liveDataset);
+
+  return (
+    <TrackspaceWorkspace
+      dataset={liveDataset ?? lastDataset}
+      dataStatus={liveDataset ? "live" : result === undefined ? "connecting" : "snapshot"}
+    />
+  );
 }
 
-function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
+function TrackspaceWorkspace({
+  dataset,
+  dataStatus = "snapshot",
+}: {
+  dataset: Dataset;
+  dataStatus?: DataStatus;
+}) {
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [briefingRequested, setBriefingRequested] = useState(false);
@@ -87,8 +94,8 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
         return;
       }
       const index = Number(event.key) - 1;
-      const item = NAV_ITEMS[index];
-      if (item && isTrackspaceView(item.id)) {
+      const item = VIEWS[index];
+      if (item) {
         setActiveView(item.id);
         setSelection(null);
       }
@@ -101,6 +108,7 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
   return (
     <DatasetProvider value={dataset}>
       <AppShell
+        dataStatus={dataStatus}
         activeView={activeView}
         drawer={
           selection && (
@@ -111,11 +119,10 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
             />
           )
         }
-        navItems={NAV_ITEMS}
         nextGate={`${summary.nextMilestone.code} · ${summary.nextMilestone.date}`}
         overlay={
           <IntroBriefing
-            onNavigate={(view) => {
+                onNavigate={(view) => {
               if (isTrackspaceView(view)) {
                 setActiveView(view);
                 setSelection(null);
@@ -147,15 +154,5 @@ function TrackspaceWorkspace({ dataset }: { dataset: Dataset }) {
         )}
       </AppShell>
     </DatasetProvider>
-  );
-}
-
-function isTrackspaceView(view: string): view is TrackspaceView {
-  return (
-    view === "command" ||
-    view === "dependency" ||
-    view === "timeline" ||
-    view === "milestones" ||
-    view === "program"
   );
 }

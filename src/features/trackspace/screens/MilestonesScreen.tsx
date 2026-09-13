@@ -54,10 +54,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
             </span>
             <span
               className="trackspace-msri-dot"
-              style={{
-                background: statusColor(item.status),
-                boxShadow: `0 0 7px ${statusColor(item.status)}`,
-              }}
+              style={{ background: statusColor(item.status) }}
               aria-hidden="true"
             />
           </button>
@@ -65,30 +62,23 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
       </nav>
 
       <div className="trackspace-mspage" key={current}>
-        <div className="trackspace-mspage-kicker">
+        <div className="trackspace-eyebrow">
           {milestone.code} · target {milestone.date}
         </div>
         <h1>{milestone.name}</h1>
-        <div className="trackspace-mspage-meta">
+        <div className="trackspace-page-meta">
           <StatusChip status={milestone.status} />
-          <span className="trackspace-cchip trackspace-cchip-up">
-            {milestone.dateConf} date confidence
-          </span>
+          <span className="trackspace-tag">{milestone.dateConf} date confidence</span>
           {milestone.critical && (
-            <span className="trackspace-cchip trackspace-cchip-up trackspace-cchip-critical">
-              Critical path
-            </span>
+            <span className="trackspace-tag is-critical">Critical path</span>
           )}
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
-            {readyCount}/{milestone.caps.length} caps ready
+          <span className="trackspace-tag trackspace-tabular">
+            {readyCount}/{milestone.caps.length} capabilities ready
           </span>
         </div>
-        <ClampedText
-          text={milestone.objective}
-          className="trackspace-mspage-objective"
-        />
-        <div className="trackspace-assess">
-          <span className="trackspace-assess-label">ASSESSMENT</span>
+        <ClampedText text={milestone.objective} className="trackspace-page-lede" />
+        <div className="trackspace-note">
+          <span className="trackspace-eyebrow">Assessment</span>
           <ClampedText text={milestone.summary} />
         </div>
 
@@ -150,12 +140,12 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
                   <span className="trackspace-caprow-name">
                     {capability.name}
                   </span>
-                  <span className="trackspace-caprow-flag">BLOCKER</span>
+                  <span className="trackspace-caprow-flag">Blocker</span>
                 </button>
               ))
             ) : (
               <p className="trackspace-mssec-empty">
-                No hard blockers on the required set — risk is in Watch items.
+                No hard blockers on the required set. The risk sits in Watch items.
               </p>
             )}
           </section>

@@ -44,7 +44,7 @@ describe("MilestonesScreen", () => {
     );
     expect(
       screen.getByText(
-        `${getMilestoneReadyCount("a3")}/${a3.caps.length} caps ready`,
+        `${getMilestoneReadyCount("a3")}/${a3.caps.length} capabilities ready`,
       ),
     ).toBeTruthy();
     expect(railItem(a3.name).getAttribute("aria-current")).toBe("true");
@@ -65,7 +65,7 @@ describe("MilestonesScreen", () => {
   it("lists the milestone's open blockers", () => {
     render(<MilestonesScreen onOpen={() => {}} />);
     // Blocker rows are the only buttons whose accessible name ends in BLOCKER.
-    const flagged = screen.queryAllByRole("button", { name: /BLOCKER$/ });
+    const flagged = screen.queryAllByRole("button", { name: /Blocker$/ });
     expect(flagged.length).toBe(getMilestoneBlockers("a3").length);
   });
 

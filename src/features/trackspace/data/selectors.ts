@@ -273,6 +273,8 @@ export type Summary = {
   statusCounts: Record<Status, number>;
   blockers: Capability[];
   nextMilestone: Milestone;
+  /** Most recent milestone reached; milestones are in chronological order. */
+  lastAchieved: Milestone | undefined;
   recentChanges: TrackspaceEvent[];
   capabilityCount: number;
   milestoneCount: number;
@@ -285,6 +287,7 @@ export function getSummary(dataset: Dataset = CURATED): Summary {
     statusCounts: getStatusCounts(dataset.capabilities),
     blockers: getBlockers(dataset.capabilities),
     nextMilestone: getNextMilestone(dataset.milestones),
+    lastAchieved: dataset.milestones.filter((m) => m.status === "ready").at(-1),
     recentChanges: getRecentChanges(3, dataset.events),
     capabilityCount: dataset.capabilities.length,
     milestoneCount: dataset.milestones.length,

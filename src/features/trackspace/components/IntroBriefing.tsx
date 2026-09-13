@@ -7,7 +7,10 @@ import {
 
 import { useDataset } from "../data/dataset-context";
 import { getSummary } from "../data/selectors";
-import { STATUS_LIST } from "../data/seed";
+import { VIEWS } from "../views";
+import { CloseIcon } from "./icons";
+import { ReadinessSummary } from "./ReadinessSummary";
+import { StatusChip } from "./StatusChip";
 
 const STORAGE_KEY = "trackspace:intro-dismissed";
 
@@ -21,39 +24,6 @@ function readSeen(): boolean {
     return true;
   }
 }
-
-const VIEWS = [
-  {
-    id: "command",
-    icon: "⊕",
-    name: "Command Center",
-    note: "Explore the Earth–Moon atlas, program sites, and readiness",
-  },
-  {
-    id: "dependency",
-    icon: "⧉",
-    name: "Dependency Map",
-    note: "Which capabilities have to work before which",
-  },
-  {
-    id: "timeline",
-    icon: "≣",
-    name: "Timeline",
-    note: "Logged events, and what is projected next",
-  },
-  {
-    id: "milestones",
-    icon: "◎",
-    name: "Milestones",
-    note: "The program's major gates, mission by mission",
-  },
-  {
-    id: "program",
-    icon: "⌘",
-    name: "Program",
-    note: "Program health at a glance",
-  },
-];
 
 export function IntroBriefing({
   onNavigate,
@@ -85,7 +55,9 @@ export function IntroBriefing({
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Digits switch views via the app-level shortcut; close so the change is visible.
+      if (e.key === "Escape" || /^[1-9]$/.test(e.key)) dismiss();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -95,101 +67,93 @@ export function IntroBriefing({
 
   return (
     <>
-      <div
-        className="trackspace-intro-scrim"
-        onClick={dismiss}
-        aria-hidden="true"
-      />
+      <div className="trackspace-scrim is-top" onClick={dismiss} aria-hidden="true" />
       <div
         className="trackspace-intro"
         role="dialog"
         aria-modal="true"
         aria-labelledby="trackspace-intro-title"
       >
-        <div className="trackspace-intro-head">
-          <div className="trackspace-intro-kicker">Mission briefing</div>
-          <h2 id="trackspace-intro-title">
-            How close is a permanent Moon base?
-          </h2>
-          <button
-            type="button"
-            className="trackspace-drawer-close"
-            onClick={dismiss}
-            aria-label="Dismiss briefing"
-            autoFocus
-          >
-            ✕
-          </button>
-        </div>
-        <div className="trackspace-intro-body">
-          <p>
-            Trackspace follows the missions, hardware, and program decisions a
-            permanent lunar base depends on, and rolls them up into one live
-            readiness picture. As of today:
-          </p>
-          <div className="trackspace-intro-stats">
-            <div className="trackspace-intro-stat">
-              <span>Readiness</span>
-              <b className="trackspace-intro-stat-accent">{summary.overall}%</b>
-            </div>
-            <div className="trackspace-intro-stat">
-              <span>Hard blockers</span>
-              <b
-                className={
-                  summary.blockers.length > 0
-                    ? "trackspace-intro-stat-blocker"
-                    : undefined
-                }
-              >
-                {summary.blockers.length}
-              </b>
-            </div>
-            <div className="trackspace-intro-stat">
-              <span>Next gate</span>
-              <b>
-                <i
-                  className={`trackspace-intro-stat-dot trackspace-bg-${summary.nextMilestone.status}`}
-                  aria-hidden="true"
-                />
-                {summary.nextMilestone.code} · {summary.nextMilestone.date}
-              </b>
-            </div>
-            <div className="trackspace-intro-statusbar" aria-hidden="true">
-              {STATUS_LIST.map((status) =>
-                summary.statusCounts[status] > 0 ? (
-                  <span
-                    key={status}
-                    className={`trackspace-side-statusbar-seg trackspace-bg-${status}`}
-                    style={{ flexGrow: summary.statusCounts[status] }}
-                  />
-                ) : null,
-              )}
-            </div>
+        <button
+          type="button"
+          className="trackspace-iconbtn trackspace-intro-close"
+          onClick={dismiss}
+          aria-label="Dismiss briefing"
+          autoFocus
+        >
+          <CloseIcon size={14} />
+        </button>
+
+        <div className="trackspace-intro-scroll">
+          <div className="trackspace-intro-head">
+            <span className="trackspace-eyebrow">Mission briefing</span>
+            <h2 id="trackspace-intro-title">How close is a permanent Moon base?</h2>
+            <p>
+              Trackspace follows the missions, hardware, and program decisions a
+              lunar base depends on, and rolls them into one readiness picture
+              built from the public record.
+            </p>
           </div>
-          <ul className="trackspace-intro-views">
-            {VIEWS.map((view) => (
-              <li key={view.id}>
+
+          <div className="trackspace-intro-status">
+            <ReadinessSummary summary={summary} />
+            <dl className="trackspace-intro-facts">
+              <div>
+                <dt>Hard blockers</dt>
+                <dd
+                  className={`trackspace-tabular${
+                    summary.blockers.length > 0 ? " is-blocker" : ""
+                  }`}
+                >
+                  {summary.blockers.length}
+                </dd>
+              </div>
+              <div>
+                <dt>Next gate</dt>
+                <dd>
+                  {summary.nextMilestone.code} · {summary.nextMilestone.date}
+                  <StatusChip status={summary.nextMilestone.status} />
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <nav className="trackspace-intro-views" aria-label="Views">
+            {VIEWS.map((item, index) => {
+              const Icon = item.icon;
+              return (
                 <button
                   type="button"
+                  key={item.id}
                   className="trackspace-intro-view"
                   onClick={() => {
-                    onNavigate(view.id);
+                    onNavigate(item.id);
                     dismiss();
                   }}
                 >
-                  <span className="trackspace-intro-glyph" aria-hidden="true">
-                    {view.icon}
+                  <span className="trackspace-intro-view-icon">
+                    <Icon size={16} />
                   </span>
-                  <span className="trackspace-intro-view-name">
-                    {view.name}
+                  <span className="trackspace-intro-view-text">
+                    <span className="trackspace-intro-view-name">{item.name}</span>
+                    <span className="trackspace-intro-view-note">
+                      {item.note}
+                    </span>
                   </span>
-                  <span className="trackspace-intro-view-note">
-                    {view.note}
-                  </span>
+                  <kbd>{index + 1}</kbd>
                 </button>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </nav>
+
+          <div className="trackspace-intro-foot">
+            <span>
+              Press <kbd>1</kbd>–<kbd>5</kbd> to switch views at any time.
+            </span>
+            <button type="button" className="trackspace-btn-primary" onClick={dismiss}>
+              Start exploring
+            </button>
+          </div>
         </div>
       </div>
     </>

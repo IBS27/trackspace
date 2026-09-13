@@ -117,12 +117,7 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
               <span
                 className="trackspace-prog-lens-dot"
                 style={{
-                  background: row.status
-                    ? `var(--ts-${row.status})`
-                    : "var(--ts-accent)",
-                  boxShadow: row.status
-                    ? `0 0 7px var(--ts-${row.status})`
-                    : "0 0 7px var(--ts-accent)",
+                  background: row.status ? `var(--ts-${row.status})` : "var(--ts-accent)",
                 }}
                 aria-hidden="true"
               />
@@ -132,41 +127,33 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
       </nav>
 
       <div className="trackspace-prog-page">
-        <div className="trackspace-prog-kicker">
-          Program · funding + schedule
+        <div className="trackspace-eyebrow">
+          Program · funding and schedule
         </div>
         <h1>Program Health</h1>
-        <div className="trackspace-prog-meta">
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+        <div className="trackspace-page-meta">
+          <span className="trackspace-tag trackspace-tabular">
             {summary.tracked}/{dataset.capabilities.length} tracked
           </span>
-          <StatusChip status="blocker" />
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-cchip-critical trackspace-tabular">
+          <span
+            className={`trackspace-tag trackspace-tabular${summary.blockers > 0 ? " is-critical" : ""}`}
+          >
             {summary.blockers} blockers
           </span>
-          <StatusChip status="watch" />
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+          <span
+            className={`trackspace-tag trackspace-tabular${summary.watch > 0 ? " is-watch" : ""}`}
+          >
             {summary.watch} watch
           </span>
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+          <span className="trackspace-tag trackspace-tabular">
             {summary.withSlip} schedule
           </span>
-          <span className="trackspace-cchip trackspace-cchip-up trackspace-tabular">
+          <span className="trackspace-tag trackspace-tabular">
             {summary.withFunding} funding
           </span>
         </div>
 
-        <p className="trackspace-prog-objective">
-          Public program data for the capabilities that carry funding,
-          provider, target, or schedule records. Blocker and watch records show
-          where schedule, hardware, or contract pressure is currently
-          concentrated.
-        </p>
-
-        <div className="trackspace-assess trackspace-prog-assess">
-          <span className="trackspace-assess-label">CURRENT READ</span>
-          {programRead(summary, attention)}
-        </div>
+        <p className="trackspace-page-lede">{programRead(summary, attention)}</p>
 
         <div className="trackspace-prog-cols">
           <section className="trackspace-mssec">
