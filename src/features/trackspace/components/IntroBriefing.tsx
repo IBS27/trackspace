@@ -73,20 +73,24 @@ export function IntroBriefing({
         role="dialog"
         aria-modal="true"
         aria-labelledby="trackspace-intro-title"
+        tabIndex={-1}
+        autoFocus
       >
-        <button
-          type="button"
-          className="trackspace-iconbtn trackspace-intro-close"
-          onClick={dismiss}
-          aria-label="Dismiss briefing"
-          autoFocus
-        >
-          <CloseIcon size={14} />
-        </button>
+        <div className="trackspace-intro-bar">
+          <span className="trackspace-eyebrow">Mission briefing</span>
+          <kbd aria-hidden="true">Esc</kbd>
+          <button
+            type="button"
+            className="trackspace-iconbtn"
+            onClick={dismiss}
+            aria-label="Dismiss briefing"
+          >
+            <CloseIcon size={14} />
+          </button>
+        </div>
 
         <div className="trackspace-intro-scroll">
           <div className="trackspace-intro-head">
-            <span className="trackspace-eyebrow">Mission briefing</span>
             <h2 id="trackspace-intro-title">How close is a permanent Moon base?</h2>
             <p>
               Trackspace follows the missions, hardware, and program decisions a
@@ -119,6 +123,9 @@ export function IntroBriefing({
           </div>
 
           <nav className="trackspace-intro-views" aria-label="Views">
+            <span className="trackspace-eyebrow trackspace-intro-views-head">
+              Views
+            </span>
             {VIEWS.map((item, index) => {
               const Icon = item.icon;
               return (
