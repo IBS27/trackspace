@@ -15,8 +15,6 @@ import type {
   Location,
   Milestone,
   MilestoneId,
-  RiskAssessment,
-  RiskLevel,
   Status,
   TrackspaceEvent,
 } from "./types";
@@ -294,59 +292,6 @@ export function getSummary(dataset: Dataset = CURATED): Summary {
   };
 }
 
-// ===== Program dimensions: funding, schedule, and risk =====
-// These read the optional `metrics` block on a capability — the Step-3 program
-// dimensions — and are kept deliberately separate from the readiness number.
-
-/** Ordinal weight per risk level; the score is likelihood × severity. */
-const RISK_WEIGHT: Record<RiskLevel, number> = { low: 1, medium: 2, high: 3 };
-
-/** Status palette tone for a single risk level (low good → high bad). */
-export const RISK_TONE: Record<RiskLevel, Status> = {
-  low: "ready",
-  medium: "watch",
-  high: "blocker",
-};
-
-/**
- * Programmatic risk on a 1–9 scale (likelihood × severity). Distinct from
- * readiness: a capability can be technically immature yet low programmatic
- * risk, or proven yet exposed to funding and schedule risk.
- */
-export function getRiskScore(risk: RiskAssessment): number {
-  return RISK_WEIGHT[risk.likelihood] * RISK_WEIGHT[risk.severity];
-}
-
-/** Status band for a risk score: ≥6 blocker, ≥3 watch, else ready. */
-export function getRiskBand(score: number): Status {
-  return score >= 6 ? "blocker" : score >= 3 ? "watch" : "ready";
-}
-
-export type RiskEntry = {
-  capability: Capability;
-  risk: RiskAssessment;
-  score: number;
-};
-
-/**
- * Capabilities carrying a risk assessment, ranked most-exposed first: by score
- * descending, then by lower readiness (more exposed breaks ties), then seed
- * order. Capabilities without a risk metric are omitted.
- */
-export function getRiskRegister(
-  capabilities: Capability[] = CAPABILITIES,
-): RiskEntry[] {
-  return capabilities
-    .flatMap((capability) => {
-      const risk = capability.metrics?.risk;
-      return risk ? [{ capability, risk, score: getRiskScore(risk) }] : [];
-    })
-    .sort(
-      (a, b) =>
-        b.score - a.score || a.capability.readiness - b.capability.readiness,
-    );
-}
-
 export type ProgramSummary = {
   /** Capabilities carrying any program metrics. */
   tracked: number;
@@ -420,44 +365,4 @@ export function getProgramSummary(
     if (metrics.funding) summary.withFunding += 1;
   }
   return summary;
-}
-
-/** Risk-matrix axes: likelihood high→low (rows), severity low→high (columns). */
-export const RISK_LIKELIHOODS_DESC: RiskLevel[] = ["high", "medium", "low"];
-export const RISK_SEVERITIES_ASC: RiskLevel[] = ["low", "medium", "high"];
-
-export type RiskCell = {
-  likelihood: RiskLevel;
-  severity: RiskLevel;
-  score: number;
-  band: Status;
-  capabilities: Capability[];
-};
-
-/**
- * The 3×3 likelihood × severity matrix as 9 cells in row-major order
- * (likelihood high→low, severity low→high), each holding the capabilities that
- * land in it. The classic risk-register heat map: the top-right cell is the
- * high-likelihood, high-severity cluster.
- */
-export function getRiskMatrix(
-  capabilities: Capability[] = CAPABILITIES,
-): RiskCell[] {
-  const cells: RiskCell[] = [];
-  for (const likelihood of RISK_LIKELIHOODS_DESC) {
-    for (const severity of RISK_SEVERITIES_ASC) {
-      const score = getRiskScore({ likelihood, severity });
-      cells.push({
-        likelihood,
-        severity,
-        score,
-        band: getRiskBand(score),
-        capabilities: capabilities.filter((c) => {
-          const risk = c.metrics?.risk;
-          return risk?.likelihood === likelihood && risk?.severity === severity;
-        }),
-      });
-    }
-  }
-  return cells;
 }

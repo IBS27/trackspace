@@ -1258,17 +1258,6 @@
   text-transform: uppercase;
 }
 
-.trackspace-riskchip {
-  padding: 1px 8px;
-  border-radius: 999px;
-  color: var(--ts-bg);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
 .trackspace-sources {
   display: flex;
   flex-direction: column;
