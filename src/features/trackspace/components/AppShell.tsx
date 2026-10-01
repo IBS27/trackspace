@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 import { VIEWS } from "../views";
 import { InfoIcon } from "./icons";
 
@@ -10,7 +12,6 @@ type AppShellProps = {
   drawer: ReactNode;
   onNavChange: (view: string) => void;
   onOpenBriefing: () => void;
-  utcTime: string;
   nextGate: string;
   overlay?: ReactNode;
   children: ReactNode;
@@ -25,7 +26,6 @@ export function AppShell({
   onNavChange,
   onOpenBriefing,
   overlay,
-  utcTime,
 }: AppShellProps) {
   return (
     <div className="trackspace-app">
@@ -33,7 +33,6 @@ export function AppShell({
         dataStatus={dataStatus}
         nextGate={nextGate}
         onOpenBriefing={onOpenBriefing}
-        utcTime={utcTime}
       />
       <TabBar activeView={activeView} onNavChange={onNavChange} />
       <main className="trackspace-screen">{children}</main>
@@ -61,12 +60,10 @@ function Header({
   dataStatus,
   nextGate,
   onOpenBriefing,
-  utcTime,
 }: {
   dataStatus: DataStatus;
   nextGate: string;
   onOpenBriefing: () => void;
-  utcTime: string;
 }) {
   const connection = CONNECTION[dataStatus];
   return (
@@ -81,7 +78,7 @@ function Header({
 
       <div className="trackspace-header-stats" aria-label="Mission status">
         <StatusCell label="Next Gate" value={nextGate} />
-        <StatusCell label="UTC" value={utcTime} tabular />
+        <UtcClock />
         <span
           className="trackspace-conn"
           data-state={dataStatus}
@@ -103,6 +100,28 @@ function Header({
       </div>
     </header>
   );
+}
+
+function UtcClock() {
+  const [utcTime, setUtcTime] = useState("00:00:00");
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setUtcTime(
+        [now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()]
+          .map((part) => part.toString().padStart(2, "0"))
+          .join(":"),
+      );
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return <StatusCell label="UTC" value={utcTime} tabular />;
 }
 
 function StatusCell({

@@ -60,25 +60,8 @@ function TrackspaceWorkspace({
   const [activeView, setActiveView] = useState<TrackspaceView>("command");
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [briefingRequested, setBriefingRequested] = useState(false);
-  const [utcTime, setUtcTime] = useState("00:00:00");
 
   const summary = getSummary(dataset);
-
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setUtcTime(
-        [now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()]
-          .map((part) => part.toString().padStart(2, "0"))
-          .join(":"),
-      );
-    };
-
-    tick();
-    const timer = window.setInterval(tick, 1000);
-
-    return () => window.clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -139,7 +122,6 @@ function TrackspaceWorkspace({
             setSelection(null);
           }
         }}
-        utcTime={utcTime}
       >
         {activeView === "command" ? (
           <CommandCenter onOpen={setSelection} />

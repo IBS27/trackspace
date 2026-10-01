@@ -1,0 +1,68 @@
+{
+  "baseCommit": "c60a5f030fee32fc17ae0b3afee6fa1e0502d475",
+  "machine": "fedora",
+  "cpu": "AMD Ryzen 7 9700X",
+  "bun": "1.4.0",
+  "react": "19.2.4",
+  "vitest": "4.1.7",
+  "environment": "React development Profiler, jsdom; fake Date/intervals, real performance.now; WebGL stubbed",
+  "datasetCounts": {
+    "capabilities": 20,
+    "milestones": 5,
+    "events": 16,
+    "locations": 9
+  },
+  "warmupTicks": 20,
+  "measuredTicksPerScenario": 120,
+  "independentRunsPerVersion": 3,
+  "runs": [
+    {"version": "before", "run": 1, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 11.936064, "medianRenderMs": 0.096311, "p95RenderMs": 0.127021},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 22.412183, "medianRenderMs": 0.181461, "p95RenderMs": 0.231045},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 33.603652, "medianRenderMs": 0.275695, "p95RenderMs": 0.318475},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 26.271897, "medianRenderMs": 0.213722, "p95RenderMs": 0.248757},
+      {"scenario": "program", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 38.953514, "medianRenderMs": 0.323089, "p95RenderMs": 0.356513},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 120, "drawerCommits": 120, "totalRenderMs": 42.882355, "medianRenderMs": 0.314149, "p95RenderMs": 0.405597}
+    ]},
+    {"version": "before", "run": 2, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 12.038635, "medianRenderMs": 0.093977, "p95RenderMs": 0.138328},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 23.03478, "medianRenderMs": 0.185122, "p95RenderMs": 0.231577},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 36.076157, "medianRenderMs": 0.266827, "p95RenderMs": 0.316205},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 26.332786, "medianRenderMs": 0.21554, "p95RenderMs": 0.250497},
+      {"scenario": "program", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 38.599395, "medianRenderMs": 0.316579, "p95RenderMs": 0.352713},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 120, "drawerCommits": 120, "totalRenderMs": 37.438363, "medianRenderMs": 0.308781, "p95RenderMs": 0.348065}
+    ]},
+    {"version": "before", "run": 3, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 12.110961, "medianRenderMs": 0.094309, "p95RenderMs": 0.14285},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 23.187918, "medianRenderMs": 0.186689, "p95RenderMs": 0.233926},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 36.300362, "medianRenderMs": 0.272334, "p95RenderMs": 0.318945},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 26.83452, "medianRenderMs": 0.218638, "p95RenderMs": 0.255571},
+      {"scenario": "program", "ticks": 120, "mainCommits": 120, "drawerCommits": 0, "totalRenderMs": 39.660486, "medianRenderMs": 0.325912, "p95RenderMs": 0.369805},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 120, "drawerCommits": 120, "totalRenderMs": 37.430573, "medianRenderMs": 0.308193, "p95RenderMs": 0.347254}
+    ]},
+    {"version": "after", "run": 1, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 1.424677, "medianRenderMs": 0.010238, "p95RenderMs": 0.018063},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.915801, "medianRenderMs": 0.007174, "p95RenderMs": 0.010279},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.846831, "medianRenderMs": 0.006402, "p95RenderMs": 0.010811},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.68102, "medianRenderMs": 0.005238, "p95RenderMs": 0.007775},
+      {"scenario": "program", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.631839, "medianRenderMs": 0.00507, "p95RenderMs": 0.006372},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.69851, "medianRenderMs": 0.005569, "p95RenderMs": 0.007523}
+    ]},
+    {"version": "after", "run": 2, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 1.339859, "medianRenderMs": 0.009627, "p95RenderMs": 0.020127},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.904679, "medianRenderMs": 0.007224, "p95RenderMs": 0.009558},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.830684, "medianRenderMs": 0.006193, "p95RenderMs": 0.012104},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.694834, "medianRenderMs": 0.005451, "p95RenderMs": 0.007575},
+      {"scenario": "program", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.614964, "medianRenderMs": 0.004888, "p95RenderMs": 0.006373},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.669299, "medianRenderMs": 0.005271, "p95RenderMs": 0.007033}
+    ]},
+    {"version": "after", "run": 3, "results": [
+      {"scenario": "command", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 1.337176, "medianRenderMs": 0.009468, "p95RenderMs": 0.019558},
+      {"scenario": "dependency", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.97086, "medianRenderMs": 0.007133, "p95RenderMs": 0.011993},
+      {"scenario": "timeline", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.810242, "medianRenderMs": 0.006403, "p95RenderMs": 0.009327},
+      {"scenario": "milestones", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.701444, "medianRenderMs": 0.005431, "p95RenderMs": 0.008014},
+      {"scenario": "program", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.613797, "medianRenderMs": 0.004719, "p95RenderMs": 0.006603},
+      {"scenario": "dependency-drawer", "ticks": 120, "mainCommits": 0, "drawerCommits": 0, "totalRenderMs": 0.686379, "medianRenderMs": 0.005372, "p95RenderMs": 0.008035}
+    ]}
+  ]
+}
