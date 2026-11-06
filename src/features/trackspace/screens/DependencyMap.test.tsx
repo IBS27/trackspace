@@ -49,14 +49,14 @@ describe("DependencyMap", () => {
     expect(nodeButton(outOfGroup.name).className).toContain("is-dim");
   });
 
-  it("clears group filters with the All caps chip", () => {
+  it("clears group filters with the All chip", () => {
     render(<DependencyMap onOpen={() => {}} />);
     const outOfGroup = CAPABILITIES.find((c) => c.group !== "launch")!;
 
     fireEvent.click(screen.getByRole("button", { name: "launch" }));
     expect(nodeButton(outOfGroup.name).className).toContain("is-dim");
 
-    fireEvent.click(screen.getByRole("button", { name: "All caps" }));
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
     expect(nodeButton(outOfGroup.name).className).not.toContain("is-dim");
   });
 

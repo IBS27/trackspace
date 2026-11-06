@@ -1106,11 +1106,63 @@
   width: 56px;
 }
 
-.trackspace-drawer-label {
+/* A single linked row: outlined like the capability tags, with a chevron. */
+.trackspace-linkrow {
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: var(--ts-radius);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.trackspace-linkrow:last-child {
+  border-bottom: 1px solid var(--ts-line-2);
+}
+
+.trackspace-linkrow:hover {
+  border-color: var(--ts-accent-dim);
+  background: var(--ts-panel);
+}
+
+.trackspace-linkrow .trackspace-crow-date {
+  padding-top: 0;
+}
+
+.trackspace-linkrow .trackspace-crow-main {
+  flex: 1;
+}
+
+.trackspace-linkrow-code {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ts-dim);
+  font-family: var(--ts-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.trackspace-linkrow-chevron {
+  flex: 0 0 auto;
+  color: var(--ts-dim);
+}
+
+/* Drawer section labels match the rail headings: sentence case, sans. */
+.trackspace-drawer-label.trackspace-eyebrow {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 9px;
+  margin-bottom: 10px;
+  color: var(--ts-ink);
+  font-family: var(--ts-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-transform: none;
+}
+
+.trackspace-fold-head.trackspace-drawer-label {
+  margin-bottom: 0;
+  color: var(--ts-ink-2);
 }
 
 .trackspace-drawer-section p {
@@ -1679,6 +1731,27 @@ a.trackspace-source:hover {
   .trackspace-fchip,
   .trackspace-dep-legend-item {
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 680px) {
+  /* Timeline: filters scroll on one row, the marker legend gets its own line. */
+  .trackspace-tline .trackspace-dep-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow: visible;
+    mask-image: none;
+  }
+
+  .trackspace-tline .trackspace-dep-filters {
+    flex: 1 1 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .trackspace-tline .trackspace-dep-legend {
+    padding-left: 0;
+    border-left: 0;
   }
 }
 
@@ -2797,6 +2870,7 @@ a.trackspace-source:hover {
 }
 
 .trackspace-intro-foot {
+  position: relative;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -2807,6 +2881,18 @@ a.trackspace-source:hover {
   background: var(--ts-panel);
   color: var(--ts-dim);
   font-size: 12px;
+}
+
+/* Fade the list into the pinned footer so clipped rows read as scrollable. */
+.trackspace-intro-foot::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 28px;
+  background: linear-gradient(180deg, transparent, var(--ts-bg-2));
+  pointer-events: none;
 }
 
 .trackspace-intro-foot kbd {

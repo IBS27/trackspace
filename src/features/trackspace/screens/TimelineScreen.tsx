@@ -50,7 +50,7 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
   return (
     <div className="trackspace-tline">
       <div className="trackspace-dep-bar">
-        <span className="trackspace-dep-title">Event Timeline</span>
+        <span className="trackspace-dep-title">Event timeline</span>
         <div
           className="trackspace-dep-filters"
           role="group"

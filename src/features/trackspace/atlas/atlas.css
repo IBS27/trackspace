@@ -549,6 +549,7 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
   }
 
   .atlas-layer-divider {

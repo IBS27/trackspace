@@ -16,7 +16,7 @@ describe("ProgramScreen", () => {
   it("renders the program heading", () => {
     render(<ProgramScreen onOpen={() => {}} />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-      "Program Health",
+      "Program health",
     );
   });
 

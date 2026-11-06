@@ -117,7 +117,7 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
         <div className="trackspace-eyebrow">
           Program · funding and schedule
         </div>
-        <h1>Program Health</h1>
+        <h1>Program health</h1>
         <div className="trackspace-page-meta">
           <span className="trackspace-tag trackspace-tabular">
             {summary.tracked}/{dataset.capabilities.length} tracked

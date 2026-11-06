@@ -50,7 +50,7 @@ describe("TrackspaceApp", () => {
     expect(screen.getByRole("banner").textContent).toContain("SNAPSHOT");
     expect(screen.getByText("Overall readiness")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Program" }));
-    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program health" })).toBeTruthy();
   });
 
   it("retains the last live dataset and selected view through failure and recovery", () => {
@@ -66,12 +66,12 @@ describe("TrackspaceApp", () => {
     rerender(<TrackspaceApp live />);
     expect(screen.getByRole("banner").textContent).toContain("SNAPSHOT");
     expect(screen.getByRole("banner").textContent).toContain("UPDATED");
-    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program health" })).toBeTruthy();
     vi.mocked(useQueries).mockReturnValue({ dataset: CURATED });
     rerender(<TrackspaceApp live />);
     expect(screen.getByRole("banner").textContent).toContain("LIVE");
     expect(screen.getByRole("banner").textContent).not.toContain("UPDATED");
-    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program health" })).toBeTruthy();
   });
 
   it("renders a tab for every view with the Command Center active", () => {
@@ -96,7 +96,7 @@ describe("TrackspaceApp", () => {
   it("switches views when a tab is clicked", () => {
     render(<TrackspaceApp />);
     fireEvent.click(screen.getByRole("button", { name: "Dependency Map" }));
-    expect(screen.getByText("All caps")).toBeTruthy();
+    expect(screen.getByText("All")).toBeTruthy();
   });
 
   it("activates the Program tab on click", () => {
@@ -105,7 +105,7 @@ describe("TrackspaceApp", () => {
 
     fireEvent.click(tab);
 
-    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program health" })).toBeTruthy();
     expect(tab.getAttribute("aria-current")).toBe("page");
   });
 
@@ -113,13 +113,13 @@ describe("TrackspaceApp", () => {
     render(<TrackspaceApp />);
 
     fireEvent.keyDown(window, { key: "3" });
-    expect(screen.getByText("Event Timeline")).toBeTruthy();
+    expect(screen.getByText("Event timeline")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "4" });
     expect(screen.getByText("Missions / Phases")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "5" });
-    expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Program health" })).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "1" });
     expect(screen.getByText("Overall readiness")).toBeTruthy();

@@ -544,7 +544,7 @@ function CapabilityBody({
           />
         </div>
         <p className="trackspace-readiness-note">
-          {capability.readiness}% · {STATUS[capability.status].desc}
+          {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
       <DrawerSection label="Depends on (upstream)">
@@ -577,15 +577,15 @@ function CapabilityBody({
         <DrawerSection label="Tied milestone">
           <button
             type="button"
-            className="trackspace-crow"
+            className="trackspace-crow trackspace-linkrow"
             onClick={() => onOpen({ type: "milestone", id: milestone.id })}
           >
             <span className="trackspace-crow-date">{milestone.date}</span>
             <span className="trackspace-crow-main">
-              <span className="trackspace-crow-title">
-                {milestone.code} · {milestone.name}
-              </span>
+              <span className="trackspace-linkrow-code">{milestone.code}</span>
+              <span className="trackspace-crow-title">{milestone.name}</span>
             </span>
+            <ChevronIcon size={12} className="trackspace-linkrow-chevron" />
           </button>
         </DrawerSection>
       )}

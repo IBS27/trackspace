@@ -156,7 +156,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
   return (
     <div className="trackspace-dep">
       <div className="trackspace-dep-bar">
-        <span className="trackspace-dep-title">Dependency Map</span>
+        <span className="trackspace-dep-title">Dependency map</span>
         <div
           className="trackspace-dep-filters"
           role="group"
@@ -168,7 +168,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
             aria-pressed={groupFilter.length === 0}
             onClick={() => setGroupFilter([])}
           >
-            All caps
+            All
           </button>
           {CAPABILITY_GROUPS.map((group) => (
             <button
