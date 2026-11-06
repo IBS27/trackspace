@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { ClampedText, EventRow } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
+import { useActiveIntoView } from "../components/useActiveIntoView";
 import { useDataset } from "../data/dataset-context";
 import { STATUS } from "../data/seed";
 import {
@@ -31,10 +32,11 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
   const events = getEventsForMilestone(current, dataset);
   const blockers = getMilestoneBlockers(current, dataset);
   const readyCount = getMilestoneReadyCount(current, dataset);
+  const railRef = useActiveIntoView<HTMLElement>(".trackspace-msri.is-on", current);
 
   return (
     <div className="trackspace-mst">
-      <nav className="trackspace-msrail" aria-label="Missions and phases">
+      <nav ref={railRef} className="trackspace-msrail" aria-label="Missions and phases">
         <div className="trackspace-msrail-head">Missions / Phases</div>
         {dataset.milestones.map((item) => (
           <button
@@ -48,8 +50,8 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
               <span className="trackspace-msri-code">{item.code}</span>
               <span className="trackspace-msri-name">{item.name}</span>
               <span className="trackspace-msri-detail">
-                {item.date} · {STATUS[item.status].label.toUpperCase()}
-                {item.critical && " · CRIT"}
+                {item.date} · {STATUS[item.status].label}
+                {item.critical && " · Critical path"}
               </span>
             </span>
             <span

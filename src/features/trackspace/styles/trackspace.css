@@ -7,27 +7,36 @@
 /* ===== Tokens & base ===== */
 
 .trackspace-app {
-  --ts-bg: #060607;
-  --ts-bg-2: #0a0a0c;
-  --ts-panel: #0e0e11;
-  --ts-panel-2: #141418;
-  --ts-line: #1d1d22;
-  --ts-line-2: #2b2b32;
-  --ts-ink: #e8e8ec;
-  --ts-ink-2: #b6b6bf;
-  --ts-dim: #86868f;
-  --ts-faint: #5c5c66;
-  --ts-accent: #5bd0ff;
-  --ts-accent-dim: #2b6b86;
-  --ts-accent-soft: rgba(91, 208, 255, 0.1);
-  --ts-ready: #33d39c;
-  --ts-watch: #f5b13d;
-  --ts-blocker: #ff5468;
-  --ts-unknown: #7e7e88;
+  /* Surfaces, low to high. Cool, lifted near-black instead of pure black. */
+  --ts-bg: #0a0b0f;
+  --ts-bg-2: #0d0f14;
+  --ts-panel: #12141b;
+  --ts-panel-2: #181b23;
+  --ts-panel-3: #1e222c;
+  --ts-line: #1f232c;
+  --ts-line-2: #2b303b;
+  --ts-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  /* Text, high to low. Every step clears 4.5:1 on --ts-bg except --ts-faint (decorative). */
+  --ts-ink: #eceef3;
+  --ts-ink-2: #c3c8d2;
+  --ts-dim: #959cab;
+  --ts-faint: #6f7685;
+  --ts-accent: #62c8f4;
+  --ts-accent-dim: #2e6984;
+  --ts-accent-soft: rgba(98, 200, 244, 0.1);
+  --ts-ready: #3fcf9b;
+  --ts-watch: #efb24a;
+  --ts-blocker: #f26474;
+  --ts-unknown: #8a909d;
+  --ts-ready-soft: rgba(63, 207, 155, 0.12);
+  --ts-watch-soft: rgba(239, 178, 74, 0.12);
+  --ts-blocker-soft: rgba(242, 100, 116, 0.12);
+  --ts-unknown-soft: rgba(138, 144, 157, 0.12);
   --ts-sans: var(--font-geist-sans), system-ui, sans-serif;
   --ts-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --ts-radius: 6px;
-  --ts-radius-sm: 4px;
+  --ts-radius: 8px;
+  --ts-radius-sm: 6px;
+  --ts-radius-lg: 12px;
 
   height: 100dvh;
   min-height: 100vh;
@@ -82,12 +91,16 @@
   background: var(--ts-panel);
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
 }
 
 .trackspace-tabular {
   font-variant-numeric: tabular-nums;
+}
+
+.trackspace-nowrap {
+  white-space: nowrap;
 }
 
 .trackspace-grow {
@@ -137,9 +150,9 @@
   display: block;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   line-height: 1.4;
   text-transform: uppercase;
 }
@@ -151,7 +164,7 @@
   gap: 6px;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -165,15 +178,32 @@
   color: var(--ts-watch);
 }
 
+/* Impact: neutral, so it never competes with status color. */
+.trackspace-impact {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ts-dim);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.trackspace-impact[data-impact="high"] {
+  padding: 1px 7px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 999px;
+  color: var(--ts-ink-2);
+}
+
 /* Status chip: a colored square and a word, no box. */
 .trackspace-schip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -214,7 +244,7 @@
   gap: 6px;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
@@ -228,13 +258,12 @@
   display: block;
   width: 5px;
   height: 5px;
-  border-radius: 1px;
+  border-radius: 50%;
   background: var(--ts-line-2);
 }
 
 .trackspace-pips i.is-on {
-  background: var(--ts-accent);
-  opacity: 0.7;
+  background: var(--ts-dim);
 }
 
 /* Buttons. */
@@ -243,8 +272,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 30px;
-  padding: 0 12px;
+  height: 34px;
+  padding: 0 14px;
   border: 1px solid var(--ts-line-2);
   border-radius: var(--ts-radius);
   background: var(--ts-panel);
@@ -277,8 +306,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--ts-radius);
@@ -376,20 +405,20 @@
   gap: 5px;
   color: var(--ts-ready);
   font-family: var(--ts-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
 .trackspace-statusbar {
   display: flex;
-  gap: 2px;
-  height: 4px;
+  gap: 3px;
+  height: 6px;
 }
 
 .trackspace-statusbar-seg {
-  min-width: 4px;
-  border-radius: 2px;
+  min-width: 6px;
+  border-radius: 3px;
 }
 
 .trackspace-statuskey {
@@ -403,10 +432,7 @@
   align-items: center;
   gap: 6px;
   color: var(--ts-dim);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12.5px;
 }
 
 .trackspace-statuskey-item::before {
@@ -434,21 +460,23 @@
 
 .trackspace-statuskey-item b {
   color: var(--ts-ink);
-  font-size: 11.5px;
+  font-family: var(--ts-mono);
+  font-size: 12.5px;
   font-weight: 500;
 }
 
 /* Callout note: an assessment or projected impact. */
 .trackspace-note {
-  max-width: 72ch;
+  max-width: 76ch;
   margin: 0;
-  padding: 12px 14px;
+  padding: 16px 18px;
   border: 1px solid var(--ts-line);
-  border-radius: var(--ts-radius);
+  border-radius: var(--ts-radius-lg);
   background: var(--ts-panel);
+  box-shadow: var(--ts-highlight);
   color: var(--ts-ink-2);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .trackspace-note > .trackspace-eyebrow {
@@ -477,8 +505,8 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 20px;
-  min-height: 56px;
-  padding: 0 18px;
+  min-height: 58px;
+  padding: 0 24px;
   border-bottom: 1px solid var(--ts-line);
   background: var(--ts-bg-2);
 }
@@ -537,10 +565,10 @@
 }
 
 .trackspace-status-cell span {
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -548,7 +576,7 @@
 .trackspace-status-cell b {
   color: var(--ts-ink);
   font-family: var(--ts-mono);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
@@ -564,8 +592,8 @@
   border-radius: 999px;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.07em;
   line-height: 1;
   white-space: nowrap;
 }
@@ -622,7 +650,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 12px;
+  padding: 13px 12px;
   border: 0;
   background: none;
   color: var(--ts-dim);
@@ -634,7 +662,7 @@
 }
 
 .trackspace-tab svg {
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   transition: color 120ms ease;
 }
 
@@ -700,24 +728,42 @@
 }
 
 @media (max-width: 680px) {
+  /* Two compact rows: brand + live + info, then the mission status line. */
   .trackspace-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    min-height: 0;
+    padding: 10px 16px;
+  }
+
+  .trackspace-brand {
+    flex: 1 1 auto;
   }
 
   .trackspace-header-stats {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto;
-    align-items: center;
-    width: 100%;
-    gap: 14px;
-    margin-left: 0;
+    display: contents;
   }
 
-  .trackspace-conn {
-    justify-self: end;
+  .trackspace-status-cell {
+    order: 3;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .trackspace-status-cell:first-child {
+    flex: 1 1 auto;
+  }
+
+  .trackspace-tabbar {
+    padding: 0 6px;
+    /* Fade the right edge so clipped tabs read as scrollable. */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+    scroll-padding-inline: 16px;
+  }
+
+  .trackspace-tab {
+    padding: 11px 10px;
   }
 
   .trackspace-screen {
@@ -754,7 +800,7 @@
 }
 
 .trackspace-side-section {
-  padding: 18px;
+  padding: 20px 24px;
 }
 
 .trackspace-side-section + .trackspace-side-section {
@@ -765,14 +811,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
-  color: var(--ts-dim);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+  color: var(--ts-ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
   line-height: 1.4;
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -786,10 +830,10 @@
 
 .trackspace-side-heading-note {
   order: 1;
-  color: var(--ts-faint);
+  color: var(--ts-dim);
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  letter-spacing: 0;
 }
 
 .trackspace-side-list {
@@ -800,9 +844,9 @@
 /* Sidebar list buttons: blockers, changes, and milestones. */
 .trackspace-side-blocker,
 .trackspace-side-row {
-  width: calc(100% + 20px);
-  margin-inline: -10px;
-  padding: 10px 10px;
+  width: calc(100% + 24px);
+  margin-inline: -12px;
+  padding: 10px 12px;
   border: 0;
   border-radius: var(--ts-radius);
   background: transparent;
@@ -841,7 +885,7 @@
 
 .trackspace-side-blocker-name {
   color: var(--ts-ink);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.35;
 }
@@ -858,18 +902,18 @@
   margin-top: 4px;
   overflow: hidden;
   color: var(--ts-dim);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .trackspace-side-row-date {
-  flex: 0 0 62px;
-  padding-top: 3px;
-  color: var(--ts-faint);
+  flex: 0 0 72px;
+  padding-top: 2px;
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .trackspace-side-row-main {
@@ -879,7 +923,7 @@
 .trackspace-side-row-title {
   display: block;
   color: var(--ts-ink);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -931,12 +975,12 @@
 }
 
 .trackspace-crow-date {
-  width: 62px;
+  width: 72px;
   flex: 0 0 auto;
   padding-top: 2px;
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .trackspace-crow-main {
@@ -946,7 +990,7 @@
 .trackspace-crow-title {
   display: block;
   color: var(--ts-ink);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.45;
   transition: color 120ms ease;
 }
@@ -989,7 +1033,7 @@
   z-index: 41;
   display: flex;
   flex-direction: column;
-  width: 440px;
+  width: 460px;
   max-width: 94vw;
   height: 100%;
   border-left: 1px solid var(--ts-line-2);
@@ -1007,8 +1051,9 @@
 
 .trackspace-drawer-head {
   position: relative;
-  padding: 18px 20px 16px;
+  padding: 20px 24px 18px;
   border-bottom: 1px solid var(--ts-line);
+  background: var(--ts-panel);
 }
 
 .trackspace-drawer-kicker {
@@ -1019,7 +1064,7 @@
 .trackspace-drawer-head h2 {
   padding-right: 36px;
   color: var(--ts-ink);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.3;
@@ -1027,8 +1072,8 @@
 
 .trackspace-drawer-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 16px;
+  right: 16px;
 }
 
 .trackspace-drawer-meta {
@@ -1041,14 +1086,14 @@
 
 .trackspace-drawer-body {
   flex: 1;
-  padding: 20px;
+  padding: 22px 24px 32px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--ts-line-2) transparent;
 }
 
 .trackspace-drawer-section {
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .trackspace-drawer-label {
@@ -1059,20 +1104,43 @@
 }
 
 .trackspace-drawer-section p {
-  color: var(--ts-ink);
-  font-size: 13.5px;
-  line-height: 1.6;
+  color: var(--ts-ink-2);
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .trackspace-drawer-section p.trackspace-muted {
   color: var(--ts-dim);
 }
 
+.trackspace-fold {
+  margin-bottom: 0;
+  border-top: 1px solid var(--ts-line);
+}
+
+.trackspace-fold:last-child {
+  border-bottom: 1px solid var(--ts-line);
+}
+
+.trackspace-fold + .trackspace-fold {
+  margin-top: 0;
+}
+
+.trackspace-fold[open] {
+  padding-bottom: 18px;
+}
+
 .trackspace-fold-head {
+  min-height: 46px;
+  margin-bottom: 0;
   cursor: pointer;
   list-style: none;
   user-select: none;
   transition: color 120ms ease;
+}
+
+.trackspace-fold[open] > .trackspace-fold-head {
+  margin-bottom: 6px;
 }
 
 .trackspace-fold-head::-webkit-details-marker {
@@ -1081,14 +1149,6 @@
 
 .trackspace-fold-head:hover {
   color: var(--ts-ink);
-}
-
-.trackspace-fold:not([open]) {
-  margin-bottom: 12px;
-}
-
-.trackspace-fold:not([open]) > .trackspace-fold-head {
-  margin-bottom: 0;
 }
 
 .trackspace-fold-chevron {
@@ -1102,8 +1162,8 @@
 }
 
 .trackspace-fold-count {
-  margin-left: 2px;
-  padding: 1px 6px;
+  margin-left: auto;
+  padding: 1px 7px;
   border: 1px solid var(--ts-line-2);
   border-radius: 999px;
   color: var(--ts-dim);
@@ -1253,7 +1313,7 @@
 .trackspace-metric-tag {
   color: var(--ts-faint);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1291,7 +1351,7 @@ a.trackspace-source:hover {
   background: var(--ts-panel-2);
   color: var(--ts-accent);
   font-family: var(--ts-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-align: center;
 }
@@ -1304,7 +1364,7 @@ a.trackspace-source:hover {
   margin-left: auto;
   color: var(--ts-faint);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -1315,8 +1375,8 @@ a.trackspace-source:hover {
   align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  min-height: 48px;
-  padding: 8px 18px;
+  min-height: 52px;
+  padding: 8px 24px;
   border-bottom: 1px solid var(--ts-line);
   background: var(--ts-bg-2);
 }
@@ -1396,11 +1456,11 @@ a.trackspace-source:hover {
 
 .trackspace-mspage h1,
 .trackspace-prog-page h1 {
-  margin: 8px 0 12px;
+  margin: 10px 0 14px;
   color: var(--ts-ink);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.15;
 }
 
@@ -1413,12 +1473,10 @@ a.trackspace-source:hover {
 
 .trackspace-page-lede {
   max-width: 68ch;
-  margin: 20px 0 16px;
-  padding-top: 18px;
-  border-top: 1px solid var(--ts-line);
-  color: var(--ts-ink);
-  font-size: 15px;
-  line-height: 1.6;
+  margin: 22px 0 18px;
+  color: var(--ts-ink-2);
+  font-size: 15.5px;
+  line-height: 1.65;
 }
 
 .trackspace-page-lede p {
@@ -1436,73 +1494,96 @@ a.trackspace-source:hover {
 
 .trackspace-graph {
   position: relative;
+  padding: 24px 24px 40px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ts-line-2) transparent;
 }
 
 .trackspace-graph-inner {
   position: relative;
-  width: 1180px;
-  height: 760px;
   margin: 0 auto;
+}
+
+/* Column lanes give the four tiers a visible structure. */
+.trackspace-lane {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid var(--ts-line);
+  border-radius: var(--ts-radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 70%);
+}
+
+.trackspace-colhdr {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  color: var(--ts-dim);
+  font-family: var(--ts-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .trackspace-edges {
   position: absolute;
   inset: 0;
-  width: 1180px;
-  height: 760px;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 
-.trackspace-colhdr {
-  position: absolute;
-  top: 10px;
-  z-index: 1;
-  transform: translateX(-50%);
-  color: var(--ts-faint);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.trackspace-edges path {
+  transition: opacity 160ms ease, stroke 160ms ease;
 }
 
 .trackspace-gnode {
   position: absolute;
   z-index: 2;
-  width: 172px;
-  padding: 11px 12px;
+  width: 196px;
+  padding: 12px 14px 11px;
   border: 1px solid var(--ts-line-2);
   border-radius: var(--ts-radius);
-  background: var(--ts-panel);
+  background: var(--ts-panel-2);
+  box-shadow: var(--ts-highlight), 0 1px 2px rgba(0, 0, 0, 0.3);
   color: inherit;
   cursor: pointer;
   text-align: left;
   transform: translate(-50%, -50%);
-  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 160ms ease;
 }
 
 .trackspace-gnode:hover,
 .trackspace-gnode.is-sel {
   border-color: var(--ts-accent);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--ts-highlight), 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .trackspace-gnode.is-dim {
   opacity: 0.22;
 }
 
+.trackspace-gnode.is-faded {
+  opacity: 0.35;
+}
+
 .trackspace-gnode-name {
   display: block;
   color: var(--ts-ink);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.3;
 }
 
 .trackspace-gnode-bar {
   display: block;
-  height: 3px;
-  margin-top: 9px;
+  height: 4px;
+  margin-top: 10px;
   border-radius: 2px;
   background: var(--ts-line-2);
   overflow: hidden;
@@ -1511,6 +1592,7 @@ a.trackspace-source:hover {
 .trackspace-gnode-bar span {
   display: block;
   height: 100%;
+  border-radius: 2px;
 }
 
 .trackspace-gnode-foot {
@@ -1518,20 +1600,32 @@ a.trackspace-source:hover {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 7px;
+  margin-top: 8px;
 }
 
 .trackspace-gnode-readiness {
-  color: var(--ts-dim);
+  color: var(--ts-ink-2);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .trackspace-gnode-state {
   font-family: var(--ts-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+@media (max-width: 680px) {
+  .trackspace-graph {
+    padding: 14px 0 28px 14px;
+  }
+
+  /* Smaller canvas on phones; it still scrolls sideways. */
+  .trackspace-graph-inner {
+    zoom: 0.8;
+    margin: 0;
+  }
 }
 
 /* ===== Event timeline ===== */
@@ -1567,59 +1661,61 @@ a.trackspace-source:hover {
 
 .trackspace-tlscroll {
   position: relative;
-  padding: 26px 26px 60px;
+  padding: 32px 32px 72px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ts-line-2) transparent;
 }
 
 .trackspace-tlwrap {
   position: relative;
-  max-width: 880px;
+  max-width: 940px;
   margin: 0 auto;
-  padding-left: 138px;
+  padding-left: 132px;
 }
 
 .trackspace-tlspine {
   position: absolute;
-  top: 6px;
+  top: 18px;
   bottom: 10px;
-  left: 138px;
+  left: 132px;
   width: 1px;
-  background: linear-gradient(180deg, var(--ts-line-2) 75%, transparent);
+  background: linear-gradient(180deg, var(--ts-line-2) 80%, transparent);
 }
 
 .trackspace-tlrow {
   position: relative;
-  margin-bottom: 30px;
+  margin-bottom: 14px;
   transition: opacity 200ms ease;
 }
 
 .trackspace-tldate {
   position: absolute;
-  left: -138px;
-  width: 116px;
-  padding-top: 1px;
-  color: var(--ts-faint);
+  top: 16px;
+  left: -132px;
+  width: 108px;
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  line-height: 1.7;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
   text-align: right;
   text-transform: uppercase;
 }
 
 .trackspace-tldate b {
   display: block;
-  color: var(--ts-dim);
-  font-size: 11.5px;
+  color: var(--ts-ink-2);
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   text-transform: none;
 }
 
 .trackspace-tlnode {
   position: absolute;
   /* 14px node centered on the 1px spine at content x=0. */
-  top: 2px;
+  top: 19px;
   left: -7px;
   z-index: 2;
   width: 14px;
@@ -1641,27 +1737,39 @@ a.trackspace-source:hover {
 
 .trackspace-tlcard {
   display: block;
-  width: calc(100% - 22px);
-  margin-left: 22px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  width: calc(100% - 24px);
+  margin-left: 24px;
+  padding: 15px 18px 16px;
+  border: 1px solid var(--ts-line);
+  border-radius: var(--ts-radius-lg);
+  background: var(--ts-panel);
+  box-shadow: var(--ts-highlight);
   color: inherit;
   cursor: pointer;
   text-align: left;
+  transition: border-color 140ms ease, background 140ms ease;
 }
 
-.trackspace-tlcard:focus-visible {
-  outline-offset: 6px;
+/* Projected events: dashed outline, flatter fill. */
+.trackspace-tlcard.is-fut {
+  border-style: dashed;
+  border-color: var(--ts-line-2);
+  background: transparent;
+  box-shadow: none;
+}
+
+.trackspace-tlcard:hover {
+  border-color: var(--ts-line-2);
+  background: var(--ts-panel-2);
 }
 
 .trackspace-tlcard-title {
   display: block;
   color: var(--ts-ink);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  line-height: 1.35;
+  line-height: 1.4;
   transition: color 120ms ease;
 }
 
@@ -1673,25 +1781,17 @@ a.trackspace-source:hover {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 6px;
-}
-
-.trackspace-tlcard-impact {
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
+  gap: 8px 14px;
+  margin-top: 8px;
 }
 
 .trackspace-tlcard-what {
   display: block;
-  max-width: 64ch;
-  margin-top: 7px;
-  color: var(--ts-dim);
-  font-size: 12.5px;
-  line-height: 1.55;
+  max-width: 70ch;
+  margin-top: 10px;
+  color: var(--ts-ink-2);
+  font-size: 13.5px;
+  line-height: 1.6;
 }
 
 .trackspace-tlnow {
@@ -1699,7 +1799,7 @@ a.trackspace-source:hover {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 12px 0 24px;
+  margin: 28px 0 28px;
   /* Clear the centered node. */
   padding-left: 18px;
 }
@@ -1723,8 +1823,8 @@ a.trackspace-source:hover {
   flex: 0 0 auto;
   color: var(--ts-accent);
   font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1738,20 +1838,45 @@ a.trackspace-source:hover {
 
 @media (max-width: 680px) {
   .trackspace-tlscroll {
-    padding: 18px 14px 50px;
+    padding: 20px 16px 56px;
   }
 
+  /* Dates move above each card so the text gets the full width. */
   .trackspace-tlwrap {
-    padding-left: 96px;
+    padding-left: 8px;
   }
 
   .trackspace-tlspine {
-    left: 96px;
+    top: 8px;
+    left: 8px;
   }
 
   .trackspace-tldate {
-    left: -96px;
-    width: 78px;
+    position: static;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: auto;
+    margin: 0 0 6px 22px;
+    text-align: left;
+  }
+
+  .trackspace-tldate b {
+    display: inline;
+  }
+
+  .trackspace-tlnode {
+    top: 3px;
+  }
+
+  .trackspace-tlcard {
+    width: calc(100% - 22px);
+    margin-left: 22px;
+    padding: 13px 14px 14px;
+  }
+
+  .trackspace-tlrow {
+    margin-bottom: 18px;
   }
 }
 
@@ -1761,14 +1886,14 @@ a.trackspace-source:hover {
 .trackspace-prog {
   height: 100%;
   display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   background: var(--ts-bg);
   overflow: hidden;
 }
 
 .trackspace-msrail,
 .trackspace-prog-rail {
-  padding: 8px 0;
+  padding: 8px 10px;
   border-right: 1px solid var(--ts-line);
   background: var(--ts-bg-2);
   overflow-y: auto;
@@ -1776,12 +1901,12 @@ a.trackspace-source:hover {
 
 .trackspace-msrail-head,
 .trackspace-prog-rail-head {
-  padding: 14px 18px 10px;
+  padding: 14px 10px 10px;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1792,8 +1917,10 @@ a.trackspace-source:hover {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 12px 18px;
+  margin-bottom: 2px;
+  padding: 11px 12px;
   border: 0;
+  border-radius: var(--ts-radius);
   background: none;
   color: inherit;
   cursor: pointer;
@@ -1814,6 +1941,7 @@ a.trackspace-source:hover {
 .trackspace-msri.is-on,
 .trackspace-prog-lens.is-on {
   background: var(--ts-panel-2);
+  box-shadow: inset 0 0 0 1px var(--ts-line-2), var(--ts-highlight);
 }
 
 .trackspace-msri-main,
@@ -1823,9 +1951,9 @@ a.trackspace-source:hover {
 
 .trackspace-msri-code {
   display: block;
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
@@ -1847,14 +1975,21 @@ a.trackspace-source:hover {
   margin-top: 0;
 }
 
-.trackspace-msri-detail,
-.trackspace-prog-lens-detail {
+.trackspace-msri-detail {
   display: block;
   margin-top: 4px;
-  color: var(--ts-faint);
+  color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.trackspace-prog-lens-detail {
+  display: block;
+  margin-top: 3px;
+  color: var(--ts-dim);
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -1874,15 +2009,25 @@ a.trackspace-source:hover {
 }
 
 .trackspace-prog-lens-count {
-  color: var(--ts-dim);
+  min-width: 28px;
+  padding: 1px 8px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 999px;
+  color: var(--ts-ink-2);
   font-family: var(--ts-mono);
-  font-size: 12px;
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.trackspace-prog-lens.is-on .trackspace-prog-lens-count {
+  border-color: var(--ts-accent-dim);
+  color: var(--ts-accent);
 }
 
 .trackspace-mspage,
 .trackspace-prog-page {
   min-width: 0;
-  padding: 28px 34px 56px;
+  padding: 32px 40px 64px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--ts-line-2) transparent;
@@ -1902,21 +2047,23 @@ a.trackspace-source:hover {
 
 .trackspace-mssec h3 {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid var(--ts-line);
-  color: var(--ts-dim);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: var(--ts-ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
+/* Count pill beside a section heading. */
 .trackspace-mssec h3 b {
-  color: var(--ts-faint);
+  padding: 1px 8px;
+  border: 1px solid var(--ts-line-2);
+  border-radius: 999px;
+  color: var(--ts-dim);
+  font-family: var(--ts-mono);
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -1984,101 +2131,75 @@ a.trackspace-source:hover {
   flex: 0 0 auto;
   color: var(--ts-dim);
   font-family: var(--ts-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   text-align: right;
 }
 
 .trackspace-caprow-flag {
   color: var(--ts-blocker);
   font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-/* Program register rows. */
+/* Program register: one row per capability. */
 .trackspace-prog-register {
-  margin-top: 32px;
+  margin-top: 28px;
 }
 
 .trackspace-prog-list {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  border: 1px solid var(--ts-line);
+  border-radius: var(--ts-radius-lg);
+  background: var(--ts-panel);
+  box-shadow: var(--ts-highlight);
+  overflow: hidden;
 }
 
-.trackspace-prog-crow .trackspace-crow-date {
-  width: 54px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.trackspace-prog-crow .trackspace-crow-title {
-  font-weight: 500;
-}
-
-.trackspace-prog-signal-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 6px;
-}
-
-.trackspace-prog-signal-line {
-  display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
-  gap: 9px;
-  color: var(--ts-dim);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.trackspace-prog-signal-line > span,
 .trackspace-prog-fact-label,
 .trackspace-prog-row-sub {
-  color: var(--ts-faint);
-  font-family: var(--ts-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--ts-dim);
+  font-size: 12px;
 }
 
 .trackspace-prog-row {
   display: grid;
-  grid-template-columns: 8px minmax(170px, 1.08fr) auto minmax(220px, 1.36fr) 126px;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 132px;
+  gap: 20px;
+  align-items: start;
   width: 100%;
-  padding: 11px 0;
+  padding: 16px 20px;
   border: 0;
   border-bottom: 1px solid var(--ts-line);
   background: transparent;
   color: inherit;
   cursor: pointer;
   text-align: left;
+  transition: background 120ms ease;
+}
+
+.trackspace-prog-row:hover {
+  background: var(--ts-panel-2);
 }
 
 .trackspace-prog-row:last-child {
   border-bottom: 0;
 }
 
-.trackspace-prog-row-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
 .trackspace-prog-row-main,
-.trackspace-prog-row-fact {
+.trackspace-prog-row-facts {
   min-width: 0;
 }
 
 .trackspace-prog-row-name {
   display: block;
   color: var(--ts-ink);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 1.32;
+  line-height: 1.35;
   transition: color 120ms ease;
 }
 
@@ -2088,34 +2209,41 @@ a.trackspace-source:hover {
 
 .trackspace-prog-row-sub {
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
+  text-transform: capitalize;
 }
 
 .trackspace-prog-row-status {
   display: flex;
-  justify-content: flex-start;
+  padding-top: 3px;
+}
+
+.trackspace-prog-row-facts {
+  display: grid;
+  gap: 6px;
 }
 
 .trackspace-prog-row-fact {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
   align-items: baseline;
 }
 
 .trackspace-prog-fact-val {
   display: block;
-  color: var(--ts-dim);
-  font-size: 12px;
-  line-height: 1.45;
+  color: var(--ts-ink-2);
+  font-size: 13px;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .trackspace-prog-row-readiness {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+  padding-top: 7px;
 }
 
 .trackspace-prog-row-readiness .trackspace-readiness-bar {
@@ -2126,9 +2254,9 @@ a.trackspace-source:hover {
 .trackspace-prog-row-pct {
   width: 36px;
   flex: 0 0 auto;
-  color: var(--ts-dim);
+  color: var(--ts-ink-2);
   font-family: var(--ts-mono);
-  font-size: 10.5px;
+  font-size: 12px;
   text-align: right;
 }
 
@@ -2139,12 +2267,18 @@ a.trackspace-source:hover {
   }
 
   .trackspace-prog-row {
-    grid-template-columns: 8px minmax(180px, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 16px;
   }
 
-  .trackspace-prog-row-fact,
+  .trackspace-prog-row-facts,
   .trackspace-prog-row-readiness {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
+  }
+
+  .trackspace-prog-row-readiness {
+    max-width: 280px;
+    padding-top: 0;
   }
 }
 
@@ -2159,11 +2293,14 @@ a.trackspace-source:hover {
   .trackspace-prog-rail {
     display: flex;
     align-items: stretch;
-    padding: 0;
+    gap: 6px;
+    padding: 10px 16px;
     border-right: 0;
     border-bottom: 1px solid var(--ts-line);
     overflow-x: auto;
     overflow-y: hidden;
+    scrollbar-width: none;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .trackspace-msrail-head,
@@ -2175,16 +2312,24 @@ a.trackspace-source:hover {
   .trackspace-prog-lens {
     width: auto;
     flex: 0 0 auto;
-    border-bottom: 2px solid transparent;
-  }
-
-  .trackspace-prog-lens {
-    width: 178px;
+    margin-bottom: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--ts-line);
   }
 
   .trackspace-msri.is-on,
   .trackspace-prog-lens.is-on {
-    border-bottom-color: var(--ts-accent);
+    border-color: var(--ts-accent-dim);
+    box-shadow: none;
+  }
+
+  /* Phone tabs keep the label and count; descriptions live on wider screens. */
+  .trackspace-prog-lens-detail {
+    display: none;
+  }
+
+  .trackspace-msri-detail {
+    margin-top: 2px;
   }
 
   .trackspace-mspage,
@@ -2198,19 +2343,12 @@ a.trackspace-source:hover {
   }
 
   .trackspace-prog-row {
-    grid-template-columns: 8px minmax(0, 1fr);
+    padding: 14px 16px;
   }
 
-  .trackspace-prog-row-status,
-  .trackspace-prog-row-fact,
-  .trackspace-prog-row-readiness {
-    grid-column: 2 / -1;
-  }
-
-  .trackspace-prog-row-fact,
-  .trackspace-prog-signal-line {
+  .trackspace-prog-row-fact {
     grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+    gap: 2px;
   }
 }
 
@@ -2222,11 +2360,12 @@ a.trackspace-source:hover {
   top: 50%;
   left: 50%;
   z-index: 51;
-  width: min(600px, calc(100vw - 32px));
+  width: min(620px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--ts-line-2);
+  border-radius: var(--ts-radius-lg);
   background: var(--ts-bg-2);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 30px 80px rgba(0, 0, 0, 0.6);
   overflow: hidden;
@@ -2302,7 +2441,7 @@ a.trackspace-source:hover {
 
 .trackspace-intro-head h2 {
   color: var(--ts-ink);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;
@@ -2310,9 +2449,9 @@ a.trackspace-source:hover {
 
 .trackspace-intro-head p {
   max-width: 54ch;
-  margin-top: 8px;
+  margin-top: 10px;
   color: var(--ts-ink-2);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -2339,8 +2478,8 @@ a.trackspace-source:hover {
 .trackspace-intro-facts dt {
   color: var(--ts-faint);
   font-family: var(--ts-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -2468,6 +2607,7 @@ a.trackspace-source:hover {
 }
 
 .trackspace-intro-foot {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2529,6 +2669,19 @@ a.trackspace-source:hover {
 
   .trackspace-intro-foot > span {
     display: none;
+  }
+}
+
+/* Touch devices have no number keys to press. */
+@media (hover: none) {
+  .trackspace-intro-view kbd,
+  .trackspace-intro-bar kbd,
+  .trackspace-intro-foot > span {
+    display: none;
+  }
+
+  .trackspace-intro-foot {
+    justify-content: flex-end;
   }
 }
 

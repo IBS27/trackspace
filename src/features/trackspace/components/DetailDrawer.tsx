@@ -28,6 +28,7 @@ import type {
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { ImpactTag } from "./ImpactTag";
 import { ArrowUpRightIcon, CheckIcon, ChevronIcon, CloseIcon } from "./icons";
 import { StatusChip } from "./StatusChip";
 
@@ -71,7 +72,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={event.status} />
         <ConfidenceChip confidence={event.conf} />
-        <span className="trackspace-tag">{event.impact} impact</span>
+        <ImpactTag impact={event.impact} />
       </>
     );
     body = <EventBody event={event} onOpen={onOpen} />;
@@ -199,7 +200,7 @@ function FoldSection({
 export function ClampedText({
   text,
   className,
-  lines = 3,
+  lines = 5,
 }: {
   text: string;
   className?: string;
@@ -259,7 +260,7 @@ function CapabilityTag({
         className={`trackspace-captag-dot trackspace-bg-${capability.status}`}
         aria-hidden="true"
       />
-      {capability.short}
+      {capability.name}
     </button>
   );
 }
@@ -544,9 +545,6 @@ function CapabilityBody({
           {capability.readiness}% · {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
-      {capability.metrics && (
-        <CapabilityMetricsSection metrics={capability.metrics} />
-      )}
       <DrawerSection label="Depends on (upstream)">
         {capability.deps.length ? (
           <div className="trackspace-capset">
@@ -588,6 +586,9 @@ function CapabilityBody({
             </span>
           </button>
         </DrawerSection>
+      )}
+      {capability.metrics && (
+        <CapabilityMetricsSection metrics={capability.metrics} />
       )}
       {events.length > 0 && (
         <FoldSection label="Related events" count={events.length}>

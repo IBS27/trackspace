@@ -40,7 +40,7 @@ export const STATUS: Record<Status, StatusMeta> = {
     id: "blocker",
     label: "Blocker",
     glyph: "■",
-    desc: "A hard dependency is unmet; downstream items wait.",
+    desc: "Not ready yet, and other capabilities wait on it.",
   },
   unknown: {
     id: "unknown",

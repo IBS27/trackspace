@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { VIEWS } from "../views";
 import { InfoIcon } from "./icons";
+import { useActiveIntoView } from "./useActiveIntoView";
 
 export type DataStatus = "live" | "connecting" | "snapshot";
 
@@ -129,8 +130,10 @@ function TabBar({
   activeView: string;
   onNavChange: (view: string) => void;
 }) {
+  const navRef = useActiveIntoView<HTMLElement>(".trackspace-tab.is-active", activeView);
+
   return (
-    <nav className="trackspace-tabbar" aria-label="Trackspace views">
+    <nav ref={navRef} className="trackspace-tabbar" aria-label="Trackspace views">
       {VIEWS.map((item) => {
         const Icon = item.icon;
         return (

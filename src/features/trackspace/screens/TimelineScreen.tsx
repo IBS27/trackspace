@@ -7,13 +7,8 @@ import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
 import { getSortedEvents } from "../data/selectors";
-import type { Impact, Status, TrackspaceEvent } from "../data/types";
-
-const IMPACT_COLOR: Record<Impact, string> = {
-  high: "var(--ts-watch)",
-  med: "var(--ts-dim)",
-  low: "var(--ts-faint)",
-};
+import type { Status, TrackspaceEvent } from "../data/types";
+import { ImpactTag } from "../components/ImpactTag";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -128,19 +123,14 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
                 </div>
                 <button
                   type="button"
-                  className="trackspace-tlcard"
+                  className={`trackspace-tlcard${event.future ? " is-fut" : ""}`}
                   onClick={() => onOpen({ type: "event", id: event.id })}
                 >
                   <span className="trackspace-tlcard-title">{event.title}</span>
                   <span className="trackspace-tlcard-meta">
                     <StatusChip status={event.status} />
                     <ConfidenceChip confidence={event.conf} />
-                    <span
-                      className="trackspace-tlcard-impact"
-                      style={{ color: IMPACT_COLOR[event.impact] }}
-                    >
-                      {event.impact} impact
-                    </span>
+                    <ImpactTag impact={event.impact} />
                   </span>
                   <span className="trackspace-tlcard-what">{event.what}</span>
                 </button>

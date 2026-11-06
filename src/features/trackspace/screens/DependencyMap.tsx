@@ -14,42 +14,43 @@ import type {
 
 // Fixed layout: capabilities flow left to right from foundations to the
 // surface systems that depend on them. Positions are node centers.
-const NODE_WIDTH = 172;
-const GRAPH_WIDTH = 1180;
-const GRAPH_HEIGHT = 760;
+const NODE_WIDTH = 196;
+const GRAPH_WIDTH = 1190;
+const GRAPH_HEIGHT = 680;
+const LANE_WIDTH = 252;
 
 const NODE_POSITIONS: Record<CapabilityId, { x: number; y: number }> = {
   // Foundations — launch, propulsion, crew and power everything builds on.
-  sls: { x: 150, y: 120 },
-  esm: { x: 150, y: 255 },
-  cryo: { x: 150, y: 390 },
-  suit: { x: 150, y: 525 },
-  power: { x: 150, y: 660 },
+  sls: { x: 160, y: 96 },
+  esm: { x: 160, y: 222 },
+  cryo: { x: 160, y: 348 },
+  suit: { x: 160, y: 474 },
+  power: { x: 160, y: 600 },
   // Enablers — reaching and moving around the surface, plus prospecting.
-  orion: { x: 430, y: 120 },
-  gateway: { x: 430, y: 255 },
-  hls: { x: 430, y: 390 },
-  ltv: { x: 430, y: 525 },
-  ice: { x: 430, y: 660 },
+  orion: { x: 450, y: 96 },
+  gateway: { x: 450, y: 222 },
+  hls: { x: 450, y: 348 },
+  ltv: { x: 450, y: 474 },
+  ice: { x: 450, y: 600 },
   // Infrastructure — relay, resource processing, construction, thermal, storage.
-  comms: { x: 710, y: 120 },
-  isru: { x: 710, y: 255 },
-  build: { x: 710, y: 390 },
-  thermal: { x: 710, y: 525 },
-  night: { x: 710, y: 660 },
+  comms: { x: 740, y: 96 },
+  isru: { x: 740, y: 222 },
+  build: { x: 740, y: 348 },
+  thermal: { x: 740, y: 474 },
+  night: { x: 740, y: 600 },
   // Surface systems — keeping a crew alive against the lunar environment.
-  rad: { x: 990, y: 120 },
-  dust: { x: 990, y: 255 },
-  health: { x: 990, y: 390 },
-  eclss: { x: 990, y: 525 },
-  hab: { x: 990, y: 660 },
+  rad: { x: 1030, y: 96 },
+  dust: { x: 1030, y: 222 },
+  health: { x: 1030, y: 348 },
+  eclss: { x: 1030, y: 474 },
+  hab: { x: 1030, y: 600 },
 };
 
 const COLUMN_HEADERS = [
-  { x: 150, title: "Foundations" },
-  { x: 430, title: "Enablers" },
-  { x: 710, title: "Infrastructure" },
-  { x: 990, title: "Surface Systems" },
+  { x: 160, title: "Foundations" },
+  { x: 450, title: "Enablers" },
+  { x: 740, title: "Infrastructure" },
+  { x: 1030, title: "Surface systems" },
 ];
 
 function edgePath(from: CapabilityId, to: CapabilityId): string | null {
@@ -64,6 +65,28 @@ function edgePath(from: CapabilityId, to: CapabilityId): string | null {
 
 function statusColor(status: Status): string {
   return `var(--ts-${status})`;
+}
+
+/** Everything upstream and downstream of `id`, including `id` itself. */
+function relatedTo(
+  id: CapabilityId,
+  edges: { from: CapabilityId; to: CapabilityId }[],
+): Set<CapabilityId> {
+  const related = new Set<CapabilityId>([id]);
+  for (const direction of ["up", "down"] as const) {
+    const queue: CapabilityId[] = [id];
+    while (queue.length > 0) {
+      const current = queue.shift() as CapabilityId;
+      for (const edge of edges) {
+        const [near, far] = direction === "up" ? [edge.to, edge.from] : [edge.from, edge.to];
+        if (near === current && !related.has(far)) {
+          related.add(far);
+          queue.push(far);
+        }
+      }
+    }
+  }
+  return related;
 }
 
 function toggle<T>(values: T[], value: T): T[] {
@@ -83,6 +106,8 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
   const [groupFilter, setGroupFilter] = useState<CapabilityGroup[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [hovered, setHovered] = useState<CapabilityId | null>(null);
+
+  const related = hovered ? relatedTo(hovered, edges) : null;
 
   const matches = (capability: Capability) =>
     (groupFilter.length === 0 || groupFilter.includes(capability.group)) &&
@@ -149,14 +174,17 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
       </div>
 
       <div className="trackspace-graph">
-        <div className="trackspace-graph-inner">
+        <div
+          className="trackspace-graph-inner"
+          style={{ width: GRAPH_WIDTH, height: GRAPH_HEIGHT }}
+        >
           {COLUMN_HEADERS.map((column) => (
             <div
               key={column.title}
-              className="trackspace-colhdr"
-              style={{ left: column.x }}
+              className="trackspace-lane"
+              style={{ left: column.x - LANE_WIDTH / 2, width: LANE_WIDTH }}
             >
-              {column.title}
+              <span className="trackspace-colhdr">{column.title}</span>
             </div>
           ))}
 
@@ -174,7 +202,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                 refY="3.5"
                 orient="auto"
               >
-                <path d="M0,0 L7,3.5 L0,7 z" fill="#48484f" />
+                <path d="M0,0 L7,3.5 L0,7 z" fill="context-stroke" />
               </marker>
             </defs>
             {edges.map((edge) => {
@@ -183,7 +211,9 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
               const active =
                 matches(capById[edge.from]) &&
                 matches(capById[edge.to]);
-              const hot = hovered === edge.from || hovered === edge.to;
+              const hot =
+                related !== null && related.has(edge.from) && related.has(edge.to);
+              const faded = related !== null && !hot;
               return (
                 <path
                   key={`${edge.from}-${edge.to}`}
@@ -197,10 +227,10 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                     stroke: hot
                       ? statusColor(edge.status)
                       : edge.status === "blocker"
-                        ? "rgba(255, 84, 104, 0.45)"
-                        : "#34343a",
-                    strokeWidth: hot ? 2.2 : 1.4,
-                    opacity: active ? 1 : 0.12,
+                        ? "rgba(242, 100, 116, 0.55)"
+                        : "#3a404c",
+                    strokeWidth: hot ? 2 : 1.4,
+                    opacity: !active ? 0.1 : faded ? 0.18 : 1,
                   }}
                 />
               );
@@ -217,7 +247,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                 key={capability.id}
                 className={`trackspace-gnode${on ? "" : " is-dim"}${
                   hovered === capability.id ? " is-sel" : ""
-                }`}
+                }${related && !related.has(capability.id) ? " is-faded" : ""}`}
                 style={{ left: position.x, top: position.y }}
                 onMouseEnter={() => setHovered(capability.id)}
                 onMouseLeave={() => setHovered(null)}
