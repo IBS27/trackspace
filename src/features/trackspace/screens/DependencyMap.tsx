@@ -17,7 +17,7 @@ import type {
 // surface systems that depend on them. Positions are node centers.
 const NODE_WIDTH = 196;
 const GRAPH_WIDTH = 1190;
-const GRAPH_HEIGHT = 680;
+const GRAPH_HEIGHT = 676;
 const LANE_WIDTH = 252;
 
 const NODE_POSITIONS: Record<CapabilityId, { x: number; y: number }> = {
@@ -62,14 +62,43 @@ const LANES = COLUMN_HEADERS.map((column) => ({
     .sort((a, b) => NODE_POSITIONS[a].y - NODE_POSITIONS[b].y),
 }));
 
+const COLUMN_X = COLUMN_HEADERS.map((column) => column.x);
+const ROW_Y = [...new Set(Object.values(NODE_POSITIONS).map((p) => p.y))].sort((a, b) => a - b);
+const ROW_STEP = ROW_Y[1] - ROW_Y[0];
+// Horizontal channels run through the gaps between rows (and below the last row).
+const CHANNELS = ROW_Y.map((y) => y + ROW_STEP / 2);
+
+/**
+ * Edges between neighboring tiers curve across the gutter. Edges that skip a
+ * tier drop into the nearest row gap, run along it, and rise into the target,
+ * so they never pass through a card.
+ */
 function edgePath(from: CapabilityId, to: CapabilityId): string | null {
   const a = NODE_POSITIONS[from];
   const b = NODE_POSITIONS[to];
   if (!a || !b) return null;
   const x1 = a.x + NODE_WIDTH / 2;
   const x2 = b.x - NODE_WIDTH / 2;
-  const mx = (x1 + x2) / 2;
-  return `M${x1},${a.y} C${mx},${a.y} ${mx},${b.y} ${x2},${b.y}`;
+  const span = COLUMN_X.indexOf(b.x) - COLUMN_X.indexOf(a.x);
+  if (span <= 1) {
+    const mx = (x1 + x2) / 2;
+    return `M${x1},${a.y} C${mx},${a.y} ${mx},${b.y} ${x2},${b.y}`;
+  }
+  const gutter = COLUMN_X[1] - COLUMN_X[0] - NODE_WIDTH;
+  const mid = (a.y + b.y) / 2;
+  const channel = CHANNELS.reduce((best, y) =>
+    Math.abs(y - mid) < Math.abs(best - mid) ? y : best,
+  );
+  const enter = x1 + gutter;
+  const exit = x2 - gutter;
+  const m1 = x1 + gutter / 2;
+  const m2 = x2 - gutter / 2;
+  return [
+    `M${x1},${a.y}`,
+    `C${m1},${a.y} ${m1},${channel} ${enter},${channel}`,
+    `L${exit},${channel}`,
+    `C${m2},${channel} ${m2},${b.y} ${x2},${b.y}`,
+  ].join(" ");
 }
 
 function statusColor(status: Status): string {

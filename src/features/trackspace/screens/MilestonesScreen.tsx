@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { ClampedText, EventRow } from "../components/DetailDrawer";
+import { ConfidenceChip } from "../components/ConfidenceChip";
 import { StatusChip } from "../components/StatusChip";
 import { useActiveIntoView } from "../components/useActiveIntoView";
 import { useDataset } from "../data/dataset-context";
@@ -70,7 +71,9 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
         <h1>{milestone.name}</h1>
         <div className="trackspace-page-meta">
           <StatusChip status={milestone.status} />
-          <span className="trackspace-tag">{milestone.dateConf} date confidence</span>
+          <span className="trackspace-tag">
+            Date <ConfidenceChip confidence={milestone.dateConf} />
+          </span>
           {milestone.critical && (
             <span className="trackspace-tag is-critical">Critical path</span>
           )}

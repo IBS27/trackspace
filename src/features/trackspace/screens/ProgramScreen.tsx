@@ -133,10 +133,10 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
             {summary.watch} watch
           </span>
           <span className="trackspace-tag trackspace-tabular">
-            {summary.withSlip} schedule
+            {summary.withSlip} schedule signals
           </span>
           <span className="trackspace-tag trackspace-tabular">
-            {summary.withFunding} funding
+            {summary.withFunding} funding signals
           </span>
         </div>
 

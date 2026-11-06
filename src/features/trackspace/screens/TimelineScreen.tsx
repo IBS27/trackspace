@@ -107,7 +107,7 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
               >
                 <div className="trackspace-tldate">
                   <b className="trackspace-tabular">{event.date}</b>
-                  {event.future ? "projected" : "logged"}
+                  {event.future && "projected"}
                 </div>
                 <div
                   className={`trackspace-tlnode${event.future ? " is-fut" : ""}`}

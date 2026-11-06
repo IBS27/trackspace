@@ -48,7 +48,7 @@ describe("TrackspaceApp", () => {
     vi.mocked(useQueries).mockReturnValue({ dataset: new Error("Free plan limits exceeded") });
     render(<TrackspaceApp live />);
     expect(screen.getByRole("banner").textContent).toContain("SNAPSHOT");
-    expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();
+    expect(screen.getByText("Overall readiness")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Program" }));
     expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
   });
@@ -122,13 +122,13 @@ describe("TrackspaceApp", () => {
     expect(screen.getByRole("heading", { name: "Program Health" })).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "1" });
-    expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();
+    expect(screen.getByText("Overall readiness")).toBeTruthy();
   });
 
   it("ignores number keys with modifiers held", () => {
     render(<TrackspaceApp />);
     fireEvent.keyDown(window, { key: "3", metaKey: true });
-    expect(screen.getByText("Lunar-Base Readiness")).toBeTruthy();
+    expect(screen.getByText("Overall readiness")).toBeTruthy();
   });
 
   it("opens location evidence after selecting a scene marker", async () => {

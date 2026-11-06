@@ -103,7 +103,9 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
     meta = (
       <>
         <StatusChip status={milestone.status} />
-        <span className="trackspace-tag">{milestone.dateConf} date</span>
+        <span className="trackspace-tag">
+          Date <ConfidenceChip confidence={milestone.dateConf} />
+        </span>
         {milestone.critical && (
           <span className="trackspace-tag is-critical">Critical path</span>
         )}

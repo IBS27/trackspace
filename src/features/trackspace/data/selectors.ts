@@ -84,8 +84,11 @@ export function getStatusCounts(
 }
 
 /** Capabilities currently blocking downstream work. */
+/** Hard blockers, least ready first. */
 export function getBlockers(capabilities: Capability[] = CAPABILITIES): Capability[] {
-  return capabilities.filter((c) => c.status === "blocker");
+  return capabilities
+    .filter((c) => c.status === "blocker")
+    .sort((a, b) => a.readiness - b.readiness);
 }
 
 /**
