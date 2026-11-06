@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import type { DrawerSelection } from "../components/DetailDrawer";
+import { useMediaQuery } from "../components/useMediaQuery";
 import { useDataset } from "../data/dataset-context";
 import { CAPABILITY_GROUPS, STATUS, STATUS_LIST } from "../data/seed";
 import { capabilityById, getDependencyEdges } from "../data/selectors";
@@ -52,6 +53,14 @@ const COLUMN_HEADERS = [
   { x: 740, title: "Infrastructure" },
   { x: 1030, title: "Surface systems" },
 ];
+
+/** Capabilities per column, top to bottom. */
+const LANES = COLUMN_HEADERS.map((column) => ({
+  title: column.title,
+  ids: (Object.keys(NODE_POSITIONS) as CapabilityId[])
+    .filter((id) => NODE_POSITIONS[id].x === column.x)
+    .sort((a, b) => NODE_POSITIONS[a].y - NODE_POSITIONS[b].y),
+}));
 
 function edgePath(from: CapabilityId, to: CapabilityId): string | null {
   const a = NODE_POSITIONS[from];
@@ -108,6 +117,8 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
   const [hovered, setHovered] = useState<CapabilityId | null>(null);
 
   const related = hovered ? relatedTo(hovered, edges) : null;
+  // Phones get a stacked list per tier instead of a sideways-scrolling canvas.
+  const stacked = useMediaQuery("(max-width: 680px)");
 
   const matches = (capability: Capability) =>
     (groupFilter.length === 0 || groupFilter.includes(capability.group)) &&
@@ -173,116 +184,172 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
         </div>
       </div>
 
-      <div className="trackspace-graph">
-        <div
-          className="trackspace-graph-inner"
-          style={{ width: GRAPH_WIDTH, height: GRAPH_HEIGHT }}
-        >
-          {COLUMN_HEADERS.map((column) => (
-            <div
-              key={column.title}
-              className="trackspace-lane"
-              style={{ left: column.x - LANE_WIDTH / 2, width: LANE_WIDTH }}
-            >
-              <span className="trackspace-colhdr">{column.title}</span>
-            </div>
+      {stacked ? (
+        <div className="trackspace-deplist">
+          {LANES.map((lane) => (
+            <section className="trackspace-deplane" key={lane.title}>
+              <h3 className="trackspace-deplane-title">{lane.title}</h3>
+              {lane.ids.map((id) => {
+                const capability = capById[id];
+                if (!capability) return null;
+                const needs = capability.deps
+                  .map((dep) => capById[dep]?.name)
+                  .filter(Boolean)
+                  .join(", ");
+                return (
+                  <button
+                    type="button"
+                    key={id}
+                    className={`trackspace-dcard${matches(capability) ? "" : " is-dim"}`}
+                    style={{ "--node-status": statusColor(capability.status) } as CSSProperties}
+                    onClick={() => onOpen({ type: "capability", id })}
+                  >
+                    <span className="trackspace-dcard-top">
+                      <span className="trackspace-gnode-name">{capability.name}</span>
+                      <span
+                        className={`trackspace-gnode-state trackspace-${capability.status}`}
+                      >
+                        {STATUS[capability.status].label}
+                      </span>
+                    </span>
+                    <span className="trackspace-dcard-bar">
+                      <span className="trackspace-gnode-bar" aria-hidden="true">
+                        <span
+                          style={{
+                            width: `${capability.readiness}%`,
+                            background: statusColor(capability.status),
+                          }}
+                        />
+                      </span>
+                      <span className="trackspace-gnode-readiness trackspace-tabular">
+                        {capability.readiness}%
+                      </span>
+                    </span>
+                    {needs && <span className="trackspace-dcard-needs">Needs {needs}</span>}
+                  </button>
+                );
+              })}
+            </section>
           ))}
-
-          <svg
-            className="trackspace-edges"
-            viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
-            aria-hidden="true"
+        </div>
+      ) : (
+        <div className="trackspace-graph">
+          <div
+            className="trackspace-graph-inner"
+            style={{ width: GRAPH_WIDTH, height: GRAPH_HEIGHT }}
           >
-            <defs>
-              <marker
-                id="trackspace-arrowhead"
-                markerWidth="7"
-                markerHeight="7"
-                refX="6"
-                refY="3.5"
-                orient="auto"
+            {COLUMN_HEADERS.map((column) => (
+              <div
+                key={column.title}
+                className="trackspace-lane"
+                style={{ left: column.x - LANE_WIDTH / 2, width: LANE_WIDTH }}
               >
-                <path d="M0,0 L7,3.5 L0,7 z" fill="context-stroke" />
-              </marker>
-            </defs>
-            {edges.map((edge) => {
-              const path = edgePath(edge.from, edge.to);
-              if (!path) return null;
-              const active =
-                matches(capById[edge.from]) &&
-                matches(capById[edge.to]);
-              const hot =
-                related !== null && related.has(edge.from) && related.has(edge.to);
-              const faded = related !== null && !hot;
-              return (
-                <path
-                  key={`${edge.from}-${edge.to}`}
-                  d={path}
-                  fill="none"
-                  markerEnd="url(#trackspace-arrowhead)"
-                  strokeDasharray={
-                    edge.status === "blocker" ? "6 4" : undefined
-                  }
-                  style={{
-                    stroke: hot
-                      ? statusColor(edge.status)
-                      : edge.status === "blocker"
-                        ? "rgba(242, 100, 116, 0.55)"
-                        : "#3a404c",
-                    strokeWidth: hot ? 2 : 1.4,
-                    opacity: !active ? 0.1 : faded ? 0.18 : 1,
-                  }}
-                />
-              );
-            })}
-          </svg>
+                <span className="trackspace-colhdr">{column.title}</span>
+              </div>
+            ))}
 
-          {dataset.capabilities.map((capability) => {
-            const position = NODE_POSITIONS[capability.id];
-            if (!position) return null;
-            const on = matches(capability);
-            return (
-              <button
-                type="button"
-                key={capability.id}
-                className={`trackspace-gnode${on ? "" : " is-dim"}${
-                  hovered === capability.id ? " is-sel" : ""
-                }${related && !related.has(capability.id) ? " is-faded" : ""}`}
-                style={{ left: position.x, top: position.y }}
-                onMouseEnter={() => setHovered(capability.id)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={() => setHovered(capability.id)}
-                onBlur={() => setHovered(null)}
-                onClick={() =>
-                  onOpen({ type: "capability", id: capability.id })
-                }
-              >
-                <span className="trackspace-gnode-name">
-                  {capability.name}
-                </span>
-                <span className="trackspace-gnode-bar" aria-hidden="true">
-                  <span
+            <svg
+              className="trackspace-edges"
+              viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+              aria-hidden="true"
+            >
+              <defs>
+                <marker
+                  id="trackspace-arrowhead"
+                  markerWidth="7"
+                  markerHeight="7"
+                  refX="6"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <path d="M0,0 L7,3.5 L0,7 z" fill="context-stroke" />
+                </marker>
+              </defs>
+              {edges.map((edge) => {
+                const path = edgePath(edge.from, edge.to);
+                if (!path) return null;
+                const active =
+                  matches(capById[edge.from]) &&
+                  matches(capById[edge.to]);
+                const hot =
+                  related !== null && related.has(edge.from) && related.has(edge.to);
+                const faded = related !== null && !hot;
+                return (
+                  <path
+                    key={`${edge.from}-${edge.to}`}
+                    d={path}
+                    fill="none"
+                    markerEnd="url(#trackspace-arrowhead)"
+                    strokeDasharray={
+                      edge.status === "blocker" ? "6 4" : undefined
+                    }
                     style={{
-                      width: `${capability.readiness}%`,
-                      background: statusColor(capability.status),
+                      stroke: hot
+                        ? statusColor(edge.status)
+                        : edge.status === "blocker"
+                          ? "rgba(242, 100, 116, 0.55)"
+                          : "#3a404c",
+                      strokeWidth: hot ? 2 : 1.4,
+                      opacity: !active ? 0.1 : faded ? 0.18 : 1,
                     }}
                   />
-                </span>
-                <span className="trackspace-gnode-foot">
-                  <span className="trackspace-gnode-readiness trackspace-tabular">
-                    {capability.readiness}%
+                );
+              })}
+            </svg>
+
+            {dataset.capabilities.map((capability) => {
+              const position = NODE_POSITIONS[capability.id];
+              if (!position) return null;
+              const on = matches(capability);
+              return (
+                <button
+                  type="button"
+                  key={capability.id}
+                  className={`trackspace-gnode${on ? "" : " is-dim"}${
+                    hovered === capability.id ? " is-sel" : ""
+                  }${related && !related.has(capability.id) ? " is-faded" : ""}`}
+                  style={
+                    {
+                      left: position.x,
+                      top: position.y,
+                      "--node-status": statusColor(capability.status),
+                    } as CSSProperties
+                  }
+                  onMouseEnter={() => setHovered(capability.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(capability.id)}
+                  onBlur={() => setHovered(null)}
+                  onClick={() =>
+                    onOpen({ type: "capability", id: capability.id })
+                  }
+                >
+                  <span className="trackspace-gnode-name">
+                    {capability.name}
                   </span>
-                  <span
-                    className={`trackspace-gnode-state trackspace-${capability.status}`}
-                  >
-                    {STATUS[capability.status].label}
+                  <span className="trackspace-gnode-bar" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${capability.readiness}%`,
+                        background: statusColor(capability.status),
+                      }}
+                    />
                   </span>
-                </span>
-              </button>
-            );
-          })}
+                  <span className="trackspace-gnode-foot">
+                    <span className="trackspace-gnode-readiness trackspace-tabular">
+                      {capability.readiness}%
+                    </span>
+                    <span
+                      className={`trackspace-gnode-state trackspace-${capability.status}`}
+                    >
+                      {STATUS[capability.status].label}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

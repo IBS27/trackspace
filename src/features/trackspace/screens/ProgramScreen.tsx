@@ -147,6 +147,12 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
             {currentLens.label} <b>{visible.length}</b>
           </h3>
           <div className="trackspace-prog-list">
+            <div className="trackspace-prog-head" aria-hidden="true">
+              <span>Capability</span>
+              <span>Status</span>
+              <span>Schedule and funding</span>
+              <span>Readiness</span>
+            </div>
             {visible.map((entry) => (
               <ProgramCapabilityRow
                 key={entry.capability.id}

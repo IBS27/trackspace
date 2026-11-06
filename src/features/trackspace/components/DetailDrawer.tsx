@@ -88,7 +88,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={capability.status} />
         <ConfidenceChip confidence={capability.conf} />
-        <span className="trackspace-tag trackspace-tabular">{capability.readiness}% ready</span>
+        <span className="trackspace-tag trackspace-tabular">Readiness {capability.readiness}%</span>
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
@@ -554,7 +554,7 @@ function CapabilityBody({
           </div>
         ) : (
           <p className="trackspace-muted">
-            No upstream dependencies. This is a foundation capability.
+            None. This is a foundation capability.
           </p>
         )}
       </DrawerSection>
