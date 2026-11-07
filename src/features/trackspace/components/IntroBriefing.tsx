@@ -11,6 +11,7 @@ import { VIEWS } from "../views";
 import { CloseIcon } from "./icons";
 import { ReadinessSummary } from "./ReadinessSummary";
 import { StatusChip } from "./StatusChip";
+import { useEdgeFade } from "./useEdgeFade";
 
 const STORAGE_KEY = "trackspace:intro-dismissed";
 
@@ -41,6 +42,7 @@ export function IntroBriefing({
   const seen = useSyncExternalStore(subscribeToNothing, readSeen, () => true);
   const [dismissed, setDismissed] = useState(false);
   const open = requested || (!seen && !dismissed);
+  const scrollRef = useEdgeFade<HTMLDivElement>(undefined, "y", open);
 
   const dismiss = useCallback(() => {
     setDismissed(true);
@@ -89,7 +91,7 @@ export function IntroBriefing({
           </button>
         </div>
 
-        <div className="trackspace-intro-scroll">
+        <div ref={scrollRef} className="trackspace-intro-scroll">
           <div className="trackspace-intro-head">
             <h2 id="trackspace-intro-title">How close is a permanent Moon base?</h2>
             <p>

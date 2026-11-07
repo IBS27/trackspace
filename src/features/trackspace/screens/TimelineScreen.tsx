@@ -6,7 +6,7 @@ import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
-import { getSortedEvents } from "../data/selectors";
+import { futureEventKind, getSortedEvents } from "../data/selectors";
 import type { Status, TrackspaceEvent } from "../data/types";
 import { ImpactTag } from "../components/ImpactTag";
 import { useEdgeFade } from "../components/useEdgeFade";
@@ -19,10 +19,10 @@ const MONTHS = [
 /** Divider label: everything below is projected; the log runs to this month. */
 function epochLabel(events: TrackspaceEvent[]): string {
   const lastLogged = events.filter((e) => !e.future).at(-1);
-  if (!lastLogged) return "Projected from here";
+  if (!lastLogged) return "Plans and projections";
   const [year, month] = lastLogged.date.split("-");
   const name = MONTHS[Number(month) - 1] ?? month;
-  return `Projected from here · logged through ${name} ${year}`;
+  return `Plans and projections · logged through ${name} ${year}`;
 }
 
 function statusColor(status: Status): string {
@@ -109,7 +109,8 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
               >
                 <div className="trackspace-tldate">
                   <b className="trackspace-tabular">{event.date}</b>
-                  {event.future && "projected"}
+                  {futureEventKind(event) === "announced" && "announced"}
+                  {futureEventKind(event) === "target" && "target"}
                 </div>
                 <div
                   className={`trackspace-tlnode${event.future ? " is-fut" : ""}`}

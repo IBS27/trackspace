@@ -8,6 +8,7 @@ import { STATUS } from "../data/seed";
 import {
   capabilityById,
   eventById,
+  futureEventKind,
   getDownstream,
   getEventsForCapability,
   getEventsForMilestone,
@@ -25,12 +26,14 @@ import type {
   Milestone,
   MilestoneId,
   Source,
+  Status,
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { ImpactTag } from "./ImpactTag";
 import { ArrowUpRightIcon, CheckIcon, ChevronIcon, CloseIcon } from "./icons";
 import { StatusChip } from "./StatusChip";
+import { useEdgeFade } from "./useEdgeFade";
 
 export type DrawerSelection =
   | { type: "capability"; id: CapabilityId }
@@ -46,6 +49,7 @@ type DetailDrawerProps = {
 
 export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) {
   const dataset = useDataset();
+  const bodyRef = useEdgeFade<HTMLDivElement>(undefined, "y");
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -66,7 +70,8 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: event not found: ${selection.id}`);
       return null;
     }
-    kicker = `${event.future ? "PROJECTED EVENT" : "LOGGED EVENT"} · ${event.date}`;
+    const kind = futureEventKind(event);
+    kicker = `${kind === "announced" ? "ANNOUNCED PLAN" : kind === "target" ? "TARGET" : "LOGGED EVENT"} · ${event.date}`;
     title = event.title;
     meta = (
       <>
@@ -98,8 +103,8 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: milestone not found: ${selection.id}`);
       return null;
     }
-    kicker = `MILESTONE · ${milestone.date}`;
-    title = `${milestone.code} — ${milestone.name}`;
+    kicker = `MILESTONE · ${milestone.code} · ${milestone.date}`;
+    title = milestone.name;
     meta = (
       <>
         <StatusChip status={milestone.status} />
@@ -151,7 +156,9 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
           </button>
           <div className="trackspace-drawer-meta">{meta}</div>
         </div>
-        <div className="trackspace-drawer-body">{body}</div>
+        <div ref={bodyRef} className="trackspace-drawer-body">
+          {body}
+        </div>
       </aside>
     </>
   );
@@ -505,7 +512,10 @@ function MetricRow({
 function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
   const { provider, contract, funding, target, slip } = metrics;
   return (
-    <FoldSection label="Funding & schedule">
+    <FoldSection
+      label="Funding & schedule"
+      count={[provider, contract, funding, target, slip].filter(Boolean).length}
+    >
       <div className="trackspace-metrics">
         {provider && (
           <MetricRow label="Provider">
@@ -722,6 +732,9 @@ function LocationBody({
   );
 }
 
+/** Required capabilities are grouped worst first. */
+const GROUP_ORDER: Status[] = ["blocker", "watch", "unknown", "ready"];
+
 function MilestoneBody({
   milestone,
   onOpen,
@@ -732,6 +745,7 @@ function MilestoneBody({
   const dataset = useDataset();
   const events = getEventsForMilestone(milestone.id, dataset);
   const locations = getLocationsForMilestone(milestone.id, dataset);
+  const byCapability = capabilityById(dataset.capabilities);
 
   return (
     <>
@@ -739,10 +753,25 @@ function MilestoneBody({
         <ClampedText text={milestone.objective} />
       </DrawerSection>
       <DrawerSection label="Required capabilities">
-        <div className="trackspace-capset">
-          {milestone.caps.map((id) => (
-            <CapabilityTag key={id} id={id} onOpen={onOpen} />
-          ))}
+        <div className="trackspace-capgroups">
+          {GROUP_ORDER.map((status) => {
+            const ids = milestone.caps.filter(
+              (id) => byCapability[id]?.status === status,
+            );
+            if (ids.length === 0) return null;
+            return (
+              <div className="trackspace-capgroup" key={status}>
+                <span className="trackspace-capgroup-label">
+                  {STATUS[status].label} · {ids.length}
+                </span>
+                <div className="trackspace-capset">
+                  {ids.map((id) => (
+                    <CapabilityTag key={id} id={id} onOpen={onOpen} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </DrawerSection>
       <DrawerSection label="Assessment">

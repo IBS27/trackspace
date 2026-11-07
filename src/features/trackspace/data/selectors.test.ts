@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CAPABILITIES, EVENTS, LOCATIONS, MILESTONES } from "./seed";
 import type { Dataset, Milestone, TrackspaceEvent } from "./types";
 import {
+  futureEventKind,
   compareEventsChronologically,
   dateSortKey,
   getBlockers,
@@ -31,6 +32,25 @@ describe("getStatusCounts", () => {
     const counts = getStatusCounts();
     const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
     expect(total).toBe(CAPABILITIES.length);
+  });
+});
+
+describe("futureEventKind", () => {
+  const event = (date: string, future: boolean) =>
+    ({ ...EVENTS[0], date, future }) as TrackspaceEvent;
+
+  it("is null for logged events", () => {
+    expect(futureEventKind(event("2026-07-24", false))).toBeNull();
+  });
+
+  it("treats a day-precise future event as an announced plan", () => {
+    expect(futureEventKind(event("2026-07-24", true))).toBe("announced");
+  });
+
+  it("treats looser future dates as targets", () => {
+    for (const date of ["2026-11", "2026-Q4", "2028+"]) {
+      expect(futureEventKind(event(date, true))).toBe("target");
+    }
   });
 });
 

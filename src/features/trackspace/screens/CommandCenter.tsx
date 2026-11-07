@@ -7,6 +7,7 @@ import { ConfidenceChip } from "../components/ConfidenceChip";
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { ReadinessSummary } from "../components/ReadinessSummary";
 import { StatusChip } from "../components/StatusChip";
+import { useEdgeFade } from "../components/useEdgeFade";
 import { useDataset } from "../data/dataset-context";
 import { getSummary, getUpcomingMilestones } from "../data/selectors";
 
@@ -25,6 +26,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
   const summary = getSummary(dataset);
   const upcomingMilestones = getUpcomingMilestones(3, dataset.milestones);
   const [atlasSelection, setAtlasSelection] = useState<AtlasSelection | null>(null);
+  const sideRef = useEdgeFade<HTMLElement>(undefined, "y");
 
   const isSelected = (kind: AtlasSelection["kind"], id: string) =>
     atlasSelection?.kind === kind && atlasSelection.id === id;
@@ -40,7 +42,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
         />
       </div>
 
-      <aside className="trackspace-cc-side">
+      <aside ref={sideRef} className="trackspace-cc-side">
         <section className="trackspace-side-section">
           <h2 className="trackspace-side-heading">
             Overall readiness

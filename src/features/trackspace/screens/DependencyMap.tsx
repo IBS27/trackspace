@@ -69,13 +69,19 @@ const ROW_STEP = ROW_Y[1] - ROW_Y[0];
 // Horizontal channels run through the gaps between rows (and below the last row).
 const CHANNELS = ROW_Y.map((y) => y + ROW_STEP / 2);
 
-const PORT_GAP = 9;
-const LANE_GAP = 6;
+// Ports spread over most of the card side; channel lanes a few pixels apart.
+const PORT_SPAN = 64;
+const MAX_PORT_GAP = 16;
+const LANE_GAP = 8;
 
 type Edge = { from: CapabilityId; to: CapabilityId };
 
 function spread(count: number, index: number, gap: number): number {
   return (index - (count - 1) / 2) * gap;
+}
+
+function portGap(count: number): number {
+  return count > 1 ? Math.min(MAX_PORT_GAP, PORT_SPAN / (count - 1)) : 0;
 }
 
 /**
@@ -93,9 +99,13 @@ function layoutEdges(edges: Edge[]): Map<string, string> {
   const inPort = new Map<string, number>();
   for (const id of Object.keys(NODE_POSITIONS) as CapabilityId[]) {
     const outgoing = edges.filter((e) => e.from === id).sort((p, q) => y(p.to) - y(q.to));
-    outgoing.forEach((e, i) => outPort.set(key(e), spread(outgoing.length, i, PORT_GAP)));
+    outgoing.forEach((e, i) =>
+      outPort.set(key(e), spread(outgoing.length, i, portGap(outgoing.length))),
+    );
     const incoming = edges.filter((e) => e.to === id).sort((p, q) => y(p.from) - y(q.from));
-    incoming.forEach((e, i) => inPort.set(key(e), spread(incoming.length, i, PORT_GAP)));
+    incoming.forEach((e, i) =>
+      inPort.set(key(e), spread(incoming.length, i, portGap(incoming.length))),
+    );
   }
 
   const channelOf = (e: Edge) => {
@@ -375,7 +385,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                           ? "rgba(242, 100, 116, 0.55)"
                           : "#4a5160",
                       strokeWidth: hot ? 2 : 1.5,
-                      opacity: !active ? 0.1 : faded ? 0.18 : 1,
+                      opacity: !active ? 0.1 : faded ? 0.28 : 1,
                     }}
                   />
                 );
