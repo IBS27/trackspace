@@ -73,7 +73,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
         <div className="trackspace-page-meta">
           <StatusChip status={milestone.status} />
           <span className="trackspace-tag">
-            Date <ConfidenceChip confidence={milestone.dateConf} />
+            Date confidence <ConfidenceChip confidence={milestone.dateConf} />
           </span>
           {milestone.critical && (
             <span className="trackspace-tag is-critical">Critical path</span>

@@ -17,42 +17,42 @@ import type {
 // Fixed layout: capabilities flow left to right from foundations to the
 // surface systems that depend on them. Positions are node centers.
 const NODE_WIDTH = 196;
-const GRAPH_WIDTH = 1190;
+const GRAPH_WIDTH = 1306;
 const GRAPH_HEIGHT = 692;
-const LANE_WIDTH = 252;
+const LANE_WIDTH = 268;
 
 const NODE_POSITIONS: Record<CapabilityId, { x: number; y: number }> = {
   // Foundations — launch, propulsion, crew and power everything builds on.
-  sls: { x: 160, y: 96 },
-  esm: { x: 160, y: 222 },
-  cryo: { x: 160, y: 348 },
-  suit: { x: 160, y: 474 },
-  power: { x: 160, y: 600 },
+  sls: { x: 170, y: 96 },
+  esm: { x: 170, y: 222 },
+  cryo: { x: 170, y: 348 },
+  suit: { x: 170, y: 474 },
+  power: { x: 170, y: 600 },
   // Enablers — reaching and moving around the surface, plus prospecting.
-  orion: { x: 450, y: 96 },
-  gateway: { x: 450, y: 222 },
-  hls: { x: 450, y: 348 },
-  ltv: { x: 450, y: 474 },
-  ice: { x: 450, y: 600 },
+  orion: { x: 492, y: 96 },
+  gateway: { x: 492, y: 222 },
+  hls: { x: 492, y: 348 },
+  ltv: { x: 492, y: 474 },
+  ice: { x: 492, y: 600 },
   // Infrastructure — relay, resource processing, construction, thermal, storage.
-  comms: { x: 740, y: 96 },
-  isru: { x: 740, y: 222 },
-  build: { x: 740, y: 348 },
-  thermal: { x: 740, y: 474 },
-  night: { x: 740, y: 600 },
+  comms: { x: 814, y: 96 },
+  isru: { x: 814, y: 222 },
+  build: { x: 814, y: 348 },
+  thermal: { x: 814, y: 474 },
+  night: { x: 814, y: 600 },
   // Surface systems — keeping a crew alive against the lunar environment.
-  rad: { x: 1030, y: 96 },
-  dust: { x: 1030, y: 222 },
-  health: { x: 1030, y: 348 },
-  eclss: { x: 1030, y: 474 },
-  hab: { x: 1030, y: 600 },
+  rad: { x: 1136, y: 96 },
+  dust: { x: 1136, y: 222 },
+  health: { x: 1136, y: 348 },
+  eclss: { x: 1136, y: 474 },
+  hab: { x: 1136, y: 600 },
 };
 
 const COLUMN_HEADERS = [
-  { x: 160, title: "Foundations" },
-  { x: 450, title: "Enablers" },
-  { x: 740, title: "Infrastructure" },
-  { x: 1030, title: "Surface systems" },
+  { x: 170, title: "Foundations" },
+  { x: 492, title: "Enablers" },
+  { x: 814, title: "Infrastructure" },
+  { x: 1136, title: "Surface systems" },
 ];
 
 /** Capabilities per column, top to bottom. */

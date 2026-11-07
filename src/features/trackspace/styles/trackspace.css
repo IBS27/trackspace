@@ -828,12 +828,25 @@
     height: 18px;
   }
 
+  /* Active tab: a soft pill behind the icon, inside the bar. */
   .trackspace-tab::after {
-    top: -1px;
+    top: 5px;
     bottom: auto;
-    right: 22%;
-    left: 22%;
-    border-radius: 0 0 2px 2px;
+    left: 50%;
+    right: auto;
+    width: 46px;
+    height: 26px;
+    border-radius: 13px;
+    transform: translateX(-50%);
+  }
+
+  .trackspace-tab.is-active::after {
+    background: var(--ts-accent-soft);
+  }
+
+  .trackspace-tab svg {
+    position: relative;
+    z-index: 1;
   }
 
   .trackspace-tab-label {
@@ -846,6 +859,8 @@
 
   .trackspace-screen {
     overflow: auto;
+    /* Content softens into the tab bar instead of meeting its border. */
+    mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent);
   }
 }
 
@@ -1392,6 +1407,40 @@
 .trackspace-capgroup {
   display: grid;
   gap: 6px;
+}
+
+/* Compact list: name left, readiness right; two columns where room allows. */
+.trackspace-caplist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0 18px;
+}
+
+.trackspace-caprow-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ts-line);
+  background: none;
+  color: var(--ts-ink-2);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.trackspace-caprow-mini:hover {
+  color: var(--ts-accent);
+}
+
+.trackspace-caprow-mini > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trackspace-capgroup-label {

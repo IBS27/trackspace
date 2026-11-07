@@ -542,13 +542,21 @@
     display: none;
   }
 
-  /* Phones: the toggles wrap inside a rounded panel instead of clipping. */
+  /* Phones: a 2x2 grid of toggles inside a rounded panel. */
   .atlas-layers {
     right: 14px;
     left: 14px;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     border-radius: 14px;
+  }
+
+  .atlas-layer {
+    justify-content: center;
+  }
+
+  .atlas-layer-divider {
+    display: none;
   }
 
   .atlas-context-head {

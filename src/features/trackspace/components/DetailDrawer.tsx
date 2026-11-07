@@ -109,7 +109,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={milestone.status} />
         <span className="trackspace-tag">
-          Date <ConfidenceChip confidence={milestone.dateConf} />
+          Date confidence <ConfidenceChip confidence={milestone.dateConf} />
         </span>
         {milestone.critical && (
           <span className="trackspace-tag is-critical">Critical path</span>
@@ -258,11 +258,9 @@ export function ClampedText({
 function CapabilityTag({
   id,
   onOpen,
-  withReadiness = false,
 }: {
   id: CapabilityId;
   onOpen: (selection: DrawerSelection) => void;
-  withReadiness?: boolean;
 }) {
   const capability = capabilityById(useDataset().capabilities)[id];
   if (!capability) return null;
@@ -277,11 +275,6 @@ function CapabilityTag({
         aria-hidden="true"
       />
       {capability.name}
-      {withReadiness && (
-        <span className="trackspace-captag-pct trackspace-tabular">
-          {capability.readiness}%
-        </span>
-      )}
     </button>
   );
 }
@@ -771,9 +764,23 @@ function MilestoneBody({
                 <span className="trackspace-capgroup-label">
                   {STATUS[status].label} · {ids.length}
                 </span>
-                <div className="trackspace-capset">
+                <div className="trackspace-caplist">
                   {ids.map((id) => (
-                    <CapabilityTag key={id} id={id} onOpen={onOpen} withReadiness />
+                    <button
+                      type="button"
+                      key={id}
+                      className="trackspace-caprow-mini"
+                      onClick={() => onOpen({ type: "capability", id })}
+                    >
+                      <span
+                        className={`trackspace-captag-dot trackspace-bg-${status}`}
+                        aria-hidden="true"
+                      />
+                      <span>{byCapability[id].name}</span>
+                      <span className="trackspace-captag-pct trackspace-tabular">
+                        {byCapability[id].readiness}%
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>

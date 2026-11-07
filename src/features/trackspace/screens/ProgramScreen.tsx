@@ -237,7 +237,7 @@ function programFacts(capability: Capability): ProgramFact[] {
   if (metrics?.slip) facts.push({ label: "Schedule", value: metrics.slip });
   if (metrics?.funding) facts.push({ label: "Funding", value: metrics.funding });
   if (facts.length === 0 && metrics?.target) {
-    facts.push({ label: "Target", value: metrics.target });
+    facts.push({ label: "Goal", value: metrics.target });
   }
   if (facts.length === 0 && metrics?.provider) {
     facts.push({ label: "Provider", value: metrics.provider });
