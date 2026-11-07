@@ -223,7 +223,12 @@ export function ClampedText({
     return () => observer.disconnect();
   }, [text, expanded]);
 
-  const classes = ["trackspace-clamp", className, expanded ? "" : "is-clamped"]
+  const classes = [
+    "trackspace-clamp",
+    className,
+    expanded ? "" : "is-clamped",
+    overflows && !expanded ? "is-overflowing" : "",
+  ]
     .filter(Boolean)
     .join(" ");
   return (
@@ -580,9 +585,10 @@ function CapabilityBody({
             className="trackspace-crow trackspace-linkrow"
             onClick={() => onOpen({ type: "milestone", id: milestone.id })}
           >
-            <span className="trackspace-crow-date">{milestone.date}</span>
             <span className="trackspace-crow-main">
-              <span className="trackspace-linkrow-code">{milestone.code}</span>
+              <span className="trackspace-linkrow-code">
+                {milestone.code} · {milestone.date}
+              </span>
               <span className="trackspace-crow-title">{milestone.name}</span>
             </span>
             <ChevronIcon size={12} className="trackspace-linkrow-chevron" />

@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import type { DrawerSelection } from "../components/DetailDrawer";
+import { useEdgeFade } from "../components/useEdgeFade";
 import { useMediaQuery } from "../components/useMediaQuery";
 import { useDataset } from "../data/dataset-context";
 import { CAPABILITY_GROUPS, STATUS, STATUS_LIST } from "../data/seed";
@@ -68,37 +69,77 @@ const ROW_STEP = ROW_Y[1] - ROW_Y[0];
 // Horizontal channels run through the gaps between rows (and below the last row).
 const CHANNELS = ROW_Y.map((y) => y + ROW_STEP / 2);
 
+const PORT_GAP = 9;
+const LANE_GAP = 6;
+
+type Edge = { from: CapabilityId; to: CapabilityId };
+
+function spread(count: number, index: number, gap: number): number {
+  return (index - (count - 1) / 2) * gap;
+}
+
 /**
- * Edges between neighboring tiers curve across the gutter. Edges that skip a
- * tier drop into the nearest row gap, run along it, and rise into the target,
- * so they never pass through a card.
+ * Lays out every edge. Edges between neighboring tiers curve across the
+ * gutter. Edges that skip a tier drop into the nearest row gap, run along it,
+ * and rise into the target, so they never pass through a card. Edges sharing a
+ * card side or a row gap are fanned a few pixels apart so each stays traceable.
  */
-function edgePath(from: CapabilityId, to: CapabilityId): string | null {
-  const a = NODE_POSITIONS[from];
-  const b = NODE_POSITIONS[to];
-  if (!a || !b) return null;
-  const x1 = a.x + NODE_WIDTH / 2;
-  const x2 = b.x - NODE_WIDTH / 2;
-  const span = COLUMN_X.indexOf(b.x) - COLUMN_X.indexOf(a.x);
-  if (span <= 1) {
-    const mx = (x1 + x2) / 2;
-    return `M${x1},${a.y} C${mx},${a.y} ${mx},${b.y} ${x2},${b.y}`;
+function layoutEdges(edges: Edge[]): Map<string, string> {
+  const key = (edge: Edge) => `${edge.from}-${edge.to}`;
+  const y = (id: CapabilityId) => NODE_POSITIONS[id]?.y ?? 0;
+  const column = (id: CapabilityId) => COLUMN_X.indexOf(NODE_POSITIONS[id]?.x ?? -1);
+
+  const outPort = new Map<string, number>();
+  const inPort = new Map<string, number>();
+  for (const id of Object.keys(NODE_POSITIONS) as CapabilityId[]) {
+    const outgoing = edges.filter((e) => e.from === id).sort((p, q) => y(p.to) - y(q.to));
+    outgoing.forEach((e, i) => outPort.set(key(e), spread(outgoing.length, i, PORT_GAP)));
+    const incoming = edges.filter((e) => e.to === id).sort((p, q) => y(p.from) - y(q.from));
+    incoming.forEach((e, i) => inPort.set(key(e), spread(incoming.length, i, PORT_GAP)));
   }
+
+  const channelOf = (e: Edge) => {
+    const mid = (y(e.from) + y(e.to)) / 2;
+    return CHANNELS.reduce((best, c) => (Math.abs(c - mid) < Math.abs(best - mid) ? c : best));
+  };
+  const skips = edges.filter((e) => column(e.to) - column(e.from) > 1);
+  const laneOffset = new Map<string, number>();
+  for (const channel of CHANNELS) {
+    const group = skips
+      .filter((e) => channelOf(e) === channel)
+      .sort((p, q) => y(p.from) - y(q.from) || y(p.to) - y(q.to));
+    group.forEach((e, i) => laneOffset.set(key(e), spread(group.length, i, LANE_GAP)));
+  }
+
   const gutter = COLUMN_X[1] - COLUMN_X[0] - NODE_WIDTH;
-  const mid = (a.y + b.y) / 2;
-  const channel = CHANNELS.reduce((best, y) =>
-    Math.abs(y - mid) < Math.abs(best - mid) ? y : best,
-  );
-  const enter = x1 + gutter;
-  const exit = x2 - gutter;
-  const m1 = x1 + gutter / 2;
-  const m2 = x2 - gutter / 2;
-  return [
-    `M${x1},${a.y}`,
-    `C${m1},${a.y} ${m1},${channel} ${enter},${channel}`,
-    `L${exit},${channel}`,
-    `C${m2},${channel} ${m2},${b.y} ${x2},${b.y}`,
-  ].join(" ");
+  const paths = new Map<string, string>();
+  for (const e of edges) {
+    const a = NODE_POSITIONS[e.from];
+    const b = NODE_POSITIONS[e.to];
+    if (!a || !b) continue;
+    const x1 = a.x + NODE_WIDTH / 2;
+    const x2 = b.x - NODE_WIDTH / 2;
+    const y1 = a.y + (outPort.get(key(e)) ?? 0);
+    const y2 = b.y + (inPort.get(key(e)) ?? 0);
+    if (column(e.to) - column(e.from) <= 1) {
+      const mx = (x1 + x2) / 2;
+      paths.set(key(e), `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+      continue;
+    }
+    const channel = channelOf(e) + (laneOffset.get(key(e)) ?? 0);
+    const m1 = x1 + gutter / 2;
+    const m2 = x2 - gutter / 2;
+    paths.set(
+      key(e),
+      [
+        `M${x1},${y1}`,
+        `C${m1},${y1} ${m1},${channel} ${x1 + gutter},${channel}`,
+        `L${x2 - gutter},${channel}`,
+        `C${m2},${channel} ${m2},${y2} ${x2},${y2}`,
+      ].join(" "),
+    );
+  }
+  return paths;
 }
 
 function statusColor(status: Status): string {
@@ -145,7 +186,9 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [hovered, setHovered] = useState<CapabilityId | null>(null);
 
+  const edgePaths = layoutEdges(edges);
   const related = hovered ? relatedTo(hovered, edges) : null;
+  const barRef = useEdgeFade<HTMLDivElement>();
   // Phones get a stacked list per tier instead of a sideways-scrolling canvas.
   const stacked = useMediaQuery("(max-width: 680px)");
 
@@ -155,8 +198,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
 
   return (
     <div className="trackspace-dep">
-      <div className="trackspace-dep-bar">
-        <span className="trackspace-dep-title">Dependency map</span>
+      <div ref={barRef} className="trackspace-dep-bar">
         <div
           className="trackspace-dep-filters"
           role="group"
@@ -210,6 +252,20 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
               {STATUS[status].label}
             </button>
           ))}
+          <span className="trackspace-dep-legend-item is-static">
+            <svg width="18" height="6" aria-hidden="true">
+              <line
+                x1="0"
+                y1="3"
+                x2="18"
+                y2="3"
+                stroke="var(--ts-blocker)"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            </svg>
+            Blocked path
+          </span>
         </div>
       </div>
 
@@ -295,7 +351,7 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                 </marker>
               </defs>
               {edges.map((edge) => {
-                const path = edgePath(edge.from, edge.to);
+                const path = edgePaths.get(`${edge.from}-${edge.to}`);
                 if (!path) return null;
                 const active =
                   matches(capById[edge.from]) &&
@@ -317,8 +373,8 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                         ? statusColor(edge.status)
                         : edge.status === "blocker"
                           ? "rgba(242, 100, 116, 0.55)"
-                          : "#3a404c",
-                      strokeWidth: hot ? 2 : 1.4,
+                          : "#4a5160",
+                      strokeWidth: hot ? 2 : 1.5,
                       opacity: !active ? 0.1 : faded ? 0.18 : 1,
                     }}
                   />

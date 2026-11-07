@@ -19,8 +19,8 @@
   /* Text, high to low. Every step clears 4.5:1 on --ts-bg except --ts-faint (decorative). */
   --ts-ink: #eceef3;
   --ts-ink-2: #c3c8d2;
-  --ts-dim: #959cab;
-  --ts-faint: #6f7685;
+  --ts-dim: #9ea5b3;
+  --ts-faint: #7a8190;
   --ts-accent: #62c8f4;
   --ts-accent-dim: #2e6984;
   --ts-accent-soft: rgba(98, 200, 244, 0.1);
@@ -93,6 +93,19 @@
   font-family: var(--ts-mono);
   font-size: 11px;
   line-height: 1;
+}
+
+/* Scroll-edge fades, set by useEdgeFade only where content continues. */
+[data-fade="start"] {
+  mask-image: linear-gradient(90deg, transparent, #000 32px);
+}
+
+[data-fade="end"] {
+  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
+}
+
+[data-fade="both"] {
+  mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
 }
 
 .trackspace-tabular {
@@ -268,8 +281,8 @@
 }
 
 .trackspace-pips i.is-on {
-  border-color: var(--ts-ink-2);
-  background: var(--ts-ink-2);
+  border-color: var(--ts-ink);
+  background: var(--ts-ink);
 }
 
 /* Buttons. */
@@ -764,8 +777,6 @@
 
   .trackspace-tabbar {
     padding: 0 6px;
-    /* Fade the right edge so clipped tabs read as scrollable. */
-    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
     scroll-padding-inline: 16px;
   }
 
@@ -1173,6 +1184,7 @@
 
 .trackspace-drawer-section p.trackspace-muted {
   color: var(--ts-dim);
+  font-size: 13px;
 }
 
 .trackspace-fold {
@@ -1232,11 +1244,14 @@
   letter-spacing: 0;
 }
 
+/* Clamped prose fades out over its last line instead of ending mid-word. */
 .trackspace-clamp.is-clamped p {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--ts-clamp-lines, 3);
+  max-height: calc(var(--ts-clamp-lines, 3) * 1.65em);
   overflow: hidden;
+}
+
+.trackspace-clamp.is-overflowing p {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 1.65em), transparent);
 }
 
 .trackspace-more {
@@ -1709,7 +1724,6 @@ a.trackspace-source:hover {
     padding: 8px 16px;
     overflow-x: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .trackspace-dep-title,
@@ -1740,7 +1754,6 @@ a.trackspace-source:hover {
     flex-wrap: wrap;
     gap: 8px;
     overflow: visible;
-    mask-image: none;
   }
 
   .trackspace-tline .trackspace-dep-filters {
@@ -1870,7 +1883,7 @@ a.trackspace-source:hover {
 
 .trackspace-tlwrap {
   position: relative;
-  max-width: 860px;
+  max-width: 920px;
   margin: 0 auto;
   padding-left: 132px;
 }
@@ -2253,6 +2266,15 @@ a.trackspace-source:hover {
   margin-top: 28px;
 }
 
+@media (min-width: 1101px) {
+  /* The short capabilities column stays in view beside the long events list. */
+  .trackspace-mscols > .trackspace-mssec:first-child {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+}
+
 .trackspace-mssec h3 {
   display: flex;
   align-items: center;
@@ -2375,7 +2397,7 @@ a.trackspace-source:hover {
 
 .trackspace-prog-row {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 132px;
+  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 168px;
   gap: 20px;
   align-items: start;
   width: 100%;
@@ -2392,7 +2414,7 @@ a.trackspace-source:hover {
 /* Column labels above the register rows. */
 .trackspace-prog-head {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 132px;
+  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 168px;
   gap: 20px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--ts-line);
@@ -2532,7 +2554,6 @@ a.trackspace-source:hover {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .trackspace-msrail-head,

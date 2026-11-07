@@ -9,6 +9,7 @@ import { STATUS, STATUS_LIST } from "../data/seed";
 import { getSortedEvents } from "../data/selectors";
 import type { Status, TrackspaceEvent } from "../data/types";
 import { ImpactTag } from "../components/ImpactTag";
+import { useEdgeFade } from "../components/useEdgeFade";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -37,6 +38,7 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
   const events = getSortedEvents(dataset.events);
   const firstFutureIndex = events.findIndex((e) => e.future);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
+  const filtersRef = useEdgeFade<HTMLDivElement>();
 
   const toggle = (status: Status) =>
     setStatusFilter(
@@ -50,8 +52,8 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
   return (
     <div className="trackspace-tline">
       <div className="trackspace-dep-bar">
-        <span className="trackspace-dep-title">Event timeline</span>
         <div
+          ref={filtersRef}
           className="trackspace-dep-filters"
           role="group"
           aria-label="Status filters"
