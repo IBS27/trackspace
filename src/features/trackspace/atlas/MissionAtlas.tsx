@@ -16,6 +16,7 @@ import type { DrawerSelection } from "../components/DetailDrawer";
 import { ArrowUpRightIcon, CloseIcon } from "../components/icons";
 import { StatusChip } from "../components/StatusChip";
 import { useEdgeFade } from "../components/useEdgeFade";
+import { displayCode } from "../data/selectors";
 import type { Capability, Dataset } from "../data/types";
 import {
   deriveAtlasContext,
@@ -529,7 +530,7 @@ export const MissionAtlas = memo(function MissionAtlas({
                         title={milestone.name}
                         onClick={() => onSelectionChange({ kind: "milestone", id: milestone.id })}
                       >
-                        {milestone.code}
+                        {displayCode(milestone.code)}
                       </button>
                     ))}
                   </LinkGroup>

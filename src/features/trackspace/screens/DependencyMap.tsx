@@ -18,7 +18,7 @@ import type {
 // surface systems that depend on them. Positions are node centers.
 const NODE_WIDTH = 196;
 const GRAPH_WIDTH = 1190;
-const GRAPH_HEIGHT = 676;
+const GRAPH_HEIGHT = 692;
 const LANE_WIDTH = 252;
 
 const NODE_POSITIONS: Record<CapabilityId, { x: number; y: number }> = {
@@ -108,11 +108,26 @@ function layoutEdges(edges: Edge[]): Map<string, string> {
     );
   }
 
-  const channelOf = (e: Edge) => {
+  // Each tier-skipping edge takes a row gap between its endpoints, preferring
+  // the least used one so long runs do not stack into a single ribbon.
+  const skips = edges
+    .filter((e) => column(e.to) - column(e.from) > 1)
+    .sort((p, q) => Math.abs(y(q.to) - y(q.from)) - Math.abs(y(p.to) - y(p.from)));
+  const load = new Map<number, number>(CHANNELS.map((c) => [c, 0]));
+  const assigned = new Map<string, number>();
+  for (const e of skips) {
+    const low = Math.min(y(e.from), y(e.to)) - ROW_STEP / 2;
+    const high = Math.max(y(e.from), y(e.to)) + ROW_STEP / 2;
     const mid = (y(e.from) + y(e.to)) / 2;
-    return CHANNELS.reduce((best, c) => (Math.abs(c - mid) < Math.abs(best - mid) ? c : best));
-  };
-  const skips = edges.filter((e) => column(e.to) - column(e.from) > 1);
+    const candidates = CHANNELS.filter((c) => c >= low && c <= high);
+    const pick = (candidates.length > 0 ? candidates : CHANNELS).reduce((best, c) => {
+      const cost = (c2: number) => (load.get(c2) ?? 0) * ROW_STEP + Math.abs(c2 - mid);
+      return cost(c) < cost(best) ? c : best;
+    });
+    assigned.set(key(e), pick);
+    load.set(pick, (load.get(pick) ?? 0) + 1);
+  }
+  const channelOf = (e: Edge) => assigned.get(key(e)) ?? CHANNELS[0];
   const laneOffset = new Map<string, number>();
   for (const channel of CHANNELS) {
     const group = skips

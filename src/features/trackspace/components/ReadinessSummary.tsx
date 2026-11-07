@@ -1,5 +1,5 @@
 import { STATUS, STATUS_LIST } from "../data/seed";
-import type { getSummary } from "../data/selectors";
+import { displayCode, type getSummary } from "../data/selectors";
 import { CheckIcon } from "./icons";
 
 type Summary = ReturnType<typeof getSummary>;
@@ -19,7 +19,7 @@ export function ReadinessSummary({ summary }: { summary: Summary }) {
           {lastAchieved && (
             <span className="trackspace-readiness-delta">
               <CheckIcon size={12} />
-              {lastAchieved.code} achieved · {lastAchieved.date}
+              {displayCode(lastAchieved.code)} achieved · {lastAchieved.date}
             </span>
           )}
         </span>

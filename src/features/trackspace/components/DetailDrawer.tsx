@@ -17,6 +17,7 @@ import {
   getLocationsForMilestone,
   locationById,
   milestoneById,
+  displayCode,
 } from "../data/selectors";
 import type {
   Capability,
@@ -87,13 +88,12 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: capability not found: ${selection.id}`);
       return null;
     }
-    kicker = `CAPABILITY · ${capability.short.toUpperCase()}`;
+    kicker = `CAPABILITY · ${capability.group.toUpperCase()}`;
     title = capability.name;
     meta = (
       <>
         <StatusChip status={capability.status} />
         <ConfidenceChip confidence={capability.conf} />
-        <span className="trackspace-tag trackspace-tabular">Readiness {capability.readiness}%</span>
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
@@ -103,7 +103,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: milestone not found: ${selection.id}`);
       return null;
     }
-    kicker = `MILESTONE · ${milestone.code} · ${milestone.date}`;
+    kicker = `MILESTONE · ${displayCode(milestone.code)} · ${milestone.date}`;
     title = milestone.name;
     meta = (
       <>
@@ -559,7 +559,7 @@ function CapabilityBody({
           />
         </div>
         <p className="trackspace-readiness-note">
-          {STATUS[capability.status].desc}
+          {capability.readiness}% ready. {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
       <DrawerSection label="Depends on (upstream)">
@@ -597,7 +597,7 @@ function CapabilityBody({
           >
             <span className="trackspace-crow-main">
               <span className="trackspace-linkrow-code">
-                {milestone.code} · {milestone.date}
+                {displayCode(milestone.code)} · {milestone.date}
               </span>
               <span className="trackspace-crow-title">{milestone.name}</span>
             </span>
@@ -713,7 +713,7 @@ function LocationBody({
                   <span className="trackspace-crow-date">{milestone.date}</span>
                   <span className="trackspace-crow-main">
                     <span className="trackspace-crow-title">
-                      {milestone.code} · {milestone.name}
+                      {displayCode(milestone.code)} · {milestone.name}
                     </span>
                     <span className="trackspace-crow-meta">
                       <StatusChip status={milestone.status} />

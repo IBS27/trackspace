@@ -14,6 +14,7 @@ import {
   getMilestoneBlockers,
   getMilestoneReadyCount,
   milestoneById,
+  displayCode,
 } from "../data/selectors";
 import type { MilestoneId, Status } from "../data/types";
 
@@ -48,7 +49,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
             onClick={() => setCurrent(item.id)}
           >
             <span className="trackspace-msri-main">
-              <span className="trackspace-msri-code">{item.code}</span>
+              <span className="trackspace-msri-code">{displayCode(item.code)}</span>
               <span className="trackspace-msri-name">{item.name}</span>
               <span className="trackspace-msri-detail">
                 {item.date} · {STATUS[item.status].label}
@@ -66,7 +67,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
 
       <div className="trackspace-mspage" key={current}>
         <div className="trackspace-eyebrow">
-          {milestone.code} · target {milestone.date}
+          {displayCode(milestone.code)} · target {milestone.date}
         </div>
         <h1>{milestone.name}</h1>
         <div className="trackspace-page-meta">

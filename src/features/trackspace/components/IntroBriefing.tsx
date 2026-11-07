@@ -6,7 +6,7 @@ import {
 } from "react";
 
 import { useDataset } from "../data/dataset-context";
-import { getSummary } from "../data/selectors";
+import { displayCode, getSummary } from "../data/selectors";
 import { VIEWS } from "../views";
 import { CloseIcon } from "./icons";
 import { ReadinessSummary } from "./ReadinessSummary";
@@ -118,7 +118,7 @@ export function IntroBriefing({
                 <dt>Next gate</dt>
                 <dd>
                   <span className="trackspace-nowrap">
-                    {summary.nextMilestone.code} · {summary.nextMilestone.date}
+                    {displayCode(summary.nextMilestone.code)} · {summary.nextMilestone.date}
                   </span>
                   <StatusChip status={summary.nextMilestone.status} />
                 </dd>

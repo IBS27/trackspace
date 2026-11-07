@@ -40,7 +40,7 @@ export const STATUS: Record<Status, StatusMeta> = {
     id: "blocker",
     label: "Blocker",
     glyph: "■",
-    desc: "Not ready yet, and other capabilities wait on it.",
+    desc: "Other capabilities wait on this one.",
   },
   unknown: {
     id: "unknown",

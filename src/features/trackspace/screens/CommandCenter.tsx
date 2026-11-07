@@ -9,7 +9,7 @@ import { ReadinessSummary } from "../components/ReadinessSummary";
 import { StatusChip } from "../components/StatusChip";
 import { useEdgeFade } from "../components/useEdgeFade";
 import { useDataset } from "../data/dataset-context";
-import { getSummary, getUpcomingMilestones } from "../data/selectors";
+import { displayCode, getSummary, getUpcomingMilestones } from "../data/selectors";
 
 /** The opening sentence, so summaries end cleanly instead of mid-word. */
 function firstSentence(text: string): string {
@@ -120,7 +120,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
                 </span>
                 <span className="trackspace-side-row-main">
                   <span className="trackspace-side-row-title">
-                    {milestone.code} · {milestone.name}
+                    {displayCode(milestone.code)} · {milestone.name}
                   </span>
                   <span className="trackspace-side-row-meta">
                     <StatusChip status={milestone.status} />
