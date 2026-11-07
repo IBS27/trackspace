@@ -2552,6 +2552,8 @@ a.trackspace-source:hover {
 }
 
 .trackspace-caprow-flag {
+  flex: 0 0 64px;
+  text-align: right;
   color: var(--ts-blocker);
   font-family: var(--ts-mono);
   font-size: 11px;

@@ -119,10 +119,10 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
                   <span className="trackspace-caprow-pct trackspace-tabular">
                     {capability.readiness}%
                   </span>
-                  {/* Blockers on the path are flagged in place, not listed twice. */}
-                  {capability.status === "blocker" && (
-                    <span className="trackspace-caprow-flag">Blocker</span>
-                  )}
+                  {/* Blockers are flagged in place; the fixed-width slot keeps bars aligned. */}
+                  <span className="trackspace-caprow-flag">
+                    {capability.status === "blocker" ? "Blocker" : ""}
+                  </span>
                 </button>
               );
             })}
