@@ -132,6 +132,27 @@
   );
 }
 
+@media (max-width: 680px) {
+  /* Wider horizontal fades on phones so a cut-off chip reads as "more". */
+  [data-fade="start"] {
+    mask-image: linear-gradient(90deg, transparent 6px, #000 72px);
+  }
+
+  [data-fade="end"] {
+    mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 6px));
+  }
+
+  [data-fade="both"] {
+    mask-image: linear-gradient(
+      90deg,
+      transparent 6px,
+      #000 72px,
+      #000 calc(100% - 72px),
+      transparent calc(100% - 6px)
+    );
+  }
+}
+
 .trackspace-tabular {
   font-variant-numeric: tabular-nums;
 }
@@ -3122,10 +3143,9 @@ a.trackspace-source:hover {
     padding: 11px 18px;
   }
 
-  .trackspace-intro-view-text {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
+  /* Phones list the five views by name so they all fit above the button. */
+  .trackspace-intro-view-note {
+    display: none;
   }
 
   .trackspace-intro-foot {
