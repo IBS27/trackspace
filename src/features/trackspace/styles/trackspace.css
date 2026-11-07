@@ -115,19 +115,19 @@
 }
 
 [data-fade-y="start"] {
-  mask-image: linear-gradient(180deg, transparent, #000 40px);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.15), #000 24px);
 }
 
 [data-fade-y="end"] {
-  mask-image: linear-gradient(180deg, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 64px), transparent);
 }
 
 [data-fade-y="both"] {
   mask-image: linear-gradient(
     180deg,
-    transparent,
-    #000 40px,
-    #000 calc(100% - 40px),
+    rgba(0, 0, 0, 0.15),
+    #000 24px,
+    #000 calc(100% - 64px),
     transparent
   );
 }
@@ -739,6 +739,10 @@
   background: var(--ts-accent);
 }
 
+.trackspace-tab-short {
+  display: none;
+}
+
 .trackspace-tab:focus-visible {
   outline-offset: -2px;
 }
@@ -799,13 +803,45 @@
     flex: 1 1 auto;
   }
 
+  /* Phone: the view tabs become a bottom bar where all five fit. */
   .trackspace-tabbar {
-    padding: 0 6px;
-    scroll-padding-inline: 16px;
+    order: 3;
+    justify-content: space-between;
+    gap: 0;
+    padding: 0 4px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--ts-line);
+    border-bottom: 0;
+    overflow: visible;
   }
 
   .trackspace-tab {
-    padding: 11px 10px;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 9px 2px 10px;
+    font-size: 11px;
+  }
+
+  .trackspace-tab svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .trackspace-tab::after {
+    top: -1px;
+    bottom: auto;
+    right: 22%;
+    left: 22%;
+    border-radius: 0 0 2px 2px;
+  }
+
+  .trackspace-tab-label {
+    display: none;
+  }
+
+  .trackspace-tab-short {
+    display: inline;
   }
 
   .trackspace-screen {
@@ -1381,6 +1417,12 @@
 .trackspace-captag:hover {
   border-color: var(--ts-accent-dim);
   color: var(--ts-ink);
+}
+
+.trackspace-captag-pct {
+  color: var(--ts-dim);
+  font-family: var(--ts-mono);
+  font-size: 11px;
 }
 
 .trackspace-captag-dot {

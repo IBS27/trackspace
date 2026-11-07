@@ -143,9 +143,13 @@ function TabBar({
             className={`trackspace-tab${item.id === activeView ? " is-active" : ""}`}
             onClick={() => onNavChange(item.id)}
             aria-current={item.id === activeView ? "page" : undefined}
+            aria-label={item.name}
           >
             <Icon size={15} />
-            {item.name}
+            <span className="trackspace-tab-label">{item.name}</span>
+            <span className="trackspace-tab-short" aria-hidden="true">
+              {item.short}
+            </span>
           </button>
         );
       })}

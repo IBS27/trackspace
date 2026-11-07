@@ -258,9 +258,11 @@ export function ClampedText({
 function CapabilityTag({
   id,
   onOpen,
+  withReadiness = false,
 }: {
   id: CapabilityId;
   onOpen: (selection: DrawerSelection) => void;
+  withReadiness?: boolean;
 }) {
   const capability = capabilityById(useDataset().capabilities)[id];
   if (!capability) return null;
@@ -275,6 +277,11 @@ function CapabilityTag({
         aria-hidden="true"
       />
       {capability.name}
+      {withReadiness && (
+        <span className="trackspace-captag-pct trackspace-tabular">
+          {capability.readiness}%
+        </span>
+      )}
     </button>
   );
 }
@@ -755,9 +762,9 @@ function MilestoneBody({
       <DrawerSection label="Required capabilities">
         <div className="trackspace-capgroups">
           {GROUP_ORDER.map((status) => {
-            const ids = milestone.caps.filter(
-              (id) => byCapability[id]?.status === status,
-            );
+            const ids = milestone.caps
+              .filter((id) => byCapability[id]?.status === status)
+              .sort((a, b) => byCapability[a].readiness - byCapability[b].readiness);
             if (ids.length === 0) return null;
             return (
               <div className="trackspace-capgroup" key={status}>
@@ -766,7 +773,7 @@ function MilestoneBody({
                 </span>
                 <div className="trackspace-capset">
                   {ids.map((id) => (
-                    <CapabilityTag key={id} id={id} onOpen={onOpen} />
+                    <CapabilityTag key={id} id={id} onOpen={onOpen} withReadiness />
                   ))}
                 </div>
               </div>

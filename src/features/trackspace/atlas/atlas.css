@@ -542,17 +542,13 @@
     display: none;
   }
 
-  /* One scrolling row on phones. */
+  /* Phones: the toggles wrap inside a rounded panel instead of clipping. */
   .atlas-layers {
     right: 14px;
     left: 14px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .atlas-layer-divider {
-    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 14px;
   }
 
   .atlas-context-head {

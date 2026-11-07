@@ -397,9 +397,9 @@ export function DependencyMap({ onOpen }: DependencyMapProps) {
                       stroke: hot
                         ? statusColor(edge.status)
                         : edge.status === "blocker"
-                          ? "rgba(242, 100, 116, 0.55)"
-                          : "#4a5160",
-                      strokeWidth: hot ? 2 : 1.5,
+                          ? "rgba(242, 100, 116, 0.7)"
+                          : "#5d6576",
+                      strokeWidth: hot ? 2.2 : 1.6,
                       opacity: !active ? 0.1 : faded ? 0.28 : 1,
                     }}
                   />
