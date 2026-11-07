@@ -11,7 +11,6 @@ import { STATUS } from "../data/seed";
 import {
   capabilityById,
   getEventsForMilestone,
-  getMilestoneBlockers,
   getMilestoneReadyCount,
   milestoneById,
   displayCode,
@@ -32,7 +31,6 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
   const capById = capabilityById(dataset.capabilities);
   const milestone = milestoneById(dataset.milestones)[current];
   const events = getEventsForMilestone(current, dataset);
-  const blockers = getMilestoneBlockers(current, dataset);
   const readyCount = getMilestoneReadyCount(current, dataset);
   const railRef = useActiveIntoView<HTMLElement>(".trackspace-msri.is-on", current);
 
@@ -121,39 +119,14 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
                   <span className="trackspace-caprow-pct trackspace-tabular">
                     {capability.readiness}%
                   </span>
+                  {/* Blockers on the path are flagged in place, not listed twice. */}
+                  {capability.status === "blocker" && (
+                    <span className="trackspace-caprow-flag">Blocker</span>
+                  )}
                 </button>
               );
             })}
 
-            <h3 className="trackspace-mssec-gap">
-              Open blockers on path <b>{blockers.length}</b>
-            </h3>
-            {blockers.length > 0 ? (
-              blockers.map((capability) => (
-                <button
-                  type="button"
-                  className="trackspace-caprow"
-                  key={capability.id}
-                  onClick={() =>
-                    onOpen({ type: "capability", id: capability.id })
-                  }
-                >
-                  <span
-                    className="trackspace-caprow-dot"
-                    style={{ background: statusColor("blocker") }}
-                    aria-hidden="true"
-                  />
-                  <span className="trackspace-caprow-name">
-                    {capability.name}
-                  </span>
-                  <span className="trackspace-caprow-flag">Blocker</span>
-                </button>
-              ))
-            ) : (
-              <p className="trackspace-mssec-empty">
-                No hard blockers on the required set. The risk sits in Watch items.
-              </p>
-            )}
           </section>
 
           <section className="trackspace-mssec">

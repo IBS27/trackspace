@@ -64,7 +64,7 @@ describe("MilestonesScreen", () => {
 
   it("lists the milestone's open blockers", () => {
     render(<MilestonesScreen onOpen={() => {}} />);
-    // Blocker rows are the only buttons whose accessible name ends in BLOCKER.
+    // Required rows on the blocker path end with a "Blocker" flag.
     const flagged = screen.queryAllByRole("button", { name: /Blocker$/ });
     expect(flagged.length).toBe(getMilestoneBlockers("a3").length);
   });
@@ -76,8 +76,7 @@ describe("MilestonesScreen", () => {
     const capability = CAPABILITY_BY_ID[capId];
 
     // A required-capability row's accessible name is its name plus the
-    // readiness %, which distinguishes it from the same capability's
-    // blocker row ("{name} BLOCKER").
+    // readiness % (and a trailing "Blocker" flag when it blocks the path).
     fireEvent.click(
       screen.getByRole("button", {
         name: new RegExp(`^${capability.name}\\s*${capability.readiness}%$`),

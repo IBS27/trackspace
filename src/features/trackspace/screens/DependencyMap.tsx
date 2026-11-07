@@ -95,19 +95,6 @@ function layoutEdges(edges: Edge[]): Map<string, string> {
   const y = (id: CapabilityId) => NODE_POSITIONS[id]?.y ?? 0;
   const column = (id: CapabilityId) => COLUMN_X.indexOf(NODE_POSITIONS[id]?.x ?? -1);
 
-  const outPort = new Map<string, number>();
-  const inPort = new Map<string, number>();
-  for (const id of Object.keys(NODE_POSITIONS) as CapabilityId[]) {
-    const outgoing = edges.filter((e) => e.from === id).sort((p, q) => y(p.to) - y(q.to));
-    outgoing.forEach((e, i) =>
-      outPort.set(key(e), spread(outgoing.length, i, portGap(outgoing.length))),
-    );
-    const incoming = edges.filter((e) => e.to === id).sort((p, q) => y(p.from) - y(q.from));
-    incoming.forEach((e, i) =>
-      inPort.set(key(e), spread(incoming.length, i, portGap(incoming.length))),
-    );
-  }
-
   // Each tier-skipping edge takes a row gap between its endpoints, preferring
   // the least used one so long runs do not stack into a single ribbon.
   const skips = edges
@@ -128,11 +115,37 @@ function layoutEdges(edges: Edge[]): Map<string, string> {
     load.set(pick, (load.get(pick) ?? 0) + 1);
   }
   const channelOf = (e: Edge) => assigned.get(key(e)) ?? CHANNELS[0];
+
+  const outPort = new Map<string, number>();
+  const inPort = new Map<string, number>();
+  for (const id of Object.keys(NODE_POSITIONS) as CapabilityId[]) {
+    // Order exits by where each edge heads first so lines do not cross at the card.
+    const heading = (e: Edge) => (column(e.to) - column(e.from) > 1 ? channelOf(e) : y(e.to));
+    const outgoing = edges
+      .filter((e) => e.from === id)
+      .sort((p, q) => heading(p) - heading(q) || y(p.to) - y(q.to));
+    outgoing.forEach((e, i) =>
+      outPort.set(key(e), spread(outgoing.length, i, portGap(outgoing.length))),
+    );
+    const arriving = (e: Edge) => (column(e.to) - column(e.from) > 1 ? channelOf(e) : y(e.from));
+    const incoming = edges
+      .filter((e) => e.to === id)
+      .sort((p, q) => arriving(p) - arriving(q) || y(p.from) - y(q.from));
+    incoming.forEach((e, i) =>
+      inPort.set(key(e), spread(incoming.length, i, portGap(incoming.length))),
+    );
+  }
+
   const laneOffset = new Map<string, number>();
   for (const channel of CHANNELS) {
     const group = skips
       .filter((e) => channelOf(e) === channel)
-      .sort((p, q) => y(p.from) - y(q.from) || y(p.to) - y(q.to));
+      // Lanes follow the exit order so parallel runs never swap places.
+      .sort(
+        (p, q) =>
+          y(p.from) + (outPort.get(key(p)) ?? 0) - (y(q.from) + (outPort.get(key(q)) ?? 0)) ||
+          y(p.to) - y(q.to),
+      );
     group.forEach((e, i) => laneOffset.set(key(e), spread(group.length, i, LANE_GAP)));
   }
 

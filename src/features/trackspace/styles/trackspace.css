@@ -1123,7 +1123,7 @@
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(4, 5, 8, 0.72);
+  background: rgba(4, 5, 8, 0.8);
   opacity: 0;
   animation: trackspace-fade 180ms ease forwards;
 }
@@ -1430,16 +1430,17 @@
   gap: 6px;
 }
 
-/* Compact list: name left, readiness right; two columns where room allows. */
+/* Compact list: name left, readiness right. Fills top to bottom, two columns where room allows. */
 .trackspace-caplist {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 0 18px;
+  columns: 2 200px;
+  column-gap: 20px;
 }
 
 .trackspace-caprow-mini {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  width: 100%;
+  break-inside: avoid;
   gap: 8px;
   min-width: 0;
   padding: 6px 0;
@@ -1459,9 +1460,11 @@
 .trackspace-caprow-mini > span:nth-child(2) {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.trackspace-caprow-mini .trackspace-captag-dot {
+  align-self: center;
 }
 
 .trackspace-capgroup-label {
