@@ -19,8 +19,8 @@
   /* Text, high to low. Every step clears 4.5:1 on --ts-bg except --ts-faint (decorative). */
   --ts-ink: #eceef3;
   --ts-ink-2: #c3c8d2;
-  --ts-dim: #959cab;
-  --ts-faint: #6f7685;
+  --ts-dim: #9ea5b3;
+  --ts-faint: #7a8190;
   --ts-accent: #62c8f4;
   --ts-accent-dim: #2e6984;
   --ts-accent-soft: rgba(98, 200, 244, 0.1);
@@ -93,6 +93,64 @@
   font-family: var(--ts-mono);
   font-size: 11px;
   line-height: 1;
+}
+
+/* Scroll-edge fades, set by useEdgeFade only where content continues. */
+[data-fade="start"] {
+  mask-image: linear-gradient(90deg, transparent 4px, #000 48px);
+}
+
+[data-fade="end"] {
+  mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent calc(100% - 4px));
+}
+
+[data-fade="both"] {
+  mask-image: linear-gradient(
+    90deg,
+    transparent 4px,
+    #000 48px,
+    #000 calc(100% - 48px),
+    transparent calc(100% - 4px)
+  );
+}
+
+[data-fade-y="start"] {
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.15), #000 24px);
+}
+
+[data-fade-y="end"] {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 64px), transparent);
+}
+
+[data-fade-y="both"] {
+  mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15),
+    #000 24px,
+    #000 calc(100% - 64px),
+    transparent
+  );
+}
+
+@media (max-width: 680px) {
+  /* Wider horizontal fades on phones so a cut-off chip reads as "more". */
+  [data-fade="start"] {
+    mask-image: linear-gradient(90deg, transparent 6px, #000 72px);
+  }
+
+  [data-fade="end"] {
+    mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 6px));
+  }
+
+  [data-fade="both"] {
+    mask-image: linear-gradient(
+      90deg,
+      transparent 6px,
+      #000 72px,
+      #000 calc(100% - 72px),
+      transparent calc(100% - 6px)
+    );
+  }
 }
 
 .trackspace-tabular {
@@ -268,8 +326,8 @@
 }
 
 .trackspace-pips i.is-on {
-  border-color: var(--ts-ink-2);
-  background: var(--ts-ink-2);
+  border-color: var(--ts-ink);
+  background: var(--ts-ink);
 }
 
 /* Buttons. */
@@ -702,6 +760,10 @@
   background: var(--ts-accent);
 }
 
+.trackspace-tab-short {
+  display: none;
+}
+
 .trackspace-tab:focus-visible {
   outline-offset: -2px;
 }
@@ -762,19 +824,64 @@
     flex: 1 1 auto;
   }
 
+  /* Phone: the view tabs become a bottom bar where all five fit. */
   .trackspace-tabbar {
-    padding: 0 6px;
-    /* Fade the right edge so clipped tabs read as scrollable. */
-    mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
-    scroll-padding-inline: 16px;
+    order: 3;
+    justify-content: space-between;
+    gap: 0;
+    padding: 0 4px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--ts-line);
+    border-bottom: 0;
+    overflow: visible;
   }
 
   .trackspace-tab {
-    padding: 11px 10px;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 9px 2px 10px;
+    font-size: 11px;
+  }
+
+  .trackspace-tab svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Active tab: a soft pill behind the icon, inside the bar. */
+  .trackspace-tab::after {
+    top: 5px;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    width: 46px;
+    height: 26px;
+    border-radius: 13px;
+    transform: translateX(-50%);
+  }
+
+  .trackspace-tab.is-active::after {
+    background: var(--ts-accent-soft);
+  }
+
+  .trackspace-tab svg {
+    position: relative;
+    z-index: 1;
+  }
+
+  .trackspace-tab-label {
+    display: none;
+  }
+
+  .trackspace-tab-short {
+    display: inline;
   }
 
   .trackspace-screen {
     overflow: auto;
+    /* Content softens into the tab bar instead of meeting its border. */
+    mask-image: linear-gradient(180deg, #000 calc(100% - 16px), transparent);
   }
 }
 
@@ -1016,7 +1123,7 @@
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(4, 5, 8, 0.72);
+  background: rgba(4, 5, 8, 0.8);
   opacity: 0;
   animation: trackspace-fade 180ms ease forwards;
 }
@@ -1173,6 +1280,7 @@
 
 .trackspace-drawer-section p.trackspace-muted {
   color: var(--ts-dim);
+  font-size: 13px;
 }
 
 .trackspace-fold {
@@ -1232,11 +1340,15 @@
   letter-spacing: 0;
 }
 
+/* Clamped prose fades out over its last line instead of ending mid-word. */
 .trackspace-clamp.is-clamped p {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--ts-clamp-lines, 3);
+  max-height: calc(var(--ts-clamp-lines, 3) * 1.65em);
   overflow: hidden;
+}
+
+/* Soft fade on the last line only; it stays faintly readable. */
+.trackspace-clamp.is-overflowing p {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 1.2em), rgba(0, 0, 0, 0.3));
 }
 
 .trackspace-more {
@@ -1308,6 +1420,58 @@
   gap: 6px;
 }
 
+.trackspace-capgroups {
+  display: grid;
+  gap: 12px;
+}
+
+.trackspace-capgroup {
+  display: grid;
+  gap: 6px;
+}
+
+/* Compact list: name left, readiness right. Fills top to bottom, two columns where room allows. */
+.trackspace-caplist {
+  columns: 2 200px;
+  column-gap: 20px;
+}
+
+.trackspace-caprow-mini {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  break-inside: avoid;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ts-line);
+  background: none;
+  color: var(--ts-ink-2);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.trackspace-caprow-mini:hover {
+  color: var(--ts-accent);
+}
+
+.trackspace-caprow-mini > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.trackspace-caprow-mini .trackspace-captag-dot {
+  align-self: center;
+}
+
+.trackspace-capgroup-label {
+  color: var(--ts-dim);
+  font-size: 12px;
+}
+
 .trackspace-captag {
   display: inline-flex;
   align-items: center;
@@ -1326,6 +1490,12 @@
 .trackspace-captag:hover {
   border-color: var(--ts-accent-dim);
   color: var(--ts-ink);
+}
+
+.trackspace-captag-pct {
+  color: var(--ts-dim);
+  font-family: var(--ts-mono);
+  font-size: 11px;
 }
 
 .trackspace-captag-dot {
@@ -1646,7 +1816,7 @@ a.trackspace-source:hover {
 }
 
 .trackspace-gnode.is-faded {
-  opacity: 0.35;
+  opacity: 0.5;
 }
 
 .trackspace-gnode-name {
@@ -1709,7 +1879,6 @@ a.trackspace-source:hover {
     padding: 8px 16px;
     overflow-x: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .trackspace-dep-title,
@@ -1740,7 +1909,6 @@ a.trackspace-source:hover {
     flex-wrap: wrap;
     gap: 8px;
     overflow: visible;
-    mask-image: none;
   }
 
   .trackspace-tline .trackspace-dep-filters {
@@ -1870,7 +2038,7 @@ a.trackspace-source:hover {
 
 .trackspace-tlwrap {
   position: relative;
-  max-width: 860px;
+  max-width: 920px;
   margin: 0 auto;
   padding-left: 132px;
 }
@@ -1928,6 +2096,25 @@ a.trackspace-source:hover {
 
 .trackspace-tlnode.is-fut {
   border-style: dashed;
+}
+
+/* Announced plans: a diamond, so they read apart from the dated sequence. */
+.trackspace-tlnode.is-announced,
+.trackspace-tlnode-lg.is-announced {
+  border-style: solid;
+  border-radius: 2px;
+  transform: rotate(45deg) scale(0.86);
+}
+
+.trackspace-tlnode-lg.is-announced {
+  border-color: var(--ts-ink-2);
+}
+
+/* Announcement dates are secondary: label first, smaller date. */
+.trackspace-tldate.is-announced b {
+  color: var(--ts-dim);
+  font-size: 11.5px;
+  font-weight: 400;
 }
 
 .trackspace-tlnode-core {
@@ -1997,6 +2184,7 @@ a.trackspace-source:hover {
 
 .trackspace-tlnow {
   position: relative;
+  scroll-margin-top: 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2078,6 +2266,17 @@ a.trackspace-source:hover {
 
   .trackspace-tlrow {
     margin-bottom: 18px;
+  }
+
+  /* The divider label wraps instead of running into the right edge. */
+  .trackspace-tlnow span {
+    flex: 1 1 auto;
+    white-space: normal;
+    line-height: 1.5;
+  }
+
+  .trackspace-tlnow::after {
+    display: none;
   }
 }
 
@@ -2253,6 +2452,15 @@ a.trackspace-source:hover {
   margin-top: 28px;
 }
 
+@media (min-width: 1101px) {
+  /* The short capabilities column stays in view beside the long events list. */
+  .trackspace-mscols > .trackspace-mssec:first-child {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+}
+
 .trackspace-mssec h3 {
   display: flex;
   align-items: center;
@@ -2344,6 +2552,8 @@ a.trackspace-source:hover {
 }
 
 .trackspace-caprow-flag {
+  flex: 0 0 64px;
+  text-align: right;
   color: var(--ts-blocker);
   font-family: var(--ts-mono);
   font-size: 11px;
@@ -2375,7 +2585,7 @@ a.trackspace-source:hover {
 
 .trackspace-prog-row {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 132px;
+  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 168px;
   gap: 20px;
   align-items: start;
   width: 100%;
@@ -2392,7 +2602,7 @@ a.trackspace-source:hover {
 /* Column labels above the register rows. */
 .trackspace-prog-head {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 132px;
+  grid-template-columns: minmax(180px, 0.9fr) 92px minmax(240px, 1.6fr) 168px;
   gap: 20px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--ts-line);
@@ -2509,7 +2719,6 @@ a.trackspace-source:hover {
   }
 
   .trackspace-prog-row-readiness {
-    max-width: 280px;
     padding-top: 0;
   }
 }
@@ -2532,7 +2741,6 @@ a.trackspace-source:hover {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
   }
 
   .trackspace-msrail-head,
@@ -2579,7 +2787,6 @@ a.trackspace-source:hover {
     padding: 12px 14px;
   }
 
-  .trackspace-prog-row-sub,
   .trackspace-prog-page .trackspace-page-meta,
   .trackspace-prog-head {
     display: none;
@@ -2883,18 +3090,6 @@ a.trackspace-source:hover {
   font-size: 12px;
 }
 
-/* Fade the list into the pinned footer so clipped rows read as scrollable. */
-.trackspace-intro-foot::before {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 100%;
-  left: 0;
-  height: 28px;
-  background: linear-gradient(180deg, transparent, var(--ts-bg-2));
-  pointer-events: none;
-}
-
 .trackspace-intro-foot kbd {
   margin: 0 1px;
 }
@@ -2933,6 +3128,10 @@ a.trackspace-source:hover {
     padding: 18px;
   }
 
+  .trackspace-intro-facts dd {
+    font-size: 14px;
+  }
+
   .trackspace-intro-facts {
     grid-template-columns: 1fr 1fr;
     padding-top: 16px;
@@ -2949,10 +3148,9 @@ a.trackspace-source:hover {
     padding: 11px 18px;
   }
 
-  .trackspace-intro-view-text {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
+  /* Phones list the five views by name so they all fit above the button. */
+  .trackspace-intro-view-note {
+    display: none;
   }
 
   .trackspace-intro-foot {

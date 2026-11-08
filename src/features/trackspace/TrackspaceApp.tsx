@@ -9,7 +9,7 @@ import {
 } from "./components/DetailDrawer";
 import { IntroBriefing } from "./components/IntroBriefing";
 import { DatasetProvider } from "./data/dataset-context";
-import { CURATED, getSummary } from "./data/selectors";
+import { CURATED, displayCode, getSummary } from "./data/selectors";
 import type { Dataset } from "./data/types";
 import { CommandCenter } from "./screens/CommandCenter";
 import { DependencyMap } from "./screens/DependencyMap";
@@ -119,7 +119,7 @@ function TrackspaceWorkspace({
             />
           )
         }
-        nextGate={`${summary.nextMilestone.code} · ${summary.nextMilestone.date}`}
+        nextGate={`${displayCode(summary.nextMilestone.code)} · ${summary.nextMilestone.date}`}
         overlay={
           <IntroBriefing
                 onNavigate={(view) => {

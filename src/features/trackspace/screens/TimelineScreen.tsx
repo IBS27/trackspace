@@ -6,23 +6,12 @@ import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { STATUS, STATUS_LIST } from "../data/seed";
-import { getSortedEvents } from "../data/selectors";
-import type { Status, TrackspaceEvent } from "../data/types";
+import { futureEventKind, getSortedEvents } from "../data/selectors";
+import type { Status } from "../data/types";
 import { ImpactTag } from "../components/ImpactTag";
+import { useEdgeFade } from "../components/useEdgeFade";
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-/** Divider label: everything below is projected; the log runs to this month. */
-function epochLabel(events: TrackspaceEvent[]): string {
-  const lastLogged = events.filter((e) => !e.future).at(-1);
-  if (!lastLogged) return "Projected from here";
-  const [year, month] = lastLogged.date.split("-");
-  const name = MONTHS[Number(month) - 1] ?? month;
-  return `Projected from here · logged through ${name} ${year}`;
-}
+const kindOf = futureEventKind;
 
 function statusColor(status: Status): string {
   return `var(--ts-${status})`;
@@ -37,6 +26,7 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
   const events = getSortedEvents(dataset.events);
   const firstFutureIndex = events.findIndex((e) => e.future);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
+  const filtersRef = useEdgeFade<HTMLDivElement>();
 
   const toggle = (status: Status) =>
     setStatusFilter(
@@ -50,8 +40,8 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
   return (
     <div className="trackspace-tline">
       <div className="trackspace-dep-bar">
-        <span className="trackspace-dep-title">Event timeline</span>
         <div
+          ref={filtersRef}
           className="trackspace-dep-filters"
           role="group"
           aria-label="Status filters"
@@ -85,8 +75,12 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
             Logged
           </span>
           <span className="trackspace-dep-legend-item is-static">
+            <span className="trackspace-tlnode-lg is-announced" />
+            Announced
+          </span>
+          <span className="trackspace-dep-legend-item is-static">
             <span className="trackspace-tlnode-lg is-fut" />
-            Projected
+            Target
           </span>
         </div>
       </div>
@@ -98,19 +92,27 @@ export function TimelineScreen({ onOpen }: TimelineScreenProps) {
             <Fragment key={event.id}>
               {index === firstFutureIndex && (
                 <div className="trackspace-tlnow">
-                  <span>{epochLabel(events)}</span>
+                  <span>Announced plans and targets</span>
                 </div>
               )}
               <div
                 className="trackspace-tlrow"
                 style={{ opacity: shows(event.status) ? 1 : 0.18 }}
               >
-                <div className="trackspace-tldate">
-                  <b className="trackspace-tabular">{event.date}</b>
-                  {event.future && "projected"}
-                </div>
+                {kindOf(event) === "announced" ? (
+                  // The date is when the plan was announced, not when it happens.
+                  <div className="trackspace-tldate is-announced">
+                    announced
+                    <b className="trackspace-tabular">{event.date}</b>
+                  </div>
+                ) : (
+                  <div className="trackspace-tldate">
+                    <b className="trackspace-tabular">{event.date}</b>
+                    {kindOf(event) === "target" && "target"}
+                  </div>
+                )}
                 <div
-                  className={`trackspace-tlnode${event.future ? " is-fut" : ""}`}
+                  className={`trackspace-tlnode${event.future ? ` is-fut is-${kindOf(event)}` : ""}`}
                   style={{ borderColor: statusColor(event.status) }}
                   aria-hidden="true"
                 >

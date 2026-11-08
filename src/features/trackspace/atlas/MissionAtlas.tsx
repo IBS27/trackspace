@@ -15,6 +15,8 @@ import {
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { ArrowUpRightIcon, CloseIcon } from "../components/icons";
 import { StatusChip } from "../components/StatusChip";
+import { useEdgeFade } from "../components/useEdgeFade";
+import { displayCode } from "../data/selectors";
 import type { Capability, Dataset } from "../data/types";
 import {
   deriveAtlasContext,
@@ -170,6 +172,7 @@ export const MissionAtlas = memo(function MissionAtlas({
   onOpen: (selection: DrawerSelection) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const layersRef = useEdgeFade<HTMLDivElement>();
   useEffect(() => {
     if (!selection || window.innerWidth > 900) return;
     viewportRef.current
@@ -350,7 +353,7 @@ export const MissionAtlas = memo(function MissionAtlas({
           />
         </SceneBoundary>
         {/* Rendered in every scene state: the fallback site list below relies on these filters. */}
-        <div className="atlas-layers" role="group" aria-label="Atlas layers">
+        <div ref={layersRef} className="atlas-layers" role="group" aria-label="Atlas layers">
           <label className="atlas-layer">
             <input
               type="checkbox"
@@ -527,7 +530,7 @@ export const MissionAtlas = memo(function MissionAtlas({
                         title={milestone.name}
                         onClick={() => onSelectionChange({ kind: "milestone", id: milestone.id })}
                       >
-                        {milestone.code}
+                        {displayCode(milestone.code)}
                       </button>
                     ))}
                   </LinkGroup>

@@ -156,6 +156,20 @@ export function getRecentChanges(
     .slice(0, count);
 }
 
+/**
+ * How to describe a forward-looking event: one dated to a specific day is a
+ * plan announced on that day; a month, quarter or open range is a target.
+ */
+export function futureEventKind(event: TrackspaceEvent): "announced" | "target" | null {
+  if (!event.future) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(event.date) ? "announced" : "target";
+}
+
+/** Milestone codes like "PHASE · BASE" read as one token: "PHASE BASE". */
+export function displayCode(code: string): string {
+  return code.replaceAll(" · ", " ");
+}
+
 /** All events in date order; future targets sort after past events. */
 export function getSortedEvents(
   events: TrackspaceEvent[] = EVENTS,

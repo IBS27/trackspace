@@ -11,6 +11,8 @@ import {
 type ViewDefinition = {
   id: string;
   name: string;
+  /** Label for the compact phone tab bar. */
+  short: string;
   /** One-line description shown in the mission briefing. */
   note: string;
   icon: ComponentType<{ size?: number }>;
@@ -21,30 +23,35 @@ export const VIEWS = [
   {
     id: "command",
     name: "Command Center",
+    short: "Command",
     note: "Earth–Moon atlas, top blockers, and the latest changes",
     icon: CommandIcon,
   },
   {
     id: "dependency",
     name: "Dependency Map",
+    short: "Map",
     note: "What has to work before what",
     icon: DependencyIcon,
   },
   {
     id: "timeline",
     name: "Timeline",
+    short: "Timeline",
     note: "Logged events and what is projected next",
     icon: TimelineIcon,
   },
   {
     id: "milestones",
     name: "Milestones",
+    short: "Milestones",
     note: "Program gates, mission by mission",
     icon: MilestoneIcon,
   },
   {
     id: "program",
     name: "Program",
+    short: "Program",
     note: "Funding, schedule, and provider signals",
     icon: ProgramIcon,
   },

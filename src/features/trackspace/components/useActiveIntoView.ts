@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 
+import { useEdgeFade } from "./useEdgeFade";
+
 /**
  * Keeps the active item of a horizontally scrolling rail in view.
  * Returns a ref for the rail; `selector` matches its active item.
  */
 export function useActiveIntoView<T extends HTMLElement>(selector: string, key: unknown) {
   const ref = useRef<T>(null);
+  useEdgeFade(ref);
 
   useEffect(() => {
     const rail = ref.current;

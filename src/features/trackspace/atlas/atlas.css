@@ -542,18 +542,21 @@
     display: none;
   }
 
-  /* One scrolling row on phones. */
+  /* Phones: a 2x2 grid of toggles inside a rounded panel. */
   .atlas-layers {
     right: 14px;
     left: 14px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 14px;
+  }
+
+  .atlas-layer {
+    justify-content: center;
   }
 
   .atlas-layer-divider {
-    flex: 0 0 auto;
+    display: none;
   }
 
   .atlas-context-head {

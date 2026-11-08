@@ -8,6 +8,7 @@ import { STATUS } from "../data/seed";
 import {
   capabilityById,
   eventById,
+  futureEventKind,
   getDownstream,
   getEventsForCapability,
   getEventsForMilestone,
@@ -16,6 +17,7 @@ import {
   getLocationsForMilestone,
   locationById,
   milestoneById,
+  displayCode,
 } from "../data/selectors";
 import type {
   Capability,
@@ -25,12 +27,14 @@ import type {
   Milestone,
   MilestoneId,
   Source,
+  Status,
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { ImpactTag } from "./ImpactTag";
 import { ArrowUpRightIcon, CheckIcon, ChevronIcon, CloseIcon } from "./icons";
 import { StatusChip } from "./StatusChip";
+import { useEdgeFade } from "./useEdgeFade";
 
 export type DrawerSelection =
   | { type: "capability"; id: CapabilityId }
@@ -46,6 +50,7 @@ type DetailDrawerProps = {
 
 export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) {
   const dataset = useDataset();
+  const bodyRef = useEdgeFade<HTMLDivElement>(undefined, "y");
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -66,7 +71,8 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: event not found: ${selection.id}`);
       return null;
     }
-    kicker = `${event.future ? "PROJECTED EVENT" : "LOGGED EVENT"} · ${event.date}`;
+    const kind = futureEventKind(event);
+    kicker = `${kind === "announced" ? "ANNOUNCED PLAN" : kind === "target" ? "TARGET" : "LOGGED EVENT"} · ${event.date}`;
     title = event.title;
     meta = (
       <>
@@ -82,13 +88,12 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: capability not found: ${selection.id}`);
       return null;
     }
-    kicker = `CAPABILITY · ${capability.short.toUpperCase()}`;
+    kicker = `CAPABILITY · ${capability.group.toUpperCase()}`;
     title = capability.name;
     meta = (
       <>
         <StatusChip status={capability.status} />
         <ConfidenceChip confidence={capability.conf} />
-        <span className="trackspace-tag trackspace-tabular">Readiness {capability.readiness}%</span>
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
@@ -98,13 +103,13 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       console.error(`Trackspace: milestone not found: ${selection.id}`);
       return null;
     }
-    kicker = `MILESTONE · ${milestone.date}`;
-    title = `${milestone.code} — ${milestone.name}`;
+    kicker = `MILESTONE · ${displayCode(milestone.code)} · ${milestone.date}`;
+    title = milestone.name;
     meta = (
       <>
         <StatusChip status={milestone.status} />
         <span className="trackspace-tag">
-          Date <ConfidenceChip confidence={milestone.dateConf} />
+          Date confidence <ConfidenceChip confidence={milestone.dateConf} />
         </span>
         {milestone.critical && (
           <span className="trackspace-tag is-critical">Critical path</span>
@@ -151,7 +156,9 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
           </button>
           <div className="trackspace-drawer-meta">{meta}</div>
         </div>
-        <div className="trackspace-drawer-body">{body}</div>
+        <div ref={bodyRef} className="trackspace-drawer-body">
+          {body}
+        </div>
       </aside>
     </>
   );
@@ -223,7 +230,12 @@ export function ClampedText({
     return () => observer.disconnect();
   }, [text, expanded]);
 
-  const classes = ["trackspace-clamp", className, expanded ? "" : "is-clamped"]
+  const classes = [
+    "trackspace-clamp",
+    className,
+    expanded ? "" : "is-clamped",
+    overflows && !expanded ? "is-overflowing" : "",
+  ]
     .filter(Boolean)
     .join(" ");
   return (
@@ -500,7 +512,10 @@ function MetricRow({
 function CapabilityMetricsSection({ metrics }: { metrics: CapabilityMetrics }) {
   const { provider, contract, funding, target, slip } = metrics;
   return (
-    <FoldSection label="Funding & schedule">
+    <FoldSection
+      label="Funding & schedule"
+      count={[provider, contract, funding, target, slip].filter(Boolean).length}
+    >
       <div className="trackspace-metrics">
         {provider && (
           <MetricRow label="Provider">
@@ -544,7 +559,7 @@ function CapabilityBody({
           />
         </div>
         <p className="trackspace-readiness-note">
-          {STATUS[capability.status].desc}
+          {capability.readiness}% ready. {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
       <DrawerSection label="Depends on (upstream)">
@@ -580,9 +595,10 @@ function CapabilityBody({
             className="trackspace-crow trackspace-linkrow"
             onClick={() => onOpen({ type: "milestone", id: milestone.id })}
           >
-            <span className="trackspace-crow-date">{milestone.date}</span>
             <span className="trackspace-crow-main">
-              <span className="trackspace-linkrow-code">{milestone.code}</span>
+              <span className="trackspace-linkrow-code">
+                {displayCode(milestone.code)} · {milestone.date}
+              </span>
               <span className="trackspace-crow-title">{milestone.name}</span>
             </span>
             <ChevronIcon size={12} className="trackspace-linkrow-chevron" />
@@ -697,7 +713,7 @@ function LocationBody({
                   <span className="trackspace-crow-date">{milestone.date}</span>
                   <span className="trackspace-crow-main">
                     <span className="trackspace-crow-title">
-                      {milestone.code} · {milestone.name}
+                      {displayCode(milestone.code)} · {milestone.name}
                     </span>
                     <span className="trackspace-crow-meta">
                       <StatusChip status={milestone.status} />
@@ -716,6 +732,9 @@ function LocationBody({
   );
 }
 
+/** Required capabilities are grouped worst first. */
+const GROUP_ORDER: Status[] = ["blocker", "watch", "unknown", "ready"];
+
 function MilestoneBody({
   milestone,
   onOpen,
@@ -726,6 +745,7 @@ function MilestoneBody({
   const dataset = useDataset();
   const events = getEventsForMilestone(milestone.id, dataset);
   const locations = getLocationsForMilestone(milestone.id, dataset);
+  const byCapability = capabilityById(dataset.capabilities);
 
   return (
     <>
@@ -733,10 +753,39 @@ function MilestoneBody({
         <ClampedText text={milestone.objective} />
       </DrawerSection>
       <DrawerSection label="Required capabilities">
-        <div className="trackspace-capset">
-          {milestone.caps.map((id) => (
-            <CapabilityTag key={id} id={id} onOpen={onOpen} />
-          ))}
+        <div className="trackspace-capgroups">
+          {GROUP_ORDER.map((status) => {
+            const ids = milestone.caps
+              .filter((id) => byCapability[id]?.status === status)
+              .sort((a, b) => byCapability[a].readiness - byCapability[b].readiness);
+            if (ids.length === 0) return null;
+            return (
+              <div className="trackspace-capgroup" key={status}>
+                <span className="trackspace-capgroup-label">
+                  {STATUS[status].label} · {ids.length}
+                </span>
+                <div className="trackspace-caplist">
+                  {ids.map((id) => (
+                    <button
+                      type="button"
+                      key={id}
+                      className="trackspace-caprow-mini"
+                      onClick={() => onOpen({ type: "capability", id })}
+                    >
+                      <span
+                        className={`trackspace-captag-dot trackspace-bg-${status}`}
+                        aria-hidden="true"
+                      />
+                      <span>{byCapability[id].name}</span>
+                      <span className="trackspace-captag-pct trackspace-tabular">
+                        {byCapability[id].readiness}%
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </DrawerSection>
       <DrawerSection label="Assessment">

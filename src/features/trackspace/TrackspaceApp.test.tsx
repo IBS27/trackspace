@@ -113,7 +113,7 @@ describe("TrackspaceApp", () => {
     render(<TrackspaceApp />);
 
     fireEvent.keyDown(window, { key: "3" });
-    expect(screen.getByText("Event timeline")).toBeTruthy();
+    expect(screen.getByText("Announced")).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "4" });
     expect(screen.getByText("Missions / Phases")).toBeTruthy();

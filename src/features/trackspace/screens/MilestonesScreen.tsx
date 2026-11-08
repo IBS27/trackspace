@@ -11,9 +11,9 @@ import { STATUS } from "../data/seed";
 import {
   capabilityById,
   getEventsForMilestone,
-  getMilestoneBlockers,
   getMilestoneReadyCount,
   milestoneById,
+  displayCode,
 } from "../data/selectors";
 import type { MilestoneId, Status } from "../data/types";
 
@@ -31,7 +31,6 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
   const capById = capabilityById(dataset.capabilities);
   const milestone = milestoneById(dataset.milestones)[current];
   const events = getEventsForMilestone(current, dataset);
-  const blockers = getMilestoneBlockers(current, dataset);
   const readyCount = getMilestoneReadyCount(current, dataset);
   const railRef = useActiveIntoView<HTMLElement>(".trackspace-msri.is-on", current);
 
@@ -48,7 +47,7 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
             onClick={() => setCurrent(item.id)}
           >
             <span className="trackspace-msri-main">
-              <span className="trackspace-msri-code">{item.code}</span>
+              <span className="trackspace-msri-code">{displayCode(item.code)}</span>
               <span className="trackspace-msri-name">{item.name}</span>
               <span className="trackspace-msri-detail">
                 {item.date} · {STATUS[item.status].label}
@@ -66,13 +65,13 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
 
       <div className="trackspace-mspage" key={current}>
         <div className="trackspace-eyebrow">
-          {milestone.code} · target {milestone.date}
+          {displayCode(milestone.code)} · target {milestone.date}
         </div>
         <h1>{milestone.name}</h1>
         <div className="trackspace-page-meta">
           <StatusChip status={milestone.status} />
           <span className="trackspace-tag">
-            Date <ConfidenceChip confidence={milestone.dateConf} />
+            Date confidence <ConfidenceChip confidence={milestone.dateConf} />
           </span>
           {milestone.critical && (
             <span className="trackspace-tag is-critical">Critical path</span>
@@ -120,39 +119,14 @@ export function MilestonesScreen({ onOpen }: MilestonesScreenProps) {
                   <span className="trackspace-caprow-pct trackspace-tabular">
                     {capability.readiness}%
                   </span>
+                  {/* Blockers are flagged in place; the fixed-width slot keeps bars aligned. */}
+                  <span className="trackspace-caprow-flag">
+                    {capability.status === "blocker" ? "Blocker" : ""}
+                  </span>
                 </button>
               );
             })}
 
-            <h3 className="trackspace-mssec-gap">
-              Open blockers on path <b>{blockers.length}</b>
-            </h3>
-            {blockers.length > 0 ? (
-              blockers.map((capability) => (
-                <button
-                  type="button"
-                  className="trackspace-caprow"
-                  key={capability.id}
-                  onClick={() =>
-                    onOpen({ type: "capability", id: capability.id })
-                  }
-                >
-                  <span
-                    className="trackspace-caprow-dot"
-                    style={{ background: statusColor("blocker") }}
-                    aria-hidden="true"
-                  />
-                  <span className="trackspace-caprow-name">
-                    {capability.name}
-                  </span>
-                  <span className="trackspace-caprow-flag">Blocker</span>
-                </button>
-              ))
-            ) : (
-              <p className="trackspace-mssec-empty">
-                No hard blockers on the required set. The risk sits in Watch items.
-              </p>
-            )}
           </section>
 
           <section className="trackspace-mssec">
