@@ -7,12 +7,12 @@
 
 html {
   color-scheme: dark;
-  background: #060607;
+  background: #0a0b0f;
 }
 
 body {
   margin: 0;
-  background: #060607;
-  color: #e6e6ea;
+  background: #0a0b0f;
+  color: #eceef3;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }

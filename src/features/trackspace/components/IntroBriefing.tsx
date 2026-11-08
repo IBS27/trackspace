@@ -115,7 +115,9 @@ export function IntroBriefing({
               <div>
                 <dt>Next gate</dt>
                 <dd>
-                  {summary.nextMilestone.code} · {summary.nextMilestone.date}
+                  <span className="trackspace-nowrap">
+                    {summary.nextMilestone.code} · {summary.nextMilestone.date}
+                  </span>
                   <StatusChip status={summary.nextMilestone.status} />
                 </dd>
               </div>
@@ -152,15 +154,15 @@ export function IntroBriefing({
               );
             })}
           </nav>
+        </div>
 
-          <div className="trackspace-intro-foot">
-            <span>
-              Press <kbd>1</kbd>–<kbd>5</kbd> to switch views at any time.
-            </span>
-            <button type="button" className="trackspace-btn-primary" onClick={dismiss}>
-              Start exploring
-            </button>
-          </div>
+        <div className="trackspace-intro-foot">
+          <span>
+            Press <kbd>1</kbd>–<kbd>5</kbd> to switch views at any time.
+          </span>
+          <button type="button" className="trackspace-btn-primary" onClick={dismiss}>
+            Start exploring
+          </button>
         </div>
       </div>
     </>

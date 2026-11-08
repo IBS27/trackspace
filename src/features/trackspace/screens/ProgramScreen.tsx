@@ -4,13 +4,14 @@ import { useState, type ReactNode } from "react";
 
 import type { DrawerSelection } from "../components/DetailDrawer";
 import { StatusChip } from "../components/StatusChip";
+import { useActiveIntoView } from "../components/useActiveIntoView";
 import { useDataset } from "../data/dataset-context";
 import {
   getProgramRegister,
   getProgramSummary,
   type ProgramEntry,
 } from "../data/selectors";
-import type { Capability, Status } from "../data/types";
+import type { Capability } from "../data/types";
 
 type ProgramScreenProps = {
   onOpen: (selection: DrawerSelection) => void;
@@ -28,6 +29,7 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
   const register = getProgramRegister(dataset.capabilities);
   const summary = getProgramSummary(dataset.capabilities);
   const [lens, setLens] = useState<ProgramLens>("attention");
+  const railRef = useActiveIntoView<HTMLElement>(".trackspace-prog-lens.is-on", lens);
 
   const attention = register.filter(
     (entry) => entry.status === "blocker" || entry.status === "watch",
@@ -35,9 +37,6 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
   const schedule = register.filter((entry) => entry.hasScheduleSignal);
   const funding = register.filter((entry) => entry.hasFundingSignal);
   const ready = register.filter((entry) => entry.status === "ready");
-  const signals = register.filter(
-    (entry) => entry.hasScheduleSignal || entry.hasFundingSignal,
-  );
 
   const visible =
     lens === "attention"
@@ -55,35 +54,30 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
     label: string;
     detail: string;
     count: number;
-    status?: Status;
   }[] = [
     {
       id: "attention",
       label: "Needs attention",
       detail: `${summary.blockers} blockers · ${summary.watch} watch`,
       count: attention.length,
-      status: summary.blockers > 0 ? "blocker" : "watch",
     },
     {
       id: "schedule",
       label: "Schedule signals",
       detail: "Documented slips and timing pressure",
       count: schedule.length,
-      status: "watch",
     },
     {
       id: "funding",
       label: "Funding signals",
       detail: "Public contract or budget figures",
       count: funding.length,
-      status: "ready",
     },
     {
       id: "ready",
       label: "Stable",
       detail: "Tracked records already marked ready",
       count: ready.length,
-      status: "ready",
     },
     {
       id: "all",
@@ -96,7 +90,7 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
 
   return (
     <div className="trackspace-prog">
-      <nav className="trackspace-prog-rail" aria-label="Program views">
+      <nav ref={railRef} className="trackspace-prog-rail" aria-label="Program views">
         <div className="trackspace-prog-rail-head">Program Views</div>
         {lensRows.map((row) => (
           <button
@@ -114,13 +108,6 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
               <span className="trackspace-prog-lens-count trackspace-tabular">
                 {row.count}
               </span>
-              <span
-                className="trackspace-prog-lens-dot"
-                style={{
-                  background: row.status ? `var(--ts-${row.status})` : "var(--ts-accent)",
-                }}
-                aria-hidden="true"
-              />
             </span>
           </button>
         ))}
@@ -130,7 +117,7 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
         <div className="trackspace-eyebrow">
           Program · funding and schedule
         </div>
-        <h1>Program Health</h1>
+        <h1>Program health</h1>
         <div className="trackspace-page-meta">
           <span className="trackspace-tag trackspace-tabular">
             {summary.tracked}/{dataset.capabilities.length} tracked
@@ -146,65 +133,26 @@ export function ProgramScreen({ onOpen }: ProgramScreenProps) {
             {summary.watch} watch
           </span>
           <span className="trackspace-tag trackspace-tabular">
-            {summary.withSlip} schedule
+            {summary.withSlip} schedule signals
           </span>
           <span className="trackspace-tag trackspace-tabular">
-            {summary.withFunding} funding
+            {summary.withFunding} funding signals
           </span>
         </div>
 
         <p className="trackspace-page-lede">{programRead(summary, attention)}</p>
-
-        <div className="trackspace-prog-cols">
-          <section className="trackspace-mssec">
-            <h3>
-              Needs attention <b>{attention.length}</b>
-            </h3>
-            <div className="trackspace-rows">
-              {attention.length > 0 ? (
-                attention.slice(0, 6).map((entry) => (
-                  <ProgramCompactRow
-                    key={entry.capability.id}
-                    entry={entry}
-                    onOpen={onOpen}
-                  />
-                ))
-              ) : (
-                <p className="trackspace-mssec-empty">
-                  No blockers or watch items in the tracked program records.
-                </p>
-              )}
-            </div>
-          </section>
-
-          <section className="trackspace-mssec">
-            <h3>
-              Schedule / funding <b>{signals.length}</b>
-            </h3>
-            <div className="trackspace-rows">
-              {signals.length > 0 ? (
-                signals.slice(0, 6).map((entry) => (
-                  <ProgramSignalRow
-                    key={entry.capability.id}
-                    entry={entry}
-                    onOpen={onOpen}
-                  />
-                ))
-              ) : (
-                <p className="trackspace-mssec-empty">
-                  No schedule or funding signal is attached to the current
-                  tracked records.
-                </p>
-              )}
-            </div>
-          </section>
-        </div>
 
         <section className="trackspace-mssec trackspace-prog-register">
           <h3>
             {currentLens.label} <b>{visible.length}</b>
           </h3>
           <div className="trackspace-prog-list">
+            <div className="trackspace-prog-head" aria-hidden="true">
+              <span>Capability</span>
+              <span>Status</span>
+              <span>Schedule and funding</span>
+              <span>Readiness</span>
+            </div>
             {visible.map((entry) => (
               <ProgramCapabilityRow
                 key={entry.capability.id}
@@ -229,70 +177,9 @@ function programRead(
 
   const lead = attention
     .slice(0, 3)
-    .map((entry) => entry.capability.short)
+    .map((entry) => entry.capability.name)
     .join(", ");
-  return `${summary.blockers} blockers and ${summary.watch} watch items need attention first. Highest-pressure records: ${lead}.`;
-}
-
-function ProgramCompactRow({
-  entry,
-  onOpen,
-}: {
-  entry: ProgramEntry;
-  onOpen: (selection: DrawerSelection) => void;
-}) {
-  const fact = primaryProgramFact(entry.capability);
-
-  return (
-    <button
-      type="button"
-      className="trackspace-crow trackspace-prog-crow"
-      onClick={() => onOpen({ type: "capability", id: entry.capability.id })}
-    >
-      <span className="trackspace-crow-date">{entry.capability.short}</span>
-      <span className="trackspace-crow-main">
-        <span className="trackspace-crow-title">{entry.capability.name}</span>
-        <span className="trackspace-crow-meta">
-          <StatusChip status={entry.status} />
-          <span className="trackspace-cchip trackspace-tabular">
-            {entry.capability.readiness}% ready
-          </span>
-          <span className="trackspace-cchip">{fact.label}</span>
-        </span>
-      </span>
-    </button>
-  );
-}
-
-function ProgramSignalRow({
-  entry,
-  onOpen,
-}: {
-  entry: ProgramEntry;
-  onOpen: (selection: DrawerSelection) => void;
-}) {
-  const facts = signalFacts(entry.capability);
-
-  return (
-    <button
-      type="button"
-      className="trackspace-crow trackspace-prog-crow"
-      onClick={() => onOpen({ type: "capability", id: entry.capability.id })}
-    >
-      <span className="trackspace-crow-date">{entry.capability.short}</span>
-      <span className="trackspace-crow-main">
-        <span className="trackspace-crow-title">{entry.capability.name}</span>
-        <span className="trackspace-prog-signal-lines">
-          {facts.map((fact) => (
-            <span className="trackspace-prog-signal-line" key={fact.label}>
-              <span>{fact.label}</span>
-              {fact.value}
-            </span>
-          ))}
-        </span>
-      </span>
-    </button>
-  );
+  return `${summary.blockers} blockers and ${summary.watch} watch items need attention first. Most pressing: ${lead}.`;
 }
 
 function ProgramCapabilityRow({
@@ -303,7 +190,7 @@ function ProgramCapabilityRow({
   onOpen: (selection: DrawerSelection) => void;
 }) {
   const capability = entry.capability;
-  const fact = primaryProgramFact(capability);
+  const facts = programFacts(capability);
 
   return (
     <button
@@ -311,23 +198,22 @@ function ProgramCapabilityRow({
       className="trackspace-prog-row"
       onClick={() => onOpen({ type: "capability", id: capability.id })}
     >
-      <span
-        className="trackspace-prog-row-dot"
-        style={{ background: `var(--ts-${entry.status})` }}
-        aria-hidden="true"
-      />
       <span className="trackspace-prog-row-main">
         <span className="trackspace-prog-row-name">{capability.name}</span>
         <span className="trackspace-prog-row-sub">
-          {capability.group} · {capability.short}
+          {capability.group}
         </span>
       </span>
       <span className="trackspace-prog-row-status">
         <StatusChip status={entry.status} />
       </span>
-      <span className="trackspace-prog-row-fact">
-        <span className="trackspace-prog-fact-label">{fact.label}</span>
-        <span className="trackspace-prog-fact-val">{fact.value}</span>
+      <span className="trackspace-prog-row-facts">
+        {facts.map((fact) => (
+          <span className="trackspace-prog-row-fact" key={fact.label}>
+            <span className="trackspace-prog-fact-label">{fact.label}</span>
+            <span className="trackspace-prog-fact-val">{fact.value}</span>
+          </span>
+        ))}
       </span>
       <span className="trackspace-prog-row-readiness">
         <span className="trackspace-readiness-bar">
@@ -344,25 +230,18 @@ function ProgramCapabilityRow({
   );
 }
 
-function primaryProgramFact(capability: Capability): ProgramFact {
+/** Schedule and funding first; fall back to target or provider so no row is empty. */
+function programFacts(capability: Capability): ProgramFact[] {
   const metrics = capability.metrics;
-  if (metrics?.slip) return { label: "Schedule", value: metrics.slip };
-  if (metrics?.funding) return { label: "Funding", value: metrics.funding };
-  if (metrics?.target) return { label: "Target", value: metrics.target };
-  if (metrics?.provider) return { label: "Provider", value: metrics.provider };
-  return { label: "Program", value: "Tracked" };
-}
-
-function signalFacts(capability: Capability): ProgramFact[] {
-  const metrics = capability.metrics;
-  if (!metrics) return [];
-
   const facts: ProgramFact[] = [];
-  if (metrics.slip) facts.push({ label: "Schedule", value: metrics.slip });
-  if (metrics.funding) facts.push({ label: "Funding", value: metrics.funding });
-  if (facts.length === 0 && metrics.target) {
+  if (metrics?.slip) facts.push({ label: "Schedule", value: metrics.slip });
+  if (metrics?.funding) facts.push({ label: "Funding", value: metrics.funding });
+  if (facts.length === 0 && metrics?.target) {
     facts.push({ label: "Target", value: metrics.target });
   }
-
+  if (facts.length === 0 && metrics?.provider) {
+    facts.push({ label: "Provider", value: metrics.provider });
+  }
+  if (facts.length === 0) facts.push({ label: "Program", value: "Tracked" });
   return facts;
 }

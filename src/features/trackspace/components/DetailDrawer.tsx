@@ -28,6 +28,7 @@ import type {
   TrackspaceEvent,
 } from "../data/types";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { ImpactTag } from "./ImpactTag";
 import { ArrowUpRightIcon, CheckIcon, ChevronIcon, CloseIcon } from "./icons";
 import { StatusChip } from "./StatusChip";
 
@@ -71,7 +72,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={event.status} />
         <ConfidenceChip confidence={event.conf} />
-        <span className="trackspace-tag">{event.impact} impact</span>
+        <ImpactTag impact={event.impact} />
       </>
     );
     body = <EventBody event={event} onOpen={onOpen} />;
@@ -87,7 +88,7 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
       <>
         <StatusChip status={capability.status} />
         <ConfidenceChip confidence={capability.conf} />
-        <span className="trackspace-tag trackspace-tabular">{capability.readiness}% ready</span>
+        <span className="trackspace-tag trackspace-tabular">Readiness {capability.readiness}%</span>
       </>
     );
     body = <CapabilityBody capability={capability} onOpen={onOpen} />;
@@ -102,7 +103,9 @@ export function DetailDrawer({ selection, onOpen, onClose }: DetailDrawerProps) 
     meta = (
       <>
         <StatusChip status={milestone.status} />
-        <span className="trackspace-tag">{milestone.dateConf} date</span>
+        <span className="trackspace-tag">
+          Date <ConfidenceChip confidence={milestone.dateConf} />
+        </span>
         {milestone.critical && (
           <span className="trackspace-tag is-critical">Critical path</span>
         )}
@@ -199,7 +202,7 @@ function FoldSection({
 export function ClampedText({
   text,
   className,
-  lines = 3,
+  lines = 5,
 }: {
   text: string;
   className?: string;
@@ -259,7 +262,7 @@ function CapabilityTag({
         className={`trackspace-captag-dot trackspace-bg-${capability.status}`}
         aria-hidden="true"
       />
-      {capability.short}
+      {capability.name}
     </button>
   );
 }
@@ -541,12 +544,9 @@ function CapabilityBody({
           />
         </div>
         <p className="trackspace-readiness-note">
-          {capability.readiness}% · {STATUS[capability.status].desc}
+          {STATUS[capability.status].desc}
         </p>
       </DrawerSection>
-      {capability.metrics && (
-        <CapabilityMetricsSection metrics={capability.metrics} />
-      )}
       <DrawerSection label="Depends on (upstream)">
         {capability.deps.length ? (
           <div className="trackspace-capset">
@@ -556,7 +556,7 @@ function CapabilityBody({
           </div>
         ) : (
           <p className="trackspace-muted">
-            No upstream dependencies. This is a foundation capability.
+            None. This is a foundation capability.
           </p>
         )}
       </DrawerSection>
@@ -577,17 +577,20 @@ function CapabilityBody({
         <DrawerSection label="Tied milestone">
           <button
             type="button"
-            className="trackspace-crow"
+            className="trackspace-crow trackspace-linkrow"
             onClick={() => onOpen({ type: "milestone", id: milestone.id })}
           >
             <span className="trackspace-crow-date">{milestone.date}</span>
             <span className="trackspace-crow-main">
-              <span className="trackspace-crow-title">
-                {milestone.code} · {milestone.name}
-              </span>
+              <span className="trackspace-linkrow-code">{milestone.code}</span>
+              <span className="trackspace-crow-title">{milestone.name}</span>
             </span>
+            <ChevronIcon size={12} className="trackspace-linkrow-chevron" />
           </button>
         </DrawerSection>
+      )}
+      {capability.metrics && (
+        <CapabilityMetricsSection metrics={capability.metrics} />
       )}
       {events.length > 0 && (
         <FoldSection label="Related events" count={events.length}>

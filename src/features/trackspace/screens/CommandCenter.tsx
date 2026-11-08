@@ -10,6 +10,12 @@ import { StatusChip } from "../components/StatusChip";
 import { useDataset } from "../data/dataset-context";
 import { getSummary, getUpcomingMilestones } from "../data/selectors";
 
+/** The opening sentence, so summaries end cleanly instead of mid-word. */
+function firstSentence(text: string): string {
+  const match = text.match(/^.+?[.!?](?=\s+[A-Z(]|$)/);
+  return match ? match[0] : text;
+}
+
 type CommandCenterProps = {
   onOpen: (selection: DrawerSelection) => void;
 };
@@ -37,7 +43,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
       <aside className="trackspace-cc-side">
         <section className="trackspace-side-section">
           <h2 className="trackspace-side-heading">
-            Lunar-Base Readiness
+            Overall readiness
             <span className="trackspace-side-heading-note">
               {summary.capabilityCount} capabilities
             </span>
@@ -46,7 +52,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
         </section>
 
         <section className="trackspace-side-section">
-          <h2 className="trackspace-side-heading">Top Blockers</h2>
+          <h2 className="trackspace-side-heading">Top blockers</h2>
           <div className="trackspace-side-list">
             {summary.blockers.map((capability) => (
               <button
@@ -62,14 +68,16 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
                     {capability.readiness}%
                   </span>
                 </span>
-                <span className="trackspace-side-blocker-desc">{capability.blurb}</span>
+                <span className="trackspace-side-blocker-desc">
+                  {firstSentence(capability.blurb)}
+                </span>
               </button>
             ))}
           </div>
         </section>
 
         <section className="trackspace-side-section">
-          <h2 className="trackspace-side-heading">Recent Changes</h2>
+          <h2 className="trackspace-side-heading">Recent changes</h2>
           <div className="trackspace-side-list">
             {summary.recentChanges.map((event) => (
               <button
@@ -95,7 +103,7 @@ export const CommandCenter = memo(function CommandCenter({ onOpen }: CommandCent
         </section>
 
         <section className="trackspace-side-section">
-          <h2 className="trackspace-side-heading">Next Milestones</h2>
+          <h2 className="trackspace-side-heading">Next milestones</h2>
           <div className="trackspace-side-list">
             {upcomingMilestones.map((milestone) => (
               <button
